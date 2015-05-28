@@ -2,7 +2,6 @@ from __future__ import print_function
 
 import os
 import re
-import unittest
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
@@ -41,7 +40,6 @@ class TestBoilerplateFilledOut(TestCase):
                 if self.lorem_regex.search(line):
                     yield (filepath, i, line)
 
-    @unittest.expectedFailure
     def test(self):
         # Ignore files in third-party dependencies and .config files.
         ignorable_regex = re.compile('|'.join([
