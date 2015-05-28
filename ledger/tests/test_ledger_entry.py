@@ -1,0 +1,34 @@
+from decimal import Decimal as D
+
+from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
+
+from counsyl.product.ledger.api.actions import Charge
+from counsyl.product.ledger.api.actions import TransactionCtx
+from counsyl.product.ledger.models import Ledger
+from counsyl.product.ledger.models import LedgerEntry
+from counsyl.product.ledger.tests.factories import UserFactory
+from counsyl.product.test import TestCase
+
+
+class TestLedgerEntryBase(TestCase):
+    def setUp(self):
+        self.entity = UserFactory()
+        self.user = UserFactory()
+        self.ledger, _ = Ledger.objects.get_or_create_ledger(
+            self.entity,
+            Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+
+
+class TestLedgerEntry(TestLedgerEntryBase):
+    def test_entry_requires_transaction(self):
+        self.assertRaises(
+            IntegrityError,
+            LedgerEntry.objects.create,
+            ledger=self.ledger, amount=D(100))
+
+    def test_cant_delete(self):
+        with TransactionCtx(self.user, self.user) as txn:
+            txn.record(Charge(self.entity, D(100)))
+        ledger_entries = txn.transaction.entries.all()
+        self.assertRaises(PermissionDenied, ledger_entries[0].delete)
