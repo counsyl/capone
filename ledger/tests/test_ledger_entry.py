@@ -2,13 +2,13 @@ from decimal import Decimal as D
 
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
+from django.test import TestCase
 
 from ledger.api.actions import Charge
 from ledger.api.actions import TransactionCtx
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.tests.factories import UserFactory
-from counsyl.product.test import TestCase
 
 
 class TestLedgerEntryBase(TestCase):

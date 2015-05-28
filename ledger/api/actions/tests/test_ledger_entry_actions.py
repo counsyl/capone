@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal as D
 
+from django.test import TestCase
 from django.utils.timezone import get_current_timezone
 from pytz import UTC
 
@@ -16,7 +17,6 @@ from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.tests.factories import UserFactory
 from ledger.timezone import to_utc
-from counsyl.product.test import TestCase
 
 
 class LedgerEntryActionSetUp(TestCase):

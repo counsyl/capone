@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal as D
 
 from django.db import IntegrityError
+from django.test import TestCase
 
 from ledger.api.actions import Charge
 from ledger.api.actions import Payment
@@ -12,7 +13,6 @@ from ledger.api.actions import WriteDown
 from ledger.models import Ledger
 from ledger.models import Transaction
 from ledger.tests.factories import UserFactory
-from counsyl.product.test import TestCase
 
 
 class TestVoidBase(TestCase):
