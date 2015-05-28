@@ -1,0 +1,9 @@
+# Requirements needed for the setup make target and the test target
+# outside of the individual tox environments.
+
+django
+pluggy==0.3.0
+py==1.4.27
+tox==2.0.1
+virtualenv==1.11.6
+xunitmerge==1.0.4

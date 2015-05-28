@@ -1,0 +1,6 @@
+include AUTHORS
+include LICENSE
+include README.rst
+include requirements*.txt
+recursive-include ledger/static *
+recursive-include ledger/templates *
