@@ -25,13 +25,14 @@ from ledger.timezone import to_utc
 
 class ExplicitTimestampQuerysetMixin(QuerySet):
     # TODO: Clean this up and move it to common
-    timestamp_fields = []
+    timestamp_fields = ()
 
     def __init__(self, *args, **kwargs):
         super(ExplicitTimestampQuerysetMixin, self).__init__(*args, **kwargs)
         self.tz = UTC
         self.tz_name = 'utc'
         if not self.timestamp_fields:
+            self.timestamp_fields = []
             # Let's introspect and do this for every timestamp
             for field in self.model._meta.fields:
                 if isinstance(field, DateTimeField):
@@ -99,7 +100,7 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
         _("UTC time this invoice was generated"),
         auto_now_add=True,
         db_index=True)
-    invioce_timestamp = explicit_timestamp_field('_invoice_timestamp')
+    invoice_timestamp = explicit_timestamp_field('_invoice_timestamp')
     _invoice_timestamp = models.DateTimeField(
         _("UTC time of the Invoice"),
         db_index=True)
