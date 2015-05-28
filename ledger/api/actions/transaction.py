@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from counsyl.product.ledger.models import LedgerEntry
-from counsyl.product.ledger.models import Transaction
-from counsyl.product.ledger.models import TransactionRelatedObject
-from counsyl.product.ledger.timezone import to_utc
+from ledger.models import LedgerEntry
+from ledger.models import Transaction
+from ledger.models import TransactionRelatedObject
+from ledger.timezone import to_utc
 
 
 class TransactionCtx(object):

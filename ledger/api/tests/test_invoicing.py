@@ -1,17 +1,17 @@
 from datetime import datetime
 from decimal import Decimal as D
 
-from counsyl.product.ledger.api.actions import Charge
-from counsyl.product.ledger.api.actions import Payment
-from counsyl.product.ledger.api.actions import Refund
-from counsyl.product.ledger.api.actions import TransactionCtx
-from counsyl.product.ledger.api.actions import TransferAmount
-from counsyl.product.ledger.api.actions import VoidTransaction
-from counsyl.product.ledger.api.actions import WriteDown
-from counsyl.product.ledger.api.invoice import Invoice
-from counsyl.product.ledger.models import Ledger
-from counsyl.product.ledger.models import Transaction
-from counsyl.product.ledger.tests.factories import UserFactory
+from ledger.api.actions import Charge
+from ledger.api.actions import Payment
+from ledger.api.actions import Refund
+from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransferAmount
+from ledger.api.actions import VoidTransaction
+from ledger.api.actions import WriteDown
+from ledger.api.invoice import Invoice
+from ledger.models import Ledger
+from ledger.models import Transaction
+from ledger.tests.factories import UserFactory
 from counsyl.product.test import TestCase
 
 

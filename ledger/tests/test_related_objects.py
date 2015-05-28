@@ -1,10 +1,10 @@
 from decimal import Decimal as D
 
-from counsyl.product.ledger.api.actions import Charge
-from counsyl.product.ledger.api.actions import TransactionCtx
-from counsyl.product.ledger.models import Ledger
-from counsyl.product.ledger.models import Transaction
-from counsyl.product.ledger.tests.factories import UserFactory
+from ledger.api.actions import Charge
+from ledger.api.actions import TransactionCtx
+from ledger.models import Ledger
+from ledger.models import Transaction
+from ledger.tests.factories import UserFactory
 from counsyl.product.test import TestCase
 
 

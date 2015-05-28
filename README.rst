@@ -27,8 +27,8 @@ Let's record a charge of $900 to Wile E.
 # Imports and setup
 from django.contrib.auth.models import User
 from counsyl.product.order.models import Product
-from counsyl.product.ledger.api.actions import Charge
-from counsyl.product.ledger.api.actions import TransactionCtx
+from ledger.api.actions import Charge
+from ledger.api.actions import TransactionCtx
 
 wilee = User.objects.latest('id')
 product = Product.objects.order_by('id')[0]
@@ -83,7 +83,7 @@ the sum of debits.
 We can send Wile E. an Invoice whenever we want.
 
 ```python
-from counsyl.product.ledger.api.invoice import Invoice
+from ledger.api.invoice import Invoice
 
 invoice = Invoice(wilee)
 print(invoice.amount)
@@ -111,7 +111,7 @@ print(invoice.get_ledger_entries())
 # [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>, <LedgerEntry: LedgerEntry (6e6a903640be44b9b79fda2e4cdc313d) Charge for $100.0000>]
 
 # Let's undo that charge
-from counsyl.product.ledger.api.actions import VoidTransaction
+from ledger.api.actions import VoidTransaction
 VoidTransaction(txn.transaction, wilee).record()
 invoice = Invoice(wilee)
 print(invoice.get_ledger_entries())
@@ -127,7 +127,7 @@ through the roof in the time if took his transaction to clear. We cash out
 $1000 worth of bitcoin into USD. Now we owe Wile E. a refund!
 
 ```python
-from counsyl.product.ledger.api.actions import Payment
+from ledger.api.actions import Payment
 with TransactionCtx(product, wilee) as txn:
     txn.record(Payment(wilee, 1000))
 ```
@@ -188,7 +188,7 @@ print(invoice.get_ledger_entries())
 Recording a refund is easy
 
 ```python
-from counsyl.product.ledger.api.actions import Refund
+from ledger.api.actions import Refund
 with TransactionCtx(product, wilee) as txn:
     txn.record(Refund(wilee, -1 * invoice.amount))
 
@@ -266,13 +266,13 @@ from datetime import datetime
 from datetime import timedelta
 from django.contrib.auth.models import User
 from counsyl.product.order.models import Product
-from counsyl.product.ledger.api.actions import Charge
-from counsyl.product.ledger.api.actions import Payment
-from counsyl.product.ledger.api.actions import Refund
-from counsyl.product.ledger.api.actions import TransactionCtx
-from counsyl.product.ledger.api.actions import TransferAmount
-from counsyl.product.ledger.api.actions import WriteDown
-from counsyl.product.ledger.api.actions import VoidTransaction
+from ledger.api.actions import Charge
+from ledger.api.actions import Payment
+from ledger.api.actions import Refund
+from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransferAmount
+from ledger.api.actions import WriteDown
+from ledger.api.actions import VoidTransaction
 
 entity = User.objects.order_by('?')[0]
 user = User.objects.latest('id')

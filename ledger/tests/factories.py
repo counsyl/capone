@@ -1,7 +1,7 @@
 import factory  # FactoryBoy
 from django.contrib.auth import get_user_model
 
-from counsyl.product.ledger.models import Ledger
+from ledger.models import Ledger
 
 
 class UserFactory(factory.DjangoModelFactory):

@@ -3,11 +3,11 @@ from decimal import Decimal as D
 
 from django.core.exceptions import PermissionDenied
 
-from counsyl.product.ledger.models import Ledger
-from counsyl.product.ledger.models import LedgerEntry
-from counsyl.product.ledger.models import Transaction
-from counsyl.product.ledger.tests.factories import UserFactory
-from counsyl.product.ledger.timezone import to_utc
+from ledger.models import Ledger
+from ledger.models import LedgerEntry
+from ledger.models import Transaction
+from ledger.tests.factories import UserFactory
+from ledger.timezone import to_utc
 from counsyl.product.test import TestCase
 
 

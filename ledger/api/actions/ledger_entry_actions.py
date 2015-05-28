@@ -4,8 +4,8 @@ import itertools
 
 from django.db.transaction import atomic
 
-from counsyl.product.ledger.models import Ledger
-from counsyl.product.ledger.models import LedgerEntry
+from ledger.models import Ledger
+from ledger.models import LedgerEntry
 
 
 class LedgerEntryAction(object):

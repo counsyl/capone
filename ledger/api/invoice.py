@@ -3,9 +3,9 @@ from datetime import datetime
 
 from django.contrib.contenttypes.models import ContentType
 
-from counsyl.product.ledger.models import InvoiceGenerationRecord
-from counsyl.product.ledger.models import Ledger
-from counsyl.product.ledger.timezone import to_utc
+from ledger.models import InvoiceGenerationRecord
+from ledger.models import Ledger
+from ledger.timezone import to_utc
 
 
 class Invoice(object):

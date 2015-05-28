@@ -17,7 +17,7 @@ from uuidfield.fields import UUIDField
 
 from counsyl.product.common.models import NoDeleteManager
 from counsyl.product.common.models import NonDeletableObject
-from counsyl.product.ledger.timezone import to_utc
+from ledger.timezone import to_utc
 
 
 class ExplicitTimestampQuerysetMixin(QuerySet):
