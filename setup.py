@@ -26,11 +26,11 @@ test_requirements = [
 setup(
     name='counsyl-django-ledger',
     version=__import__('ledger').__version__,
-    author='lorem ipsum',
-    author_email='lorem ipsum',
+    author='Steven Buss',
+    author_email='root@counsyl.com',
     packages=find_packages(),
     include_package_data=True,
-    url='lorem ipsum',
+    url='https://github.counsyl.com/dev/ledger/',
     license='Copyright Counsyl, Inc.',
     description=' '.join(__import__('ledger').__doc__.splitlines()).strip(),
     classifiers=[
