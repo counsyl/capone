@@ -3,6 +3,8 @@ from collections import OrderedDict
 from decimal import Decimal
 from functools import partial
 
+from counsyl_django_utils.models.non_deletable import NoDeleteManager
+from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from django.conf import settings
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
@@ -15,8 +17,6 @@ from django.utils.translation import ugettext_lazy as _
 from pytz import UTC
 from uuidfield.fields import UUIDField
 
-from counsyl.product.common.models import NoDeleteManager
-from counsyl.product.common.models import NonDeletableObject
 from ledger.timezone import to_utc
 
 
@@ -78,7 +78,7 @@ class InvoiceGenerationRecordManager(NoDeleteManager):
             annotate_with_explicit_timestamp()
 
 
-class InvoiceGenerationRecord(NonDeletableObject, models.Model):
+class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     """An invoice is the amount owed at a given timestamp by a given entity.
 
     Invoices are recorded for historical reference. They should not be
@@ -145,7 +145,7 @@ class TransactionRelatedObjectManager(NoDeleteManager):
         return qs
 
 
-class TransactionRelatedObject(NonDeletableObject, models.Model):
+class TransactionRelatedObject(NonDeletableModel, models.Model):
     objects = TransactionRelatedObjectManager()
 
     transaction = models.ForeignKey(
@@ -221,7 +221,7 @@ class TransactionManager(NoDeleteManager):
             related_objects, **kwargs)
 
 
-class Transaction(NonDeletableObject, models.Model):
+class Transaction(NonDeletableModel, models.Model):
     """Transactions link together many LedgerEntries.
 
     A LedgerEntry cannot exist on its own, it must have an equal and opposite
@@ -348,7 +348,7 @@ class LedgerManager(NoDeleteManager):
             entity_id=entity.pk)
 
 
-class Ledger(NonDeletableObject, models.Model):
+class Ledger(NonDeletableModel, models.Model):
     """Ledgers are the record of debits and credits for a given entity.
 
     Currently the only two kinds of entities with a ledger are
@@ -411,7 +411,7 @@ class LedgerEntryManager(NoDeleteManager):
             related_objects, **kwargs)
 
 
-class LedgerEntry(NonDeletableObject, models.Model):
+class LedgerEntry(NonDeletableModel, models.Model):
     """A single entry in a single column in a ledger.
 
     LedgerEntries must always be part of a transaction.
