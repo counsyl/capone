@@ -6,7 +6,10 @@ from functools import partial
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from django.conf import settings
-from django.contrib.contenttypes import generic
+try:
+    from django.contrib.contenttypes.fields import GenericForeignKey
+except ImportError:
+    from django.contrib.contenttypes.generic import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import DateTimeField
@@ -96,7 +99,7 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
         _("UTC time this invoice was generated"),
         auto_now_add=True,
         db_index=True)
-    invioce_timestamp = explicit_timestamp_field('_invioce_timestamp')
+    invioce_timestamp = explicit_timestamp_field('_invoice_timestamp')
     _invoice_timestamp = models.DateTimeField(
         _("UTC time of the Invoice"),
         db_index=True)
@@ -155,7 +158,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
         default=False)
     related_object_content_type = models.ForeignKey(ContentType)
     related_object_id = models.PositiveIntegerField(db_index=True)
-    related_object = generic.GenericForeignKey(
+    related_object = GenericForeignKey(
         'related_object_content_type', 'related_object_id')
 
     class Meta:
@@ -371,7 +374,7 @@ class Ledger(NonDeletableModel, models.Model):
 
     entity_content_type = models.ForeignKey(ContentType)
     entity_id = models.PositiveIntegerField(db_index=True)
-    entity = generic.GenericForeignKey('entity_content_type', 'entity_id')
+    entity = GenericForeignKey('entity_content_type', 'entity_id')
 
     name = models.CharField(
         _("Name of this ledger"),
