@@ -53,7 +53,8 @@ clean:
 	rm -f $(TEST_OUTPUT)
 	find $(PACKAGE_NAME) -type f -name '*.pyc' -delete
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
-	dropdb --if-exists $(PACKAGE_NAME)_test_db
+	dropdb --if-exists $(PACKAGE_NAME)_test_db  # Django 1.6
+	dropdb --if-exists test_$(PACKAGE_NAME)_test_db  # Django 1.7
 
 .PHONY: teardown
 teardown:
