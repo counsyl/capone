@@ -25,9 +25,11 @@ TEMPLATE_DIRS = (os.path.join(os.path.dirname(__file__), 'templates'),)
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.environ.get('DBFILENAME', ':memory:')
-    }
+        'NAME': 'ledger_test_db',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'USER': 'django',
+        'PASSWORD': 'secret',
+    },
 }
 
 ROOT_URLCONF = "ledger.tests.urls"

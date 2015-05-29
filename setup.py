@@ -43,7 +43,7 @@ setup(
         'Development Status :: 4 - Beta',
         'Operating System :: OS Independent',
     ],
-    long_description=read_file('README.rst'),
+    long_description=read_file('README.md'),
     install_requires=requirements,
     tests_require=test_requirements,
     zip_safe=False,
