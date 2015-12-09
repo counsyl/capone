@@ -31,7 +31,7 @@ from ledger.api.actions import Charge
 from ledger.api.actions import TransactionCtx
 
 wilee = User.objects.latest('id')
-product = Product.objects.order_by('id')[0]
+product = Product.objects.earliest('id')
 
 # Business logic
 with TransactionCtx(product, wilee) as txn:
@@ -274,7 +274,7 @@ from ledger.api.actions import TransferAmount
 from ledger.api.actions import WriteDown
 from ledger.api.actions import VoidTransaction
 
-entity = User.objects.order_by('?')[0]
+entity = User.objects.earliest('?')
 user = User.objects.latest('id')
 product = Product.objects.latest('id')
 ```
