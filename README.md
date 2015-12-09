@@ -39,7 +39,7 @@ with TransactionCtx(product, wilee) as txn:
 ```
 
 Here you see the two important concepts of the Ledger system:
-TransactionContexts (shortened to TransactionCtx) and Actions. TransactionCtxs
+TransactionContexts and Actions. TransactionCtxs
 are used to wrap a series of Actions into a single Transaction. They also
 perform necessary validation to ensure that credits and debits balance. In
 this example, `Charge` is the action we performed. It records a charge against
