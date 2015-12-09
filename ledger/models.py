@@ -82,7 +82,9 @@ class InvoiceGenerationRecordManager(NoDeleteManager):
 
 
 class InvoiceGenerationRecord(NonDeletableModel, models.Model):
-    """An invoice is the amount owed at a given timestamp by a given entity.
+    """A record of an invoice being generated at a particular time.
+
+    An invoice is the amount owed at a given timestamp by a given entity.
 
     Invoices are recorded for historical reference. They should not be
     created directly. Instead you should go through ledger.invoice.Invoice.
@@ -413,7 +415,8 @@ class LedgerEntryManager(NoDeleteManager):
 class LedgerEntry(NonDeletableModel, models.Model):
     """A single entry in a single column in a ledger.
 
-    LedgerEntries must always be part of a transaction.
+    LedgerEntries must always be part of a transaction so that they balance
+    according to double-entry bookkeeping.
     """
     objects = LedgerEntryManager()
 
