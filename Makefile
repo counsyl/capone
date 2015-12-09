@@ -41,14 +41,18 @@ else
 	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
 endif
 
-.PHONY: shell
-shell: develop
+.PHONY: migrate
+migrate: develop
+	dropdb --if-exists ledger_test_db
+	createdb ledger_test_db
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=ledger.tests.settings --noinput
+
+.PHONY: shell
+shell: migrate
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=ledger.tests.settings
 
 .PHONY: runserver
-runserver: develop
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=ledger.tests.settings --noinput
+runserver: migrate
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py createsuperuser --settings=ledger.tests.settings
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py runserver --settings=ledger.tests.settings 0.0.0.0:8000
 
@@ -64,6 +68,7 @@ clean:
 	rm -f $(TEST_OUTPUT)
 	find $(PACKAGE_NAME) -type f -name '*.pyc' -delete
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
+	dropdb --if-exists ledger_test_db
 
 .PHONY: teardown
 teardown:
