@@ -1,6 +1,8 @@
 include AUTHORS
-include LICENSE
-include README.rst
+include LICENSE.rst
+include README.md
 include requirements*.txt
 recursive-include ledger/static *
 recursive-include ledger/templates *
+prune ledger/tests
+exclude Makefile
