@@ -1,23 +1,18 @@
 import os
 
-import django
-
 
 DEBUG = True
 
 INSTALLED_APPS = (
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.staticfiles',
-    'django_nose',
-    'ledger',
     'ledger.tests',
+    'ledger',
+    'django_nose',
+    'django.contrib.staticfiles',
+    'django.contrib.sessions',
+    'django.contrib.contenttypes',
+    'django.contrib.auth',
+    'django.contrib.admin',
 )
-if django.VERSION[:2] >= (1, 7):
-    # Django switched the order of installed apps in 1.7.
-    INSTALLED_APPS = tuple(reversed(INSTALLED_APPS))
 
 SECRET_KEY = 'secretkey'
 

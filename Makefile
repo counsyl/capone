@@ -3,7 +3,13 @@
 
 PACKAGE_NAME=ledger
 TEST_OUTPUT?=nosetests.xml
-PYPI?=https://pypi.counsyl.com/counsyl/prod/
+PYPI?=https://pypi.counsyl.com/counsyl/prod/+simple/
+
+ifdef TOX_ENV
+	TOX_ENV_FLAG := -e $(TOX_ENV)
+else
+	TOX_ENV_FLAG :=
+endif
 
 .PHONY: default
 default:
@@ -18,26 +24,31 @@ venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): requirements*.txt
 	test -f $@ || virtualenv --python=python2.7 $(VENV_DIR)
-	$(WITH_VENV) pip install --no-deps -r requirements-setup.txt --index-url=${PYPI}
-	$(WITH_VENV) pip install --no-deps -r requirements.txt  --index-url=${PYPI}
-	$(WITH_VENV) pip install --no-deps -r requirements-dev.txt  --index-url=${PYPI}
-.PHONY: venv
-venv: $(VENV_ACTIVATE)
+	$(WITH_VENV) pip install -r requirements-setup.txt --index-url=${PYPI}
+	$(WITH_VENV) pip install -e . --index-url=${PYPI}
+	$(WITH_VENV) pip install -r requirements-dev.txt  --index-url=${PYPI}
+	touch $@
 
 develop: venv
 	$(WITH_VENV) python setup.py develop
 
 .PHONY: setup
+setup: ##[setup] Run an arbitrary setup.py command
 setup: venv
+ifdef ARGS
+	$(WITH_VENV) python setup.py ${ARGS}
+else
+	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
+endif
 
 .PHONY: shell
 shell: develop
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py syncdb --settings=ledger.tests.settings --noinput
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=ledger.tests.settings --noinput
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=ledger.tests.settings
 
 .PHONY: runserver
 runserver: develop
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py syncdb --settings=ledger.tests.settings --noinput
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=ledger.tests.settings --noinput
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py createsuperuser --settings=ledger.tests.settings
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py runserver --settings=ledger.tests.settings 0.0.0.0:8000
 
@@ -53,12 +64,10 @@ clean:
 	rm -f $(TEST_OUTPUT)
 	find $(PACKAGE_NAME) -type f -name '*.pyc' -delete
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
-	dropdb --if-exists $(PACKAGE_NAME)_test_db  # Django 1.6
-	dropdb --if-exists test_$(PACKAGE_NAME)_test_db  # Django 1.7
 
 .PHONY: teardown
 teardown:
-	rm -rf .tox .venv
+	rm -rf .tox $(VENV_DIR)
 
 .PHONY: lint
 lint: venv
@@ -68,14 +77,33 @@ lint: venv
 test: venv
 	$(WITH_VENV) \
 	coverage erase ; \
-	tox -v; \
+	tox -v $(TOX_ENV_FLAG); \
 	status=$$?; \
 	coverage combine; \
-	coverage html --directory=coverage --omit="tests*"; \
+	coverage html --directory=coverage --omit="*tests*"; \
 	coverage report; \
 	xunitmerge nosetests-*.xml $(TEST_OUTPUT); \
 	exit $$status;
 
+# Distribution
+VERSION=`$(WITH_VENV) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'`
+
+.PHONY: version
+version: venv
+version: ## Print the computed semver version.
+	@echo ${VERSION}
+
+.PHONY: tag
+tag: ##[distribution] Tag the release.
+tag: venv
+	echo "Tagging version as ${VERSION}"
+	git tag -a ${VERSION} -m 'Version ${VERSION}'
+	# We won't push changes or tags here allowing the pipeline to do that, so we don't accidentally do that locally.
+
 .PHONY: dist
-dist:
-	python setup.py sdist
+dist: venv
+	$(WITH_VENV) python setup.py sdist
+
+.PHONY: sdist
+sdist: dist
+	@echo "runs dist"
