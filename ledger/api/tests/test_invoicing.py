@@ -6,7 +6,7 @@ from django.test import TestCase
 from ledger.api.actions import Charge
 from ledger.api.actions import Payment
 from ledger.api.actions import Refund
-from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
 from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
@@ -27,7 +27,7 @@ class TestInvoicingBase(TestCase):
 class TestSimpleInvoices(TestInvoicingBase):
     def test_simple_invoice(self):
         """Entity owes us money."""
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Charge(self.entity_1, D(100)))
         invoice = Invoice(self.entity_1)
         self.assertEqual(invoice.amount, D(100))
@@ -35,10 +35,10 @@ class TestSimpleInvoices(TestInvoicingBase):
 
     def test_simple_refund_invoice(self):
         """Entity has paid too much and needs a refund."""
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Charge(self.entity_1, D(100)))
         # Entity_1 overpays by $100!
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Payment(self.entity_1, D(200)))
         invoice = Invoice(self.entity_1)
         # ...so we owe entity_1 $100
@@ -47,9 +47,9 @@ class TestSimpleInvoices(TestInvoicingBase):
 
     def test_simple_write_down(self):
         """Entity negotiated a reduced rate, so we are comping some amount."""
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Charge(self.entity_1, D(1000)))
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(WriteDown(self.entity_1, D(501)))
         invoice = Invoice(self.entity_1)
         self.assertEqual(invoice.amount, D(499))
@@ -64,16 +64,16 @@ class TestInvoiceReversals(TestInvoicingBase):
         self.comp_amount_1 = D(90)
         self.comp_amount_2 = D(10)
 
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Charge(self.entity_1, self.charge_amount))
 
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(TransferAmount(self.entity_1, self.entity_2,
                                       self.transfer_amount))
             txn.record(WriteDown(self.entity_2, self.comp_amount_1))
         self.transfer_txn = txn.transaction
 
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(WriteDown(self.entity_2, self.comp_amount_2))
         self.comp_txn = txn.transaction
 
@@ -195,7 +195,7 @@ class TestInvoiceReversals(TestInvoicingBase):
         invoice = Invoice(self.entity_2)
         payment_amount = invoice.amount
 
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Payment(self.entity_2, payment_amount))
 
         self._assert_invoices(self.charge_amount - self.transfer_amount, 0)
@@ -216,7 +216,7 @@ class TestInvoiceReversals(TestInvoicingBase):
         self._assert_invoices(self.charge_amount - self.transfer_amount, 0)
 
     def test_wrong_void_syntax(self):
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             self.assertRaises(Transaction.UnvoidableTransactionException,
                               txn.record,
                               VoidTransaction(self.transfer_txn, self.user))
@@ -228,10 +228,10 @@ class TestInvoiceRefunds(TestInvoicingBase):
         self.charge_amount = D(1000)
         self.payment_amount = D(1500)
 
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Charge(self.entity_1, self.charge_amount))
         self.charge = txn.transaction
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Payment(self.entity_1, self.payment_amount))
         self.payment = txn.transaction
 
@@ -244,7 +244,7 @@ class TestInvoiceRefunds(TestInvoicingBase):
 
     def test_invoice_show_refund(self):
         invoice_1 = Invoice(self.entity_1)
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Refund(self.entity_1, -invoice_1.amount))
         refund = txn.transaction
         invoice_2 = Invoice(self.entity_1)
@@ -263,7 +263,7 @@ class TestInvoiceRefunds(TestInvoicingBase):
         invoice_2 = Invoice(self.entity_1)
         self.assertEqual(invoice_2.amount, -self.payment_amount)
         # If we process the refund, everything should be back to 0
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Refund(self.entity_1, -invoice_2.amount))
         invoice_3 = Invoice(self.entity_1)
         self.assertEqual(invoice_3.amount, D(0))
@@ -311,13 +311,13 @@ class TestInvoiceBackdatedTransactions(TestInvoicingBase):
         self.charge_amount = D(1000)
         self.customer_responsibility = D(100)
 
-        with TransactionCtx(
+        with TransactionContext(
                 self.user, self.user,
                 posted_timestamp=self.order_date) as txn:
             txn.record(Charge(self.entity_1, self.charge_amount))
         self.charge_txn = txn.transaction
 
-        with TransactionCtx(
+        with TransactionContext(
                 self.user, self.user,
                 posted_timestamp=self.write_down_date) as txn:
             txn.record(
@@ -331,7 +331,7 @@ class TestInvoiceBackdatedTransactions(TestInvoicingBase):
         self.entity_invoice_1 = Invoice(
             self.entity_1, timestamp=self.invoice_1_date)
 
-        with TransactionCtx(
+        with TransactionContext(
                 self.user, self.user,
                 posted_timestamp=self.date_of_backdated_payment)\
                 as txn:

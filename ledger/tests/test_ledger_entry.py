@@ -5,7 +5,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 
 from ledger.api.actions import Charge
-from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransactionContext
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.tests.factories import UserFactory
@@ -28,7 +28,7 @@ class TestLedgerEntry(TestLedgerEntryBase):
             ledger=self.ledger, amount=D(100))
 
     def test_cant_delete(self):
-        with TransactionCtx(self.user, self.user) as txn:
+        with TransactionContext(self.user, self.user) as txn:
             txn.record(Charge(self.entity, D(100)))
         ledger_entries = txn.transaction.entries.all()
         self.assertRaises(PermissionDenied, ledger_entries[0].delete)

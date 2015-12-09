@@ -3,7 +3,7 @@ from decimal import Decimal as D
 from django.test import TestCase
 
 from ledger.api.actions import Charge
-from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransactionContext
 from ledger.models import Ledger
 from ledger.models import Transaction
 from ledger.tests.factories import UserFactory
@@ -26,7 +26,7 @@ class _TestRelatedObjectBase(TestCase):
 
         amount = D(100)
         for related_object in self.related_objects_user_list:
-            with TransactionCtx(related_object, self.user) as txn:
+            with TransactionContext(related_object, self.user) as txn:
                 txn.record(Charge(self.entity, amount))
         self.charge = txn.transaction
 
@@ -34,7 +34,7 @@ class _TestRelatedObjectBase(TestCase):
             self.related_objects_user_list
         # Related objects can be anything, so just make it the last used
         # Charge from above
-        with TransactionCtx(self.charge, self.user) as txn:
+        with TransactionContext(self.charge, self.user) as txn:
             txn.record(Charge(self.entity, amount))
 
     def get_queryset(self):
@@ -103,11 +103,11 @@ class TestRelatedObjectAllRequired(TestCase):
         self.ro2 = UserFactory(username="ro2")
         self.ro3 = UserFactory(username="ro3")
 
-        with TransactionCtx(
+        with TransactionContext(
                 self.ro1, self.user,
                 secondary_related_objects=[self.ro2]) as txn:
             txn.record(Charge(self.entity, D(100)))
-        with TransactionCtx(
+        with TransactionContext(
                 self.ro1, self.user,
                 secondary_related_objects=[self.ro3]) as txn:
             txn.record(Charge(self.entity, D(100)))
@@ -174,7 +174,7 @@ class TestRelatedObjectAllRequired(TestCase):
             1,
         )
         # Create a similar transaction as in setUp
-        with TransactionCtx(
+        with TransactionContext(
                 self.ro1, self.user,
                 secondary_related_objects=[self.ro2]) as txn:
             txn.record(Charge(self.entity, D(100)))
@@ -185,7 +185,7 @@ class TestRelatedObjectAllRequired(TestCase):
         )
 
     def test_mixed_content_types(self):
-        with TransactionCtx(
+        with TransactionContext(
                 self.ro1, self.user,
                 secondary_related_objects=[self.ro2, self.ledger]) as txn:
             txn.record(Charge(self.entity, D(100)))

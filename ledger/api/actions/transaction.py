@@ -6,7 +6,7 @@ from ledger.models import TransactionRelatedObject
 from ledger.timezone import to_utc
 
 
-class TransactionCtx(object):
+class TransactionContext(object):
     """Transactions manage FinancialActions."""
     def __init__(self, related_object, created_by, posted_timestamp=None,
                  secondary_related_objects=None):
@@ -55,15 +55,15 @@ class TransactionCtx(object):
 class VoidTransaction(object):
     """Void a given Transaction.
 
-    VoidTransactions are not enclosed in a TransactionCtx, since they are
+    VoidTransactions are not enclosed in a TransactionContext, since they are
     really their own Transactions. It wouldn't make sense to allow other,
     non-voiding actions in a VoidTransaction because that transaction is
     marked as 'voiding' another, so it would break an assumption about
     the ledger entries contained.
 
-    The do have a similar syntax to TransactionCtx, though:
+    The do have a similar syntax to TransactionContext, though:
 
-    with TransactionCtx(related_object, created_by) as txn:
+    with TransactionContext(related_object, created_by) as txn:
         txn.record(Charge(entity, 100))
 
     VoidTransaction(txn.transaction, created_by[, posted_timestamp]).record()
@@ -115,7 +115,7 @@ class VoidTransaction(object):
                 .format(id=self.other_transaction.transaction_id))
 
         # TODO: Should we be copying the secondary related objects here?
-        with TransactionCtx(self.other_transaction.primary_related_object,
+        with TransactionContext(self.other_transaction.primary_related_object,
                             self.created_by,
                             posted_timestamp=self.posted_timestamp,
                             secondary_related_objects=self.other_transaction.

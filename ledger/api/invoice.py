@@ -83,10 +83,10 @@ class Invoice(object):
 
         Given this set up:
 
-            with TransactionCtx(related_object, user) as txn:
+            with TransactionContext(related_object, user) as txn:
                 txn.record(Charge(entity_1, 1000))
 
-            with TransactionCtx(related_object, user) as transfer_txn:
+            with TransactionContext(related_object, user) as transfer_txn:
                 transfer_txn.record(Transfer(entity_1, entity_2, 1000))
                 transfer_txn.record(WriteDown(entity_2, 800))
 

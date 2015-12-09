@@ -6,7 +6,7 @@ from django.test import TestCase
 
 from ledger.api.actions import Charge
 from ledger.api.actions import Payment
-from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
 from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
@@ -33,7 +33,7 @@ class TestVoidTransaction(TestVoidBase):
     def test_simple_void(self):
         amount = D(100)
         # First record a charge
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Charge(self.entity, amount))
 
         # Then void it
@@ -48,7 +48,7 @@ class TestVoidTransaction(TestVoidBase):
     def test_cant_void_twice(self):
         amount = D(100)
         # First record a charge
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Charge(self.entity, amount))
 
         # Then void it
@@ -63,7 +63,7 @@ class TestVoidTransaction(TestVoidBase):
         # A void transaction can be voided, thus re-instating the original txn
         amount = D(100)
         # First record a charge
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Charge(self.entity, amount))
 
         # Then void it
@@ -83,9 +83,9 @@ class TestVoidTransaction(TestVoidBase):
         amount_1 = D(100)
         amount_2 = D(200)
 
-        with TransactionCtx(self.creation_user, self.creation_user) as txn_1:
+        with TransactionContext(self.creation_user, self.creation_user) as txn_1:
             txn_1.record(Charge(self.entity, amount_1))
-        with TransactionCtx(self.creation_user, self.creation_user) as txn_2:
+        with TransactionContext(self.creation_user, self.creation_user) as txn_2:
             txn_2.record(Charge(self.entity, amount_2))
         self.assertNotEqual(txn_1, txn_2)
         self.assertNotEqual(txn_1.transaction, txn_2.transaction)
@@ -99,10 +99,10 @@ class TestVoidTransaction(TestVoidBase):
         # Cash transactions can be voided
         amount = D(100)
 
-        with TransactionCtx(
+        with TransactionContext(
                 self.creation_user, self.creation_user) as charge_txn:
             charge_txn.record(Charge(self.entity, amount))
-        with TransactionCtx(self.creation_user, self.creation_user) as pay_txn:
+        with TransactionContext(self.creation_user, self.creation_user) as pay_txn:
             pay_txn.record(Payment(self.entity, amount))
 
         # Void the charge
@@ -125,10 +125,10 @@ class TestVoidTransaction(TestVoidBase):
         transfer_amount = D(800)
         comp_amount = D(701)
 
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Charge(self.entity, charge_amount))
 
-        with TransactionCtx(self.creation_user, self.creation_user) as txn2:
+        with TransactionContext(self.creation_user, self.creation_user) as txn2:
             txn2.record(TransferAmount(
                 self.entity, self.creation_user, transfer_amount))
             txn2.record(WriteDown(self.creation_user, comp_amount))
@@ -147,7 +147,7 @@ class TestVoidTimestamps(TestVoidBase):
         # is the same as the transaction we're voiding.
         amount = D(100)
         # First record a charge
-        with TransactionCtx(
+        with TransactionContext(
                 self.creation_user, self.creation_user) as charge_txn:
             charge_txn.record(Charge(self.entity, amount))
 
@@ -161,7 +161,7 @@ class TestVoidTimestamps(TestVoidBase):
         # If a posted_timestamp is given for the void, then use it
         amount = D(100)
         # First record a charge
-        with TransactionCtx(
+        with TransactionContext(
                 self.creation_user, self.creation_user) as charge_txn:
             charge_txn.record(Charge(self.entity, amount))
 
@@ -183,7 +183,7 @@ class TestSecondaryRelatedObject(TestCase):
             Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
 
     def test_can_set_related_object(self):
-        with TransactionCtx(
+        with TransactionContext(
                 self.user, self.user,
                 secondary_related_objects=[self.user2]) as charge_txn:
             charge_txn.record(Charge(self.entity, D(100)))
@@ -195,13 +195,13 @@ class TestSecondaryRelatedObject(TestCase):
     def test_no_dupes_related_object(self):
         self.assertRaises(
             IntegrityError,
-            TransactionCtx,
+            TransactionContext,
             self.user, self.user,
             secondary_related_objects=[self.user2, self.user2])
 
     def test_multiple_secondary_objects(self):
         user3 = UserFactory()
-        with TransactionCtx(
+        with TransactionContext(
                 self.user, self.user,
                 secondary_related_objects=[self.user2, user3]) as charge_txn:
             charge_txn.record(Charge(self.entity, D(100)))
