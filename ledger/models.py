@@ -24,7 +24,6 @@ from ledger.timezone import to_utc
 
 
 class ExplicitTimestampQuerysetMixin(QuerySet):
-    # TODO: Clean this up and move it to common
     timestamp_fields = ()
 
     def __init__(self, *args, **kwargs):
@@ -353,11 +352,7 @@ class LedgerManager(NoDeleteManager):
 
 
 class Ledger(NonDeletableModel, models.Model):
-    """Ledgers are the record of debits and credits for a given entity.
-
-    Currently the only two kinds of entities with a ledger are
-    InsurancePayer and CustomerProfile.
-    """
+    """Ledgers are the record of debits and credits for a given entity."""
     objects = LedgerManager()
     transactions = models.ManyToManyField(Transaction, through='LedgerEntry')
 
