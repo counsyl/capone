@@ -392,9 +392,13 @@ class Ledger(NonDeletableModel, models.Model):
     # similar GFKs on Transaction.
     entity_content_type = models.ForeignKey(
         ContentType,
+        blank=True,
+        null=True,
     )
     entity_id = models.PositiveIntegerField(
         db_index=True,
+        blank=True,
+        null=True,
     )
     entity = GenericForeignKey(
         'entity_content_type',
