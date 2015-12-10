@@ -377,6 +377,10 @@ class Ledger(NonDeletableModel, models.Model):
     name = models.CharField(
         _("Name of this ledger"),
         max_length=255)
+    are_debits_positive = models.BooleanField(
+        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits are positive and credits negative, or debits are negative and credits are positive.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
+    )
+
 
     class Meta:
         unique_together = ('type', 'entity_content_type', 'entity_id')
