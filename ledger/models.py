@@ -370,10 +370,11 @@ class Ledger(NonDeletableModel, models.Model):
         _("The ledger type, eg Accounts Receivable, Revenue, etc"),
         choices=LEDGER_CHOICES, max_length=128)
 
-    entity_content_type = models.ForeignKey(ContentType)
-    entity_id = models.PositiveIntegerField(db_index=True)
-    entity = GenericForeignKey('entity_content_type', 'entity_id')
-
+    """Ledgers are the record of debits and credits."""
+    ledger_number = models.PositiveIntegerField(
+        unique=True,
+        help_text="A unique number identifiying this Ledger.  Often, ranges of ledger numbers are of the same account type: assets, liabilities, revenue, etc.",  # nopep8
+    )
     name = models.CharField(
         _("Name of this ledger"),
         max_length=255)
@@ -381,6 +382,26 @@ class Ledger(NonDeletableModel, models.Model):
         help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits are positive and credits negative, or debits are negative and credits are positive.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
     )
 
+    transactions = models.ManyToManyField(
+        Transaction,
+        through='LedgerEntry',
+    )
+
+    # The non-Ledger object that this Ledger is attached to.
+    # TODO: Consider removing this GFK and moving its functionality to the
+    # similar GFKs on Transaction.
+    entity_content_type = models.ForeignKey(
+        ContentType,
+    )
+    entity_id = models.PositiveIntegerField(
+        db_index=True,
+    )
+    entity = GenericForeignKey(
+        'entity_content_type',
+        'entity_id',
+    )
+
+    objects = LedgerManager()
 
     class Meta:
         unique_together = ('type', 'entity_content_type', 'entity_id')
