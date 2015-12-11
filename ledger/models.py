@@ -377,13 +377,8 @@ class Ledger(NonDeletableModel, models.Model):
         blank=True,
     )
 
-    """Ledgers are the record of debits and credits."""
-    ledger_number = models.PositiveIntegerField(
-        unique=True,
-        null=True,
-        blank=True,
-        help_text="A unique number identifiying this Ledger.  Often, ranges of ledger numbers are of the same account type: assets, liabilities, revenue, etc.",  # nopep8
-    )
+    # TODO: Add field `ledger_number` here: Accounting likes to refer to
+    # Ledgers via unique numbers that they can set when creating a Ledger.
     name = models.CharField(
         _("Name of this ledger"),
         max_length=255)
