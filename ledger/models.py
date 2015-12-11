@@ -380,6 +380,8 @@ class Ledger(NonDeletableModel, models.Model):
     """Ledgers are the record of debits and credits."""
     ledger_number = models.PositiveIntegerField(
         unique=True,
+        null=True,
+        blank=True,
         help_text="A unique number identifiying this Ledger.  Often, ranges of ledger numbers are of the same account type: assets, liabilities, revenue, etc.",  # nopep8
     )
     name = models.CharField(
