@@ -53,7 +53,6 @@ shell: migrate
 
 .PHONY: runserver
 runserver: migrate
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py createsuperuser --settings=tests.settings
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py runserver --settings=tests.settings 0.0.0.0:8000
 
 .PHONY: clean
