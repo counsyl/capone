@@ -9,7 +9,7 @@ from ledger.api.actions import TransactionContext
 from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LedgerEntry
-from ledger.tests.factories import UserFactory
+from tests.factories import UserFactory
 
 
 class TestLedgerEntryBase(TestCase):

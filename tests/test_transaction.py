@@ -8,8 +8,8 @@ from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
-from ledger.tests.factories import UserFactory
 from ledger.timezone import to_utc
+from tests.factories import UserFactory
 
 
 class TransactionBase(TestCase):

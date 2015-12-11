@@ -4,7 +4,6 @@ import os
 DEBUG = True
 
 INSTALLED_APPS = (
-    'ledger.tests',
     'ledger',
     'django_nose',
     'django.contrib.staticfiles',
@@ -27,7 +26,7 @@ DATABASES = {
     },
 }
 
-ROOT_URLCONF = "ledger.tests.urls"
+ROOT_URLCONF = "tests.urls"
 
 ALLOWED_HOSTS = []
 

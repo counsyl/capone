@@ -3,7 +3,7 @@ import os
 import sys
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE",
-                      "ledger.tests.settings")
+                      "tests.settings")
 
 from django.conf import settings
 
@@ -17,7 +17,7 @@ from django_nose import NoseTestSuiteRunner
 
 def runtests(*test_args, **kwargs):
     if not test_args:
-        test_args = ['ledger.tests']
+        test_args = ['tests']
 
     test_runner = NoseTestSuiteRunner(**kwargs)
 
