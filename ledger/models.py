@@ -378,9 +378,7 @@ class LedgerManager(NoDeleteManager):
 
 class Ledger(NonDeletableModel, models.Model):
     """Ledgers are the record of debits and credits for a given entity."""
-    objects = LedgerManager()
-    transactions = models.ManyToManyField(Transaction, through='LedgerEntry')
-
+    # Fields for object-attached Ledgers
     type = models.CharField(
         _("The ledger type, eg Accounts Receivable, Revenue, etc"),
         choices=LEDGER_CHOICES,
@@ -390,20 +388,6 @@ class Ledger(NonDeletableModel, models.Model):
         # a null `entity` and is a Counsyl-wide account like "Unreconciled
         # Cash".
         blank=True,
-    )
-
-    # TODO: Add field `ledger_number` here: Accounting likes to refer to
-    # Ledgers via unique numbers that they can set when creating a Ledger.
-    name = models.CharField(
-        _("Name of this ledger"),
-        max_length=255)
-    are_debits_positive = models.BooleanField(
-        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits are positive and credits negative, or debits are negative and credits are positive.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
-    )
-
-    transactions = models.ManyToManyField(
-        Transaction,
-        through='LedgerEntry',
     )
 
     # The non-Ledger object that this Ledger is attached to.
@@ -422,6 +406,24 @@ class Ledger(NonDeletableModel, models.Model):
     entity = GenericForeignKey(
         'entity_content_type',
         'entity_id',
+    )
+
+    # Fields for company-wide ledgers
+
+    # TODO: Add field `ledger_number` here: Accounting likes to refer to
+    # Ledgers via unique numbers that they can set when creating a Ledger.
+    name = models.CharField(
+        _("Name of this ledger"),
+        max_length=255)
+    are_debits_positive = models.BooleanField(
+        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits are positive and credits negative, or debits are negative and credits are positive.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
+    )
+
+    # Fields for both types of Ledgers
+
+    transactions = models.ManyToManyField(
+        Transaction,
+        through='LedgerEntry',
     )
 
     objects = LedgerManager()
