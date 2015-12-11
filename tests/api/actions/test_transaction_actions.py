@@ -11,6 +11,9 @@ from ledger.api.actions import TransferAmount
 from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
 from ledger.models import Ledger
+from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
+from ledger.models import LEDGER_CASH
+from ledger.models import LEDGER_REVENUE
 from ledger.models import Transaction
 from ledger.tests.factories import UserFactory
 
@@ -20,13 +23,13 @@ class TestVoidBase(TestCase):
         self.entity = UserFactory()
         self.creation_user = UserFactory()
         self.entity_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity, LEDGER_ACCOUNTS_RECEIVABLE)
         self.entity_rev_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_REVENUE)
+            self.entity, LEDGER_REVENUE)
         self.entity_cash_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_CASH)
+            self.entity, LEDGER_CASH)
         self.creation_user_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.creation_user, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.creation_user, LEDGER_ACCOUNTS_RECEIVABLE)
 
 
 class TestVoidTransaction(TestVoidBase):
@@ -180,7 +183,7 @@ class TestSecondaryRelatedObject(TestCase):
         self.user2 = UserFactory()
         self.ledger, _ = Ledger.objects.get_or_create_ledger(
             self.entity,
-            Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            LEDGER_ACCOUNTS_RECEIVABLE)
 
     def test_can_set_related_object(self):
         with TransactionContext(

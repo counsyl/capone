@@ -12,6 +12,9 @@ from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
 from ledger.api.invoice import Invoice
 from ledger.models import Ledger
+from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
+from ledger.models import LEDGER_CASH
+from ledger.models import LEDGER_REVENUE
 from ledger.models import Transaction
 from ledger.tests.factories import UserFactory
 
@@ -268,11 +271,11 @@ class TestInvoiceRefunds(TestInvoicingBase):
         invoice_3 = Invoice(self.entity_1)
         self.assertEqual(invoice_3.amount, D(0))
         ar_ledger = Ledger.objects.get_ledger(
-            self.entity_1, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity_1, LEDGER_ACCOUNTS_RECEIVABLE)
         rev_ledger = Ledger.objects.get_ledger(
-            self.entity_1, Ledger.LEDGER_REVENUE)
+            self.entity_1, LEDGER_REVENUE)
         cash_ledger = Ledger.objects.get_ledger(
-            self.entity_1, Ledger.LEDGER_CASH)
+            self.entity_1, LEDGER_CASH)
         self.assertEqual(ar_ledger.get_balance(), D(0))
         self.assertEqual(rev_ledger.get_balance(), D(0))
         self.assertEqual(cash_ledger.get_balance(), D(0))

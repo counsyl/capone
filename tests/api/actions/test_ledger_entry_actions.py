@@ -29,17 +29,17 @@ class LedgerEntryActionSetUp(TestCase):
         self.entity_2 = UserFactory()
         self.creation_user = UserFactory()
         self.entity_1_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity_1, LEDGER_ACCOUNTS_RECEIVABLE)
         self.entity_1_rev_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, Ledger.LEDGER_REVENUE)
+            self.entity_1, LEDGER_REVENUE)
         self.entity_1_cash_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, Ledger.LEDGER_CASH)
+            self.entity_1, LEDGER_CASH)
         self.entity_2_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity_2, LEDGER_ACCOUNTS_RECEIVABLE)
         self.entity_2_rev_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, Ledger.LEDGER_REVENUE)
+            self.entity_2, LEDGER_REVENUE)
         self.entity_2_cash_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, Ledger.LEDGER_CASH)
+            self.entity_2, LEDGER_CASH)
 
 
 class TestPostedTimestampTimezonesMixin(object):

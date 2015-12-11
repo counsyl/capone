@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from ledger.models import InvoiceGenerationRecord
 from ledger.models import Ledger
+from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.timezone import to_utc
 
 
@@ -29,7 +30,7 @@ class Invoice(object):
         self.entity = entity
         self.related_objects = related_objects if related_objects else None
         self.ledger, created = Ledger.objects.get_or_create(
-            type=Ledger.LEDGER_ACCOUNTS_RECEIVABLE,
+            type=LEDGER_ACCOUNTS_RECEIVABLE,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk)
         if not timestamp:
