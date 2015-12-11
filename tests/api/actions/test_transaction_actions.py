@@ -86,9 +86,11 @@ class TestVoidTransaction(TestVoidBase):
         amount_1 = D(100)
         amount_2 = D(200)
 
-        with TransactionContext(self.creation_user, self.creation_user) as txn_1:
+        with TransactionContext(
+                self.creation_user, self.creation_user) as txn_1:
             txn_1.record(Charge(self.entity, amount_1))
-        with TransactionContext(self.creation_user, self.creation_user) as txn_2:
+        with TransactionContext(
+                self.creation_user, self.creation_user) as txn_2:
             txn_2.record(Charge(self.entity, amount_2))
         self.assertNotEqual(txn_1, txn_2)
         self.assertNotEqual(txn_1.transaction, txn_2.transaction)
@@ -105,7 +107,8 @@ class TestVoidTransaction(TestVoidBase):
         with TransactionContext(
                 self.creation_user, self.creation_user) as charge_txn:
             charge_txn.record(Charge(self.entity, amount))
-        with TransactionContext(self.creation_user, self.creation_user) as pay_txn:
+        with TransactionContext(
+                self.creation_user, self.creation_user) as pay_txn:
             pay_txn.record(Payment(self.entity, amount))
 
         # Void the charge
@@ -131,7 +134,8 @@ class TestVoidTransaction(TestVoidBase):
         with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Charge(self.entity, charge_amount))
 
-        with TransactionContext(self.creation_user, self.creation_user) as txn2:
+        with TransactionContext(
+                self.creation_user, self.creation_user) as txn2:
             txn2.record(TransferAmount(
                 self.entity, self.creation_user, transfer_amount))
             txn2.record(WriteDown(self.creation_user, comp_amount))

@@ -92,17 +92,21 @@ class _TestLedgerActionBase(TestCase,
 
     def test_multiple_entries_in_transaction(self):
         """Multiple LedgerEntries can be put into a single transaction."""
-        with TransactionContext(self.creation_user, self.creation_user) as txn_1:
+        with TransactionContext(
+                self.creation_user, self.creation_user) as txn_1:
             txn_1.record(self.ACTION_CLASS(self.entity, D(100)))
-        with TransactionContext(self.creation_user, self.creation_user) as txn_2:
+        with TransactionContext(
+                self.creation_user, self.creation_user) as txn_2:
             txn_2.record(self.ACTION_CLASS(self.entity, D(100)))
             txn_2.record(self.ACTION_CLASS(self.entity, D(10)))
         self.assertNotEqual(txn_1, txn_2)
         self.assertEqual(txn_2.transaction.entries.count(), 4)
 
     def _test_timestamp(self, timestamp):
-        with TransactionContext(self.creation_user, self.creation_user,
-                            posted_timestamp=timestamp) as txn:
+        with TransactionContext(
+                self.creation_user,
+                self.creation_user,
+                posted_timestamp=timestamp) as txn:
             txn.record(self.ACTION_CLASS(self.entity, D(100)))
         self.assertEqual(
             to_utc(txn.transaction.posted_timestamp), timestamp)
