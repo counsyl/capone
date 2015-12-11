@@ -5,6 +5,9 @@ import itertools
 from django.db.transaction import atomic
 
 from ledger.models import Ledger
+from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
+from ledger.models import LEDGER_CASH
+from ledger.models import LEDGER_REVENUE
 from ledger.models import LedgerEntry
 
 
@@ -73,12 +76,12 @@ class Charge(SingleEntityLedgerEntryAction):
     """Charge an entity a given amount."""
     def _get_credit_ledger(self):
         ledger, created = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_REVENUE)
+            self.entity, LEDGER_REVENUE)
         return ledger
 
     def _get_debit_ledger(self):
         ledger, created = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity, LEDGER_ACCOUNTS_RECEIVABLE)
         return ledger
 
 
@@ -86,12 +89,12 @@ class Payment(SingleEntityLedgerEntryAction):
     """Record a payment from an entity."""
     def _get_credit_ledger(self):
         ledger, created = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity, LEDGER_ACCOUNTS_RECEIVABLE)
         return ledger
 
     def _get_debit_ledger(self):
         ledger, created = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_CASH)
+            self.entity, LEDGER_CASH)
         return ledger
 
 
@@ -99,12 +102,12 @@ class Refund(SingleEntityLedgerEntryAction):
     """Record a payment to an entity (a refund)."""
     def _get_credit_ledger(self):
         ledger, created = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_CASH)
+            self.entity, LEDGER_CASH)
         return ledger
 
     def _get_debit_ledger(self):
         ledger, created = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity, LEDGER_ACCOUNTS_RECEIVABLE)
         return ledger
 
 
@@ -115,12 +118,12 @@ class WriteDown(SingleEntityLedgerEntryAction):
     """
     def _get_credit_ledger(self):
         ledger, created = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity, LEDGER_ACCOUNTS_RECEIVABLE)
         return ledger
 
     def _get_debit_ledger(self):
         ledger, created = Ledger.objects.get_or_create_ledger(
-            self.entity, Ledger.LEDGER_REVENUE)
+            self.entity, LEDGER_REVENUE)
         return ledger
 
 

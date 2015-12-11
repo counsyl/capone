@@ -325,7 +325,24 @@ class Transaction(NonDeletableModel, models.Model):
         pass
 
 
+LEDGER_ACCOUNTS_RECEIVABLE = "ar"
+LEDGER_REVENUE = "revenue"
+LEDGER_CASH = "cash"
+LEDGER_CHOICES = (
+    (LEDGER_ACCOUNTS_RECEIVABLE, "Accounts Receivable"),
+    (LEDGER_REVENUE, "Revenue"),
+    (LEDGER_CASH, "Cash")
+)
+
+
 class LedgerManager(NoDeleteManager):
+    # The value of `are_debits_positive` for this type of account.
+    ACCOUNT_TYPE_TO_LEDGER_POLARITY = {
+        LEDGER_ACCOUNTS_RECEIVABLE: True,
+        LEDGER_REVENUE: False,
+        LEDGER_CASH: True,
+    }
+
     def get_or_create_ledger(self, entity, ledger_type):
         """Convenience method to get the correct ledger.
 
@@ -337,7 +354,10 @@ class LedgerManager(NoDeleteManager):
         return Ledger.objects.get_or_create(
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
-            entity_id=entity.pk)
+            entity_id=entity.pk,
+            are_debits_positive=self.ACCOUNT_TYPE_TO_LEDGER_POLARITY[
+                ledger_type]
+        )
 
     def get_ledger(self, entity, ledger_type):
         """Convenience method to get the correct ledger.
@@ -350,7 +370,10 @@ class LedgerManager(NoDeleteManager):
         return Ledger.objects.get(
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
-            entity_id=entity.pk)
+            entity_id=entity.pk,
+            are_debits_positive=self.ACCOUNT_TYPE_TO_LEDGER_POLARITY[
+                ledger_type]
+        )
 
 
 class Ledger(NonDeletableModel, models.Model):
@@ -358,14 +381,6 @@ class Ledger(NonDeletableModel, models.Model):
     objects = LedgerManager()
     transactions = models.ManyToManyField(Transaction, through='LedgerEntry')
 
-    LEDGER_ACCOUNTS_RECEIVABLE = "ar"
-    LEDGER_REVENUE = "revenue"
-    LEDGER_CASH = "cash"
-    LEDGER_CHOICES = (
-        (LEDGER_ACCOUNTS_RECEIVABLE, "Accounts Receivable"),
-        (LEDGER_REVENUE, "Revenue"),
-        (LEDGER_CASH, "Cash")
-    )
     type = models.CharField(
         _("The ledger type, eg Accounts Receivable, Revenue, etc"),
         choices=LEDGER_CHOICES,

@@ -5,6 +5,7 @@ from django.test import TestCase
 from ledger.api.actions import Charge
 from ledger.api.actions import TransactionContext
 from ledger.models import Ledger
+from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import Transaction
 from ledger.tests.factories import UserFactory
 
@@ -16,7 +17,7 @@ class _TestRelatedObjectBase(TestCase):
         self.user = UserFactory()
         self.ledger, _ = Ledger.objects.get_or_create_ledger(
             self.entity,
-            Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            LEDGER_ACCOUNTS_RECEIVABLE)
 
         # Record a few charges due to different related objects
         self.related_objects_user_list = [UserFactory() for x in range(3)]
@@ -98,7 +99,7 @@ class TestRelatedObjectAllRequired(TestCase):
         self.user = UserFactory()
         self.ledger, _ = Ledger.objects.get_or_create_ledger(
             self.entity,
-            Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            LEDGER_ACCOUNTS_RECEIVABLE)
         self.ro1 = UserFactory(username="ro1")
         self.ro2 = UserFactory(username="ro2")
         self.ro3 = UserFactory(username="ro3")

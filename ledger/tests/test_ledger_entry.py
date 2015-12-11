@@ -7,6 +7,7 @@ from django.test import TestCase
 from ledger.api.actions import Charge
 from ledger.api.actions import TransactionContext
 from ledger.models import Ledger
+from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LedgerEntry
 from ledger.tests.factories import UserFactory
 
@@ -17,7 +18,7 @@ class TestLedgerEntryBase(TestCase):
         self.user = UserFactory()
         self.ledger, _ = Ledger.objects.get_or_create_ledger(
             self.entity,
-            Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            LEDGER_ACCOUNTS_RECEIVABLE)
 
 
 class TestLedgerEntry(TestLedgerEntryBase):
