@@ -368,7 +368,14 @@ class Ledger(NonDeletableModel, models.Model):
     )
     type = models.CharField(
         _("The ledger type, eg Accounts Receivable, Revenue, etc"),
-        choices=LEDGER_CHOICES, max_length=128)
+        choices=LEDGER_CHOICES,
+        max_length=128,
+        # A blank `type` here means that the type of account represented by
+        # this ledger is not of the types in LEDGER_CHOICES: it most likely has
+        # a null `entity` and is a Counsyl-wide account like "Unreconciled
+        # Cash".
+        blank=True,
+    )
 
     """Ledgers are the record of debits and credits."""
     ledger_number = models.PositiveIntegerField(
