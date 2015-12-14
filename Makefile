@@ -85,7 +85,7 @@ test: venv
 	status=$$?; \
 	coverage combine; \
 	coverage html --directory=coverage --omit="*tests*"; \
-	coverage report --fail-under=100; \
+	coverage report --fail-under=100 --show-missing; \
 	coverage_code=$$?; \
 	xunitmerge nosetests-*.xml $(TEST_OUTPUT); \
 	if [ $$coverage_code > 0 ] ; then echo "Failed: Test coverage is not 100%."; fi; \
