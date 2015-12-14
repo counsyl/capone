@@ -2,6 +2,7 @@ import mock
 from datetime import datetime
 from decimal import Decimal as D
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils.timezone import get_current_timezone
 from pytz import UTC
@@ -143,6 +144,30 @@ class TestWriteDown(_TestLedgerActionBase):
 
 class TestRefund(_TestLedgerActionBase):
     ACTION_CLASS = Refund
+
+
+class TestReprs(TestCase):
+    def test_reprs(self):
+        User.objects.all().delete()
+
+        CLASSES_TO_REPRS = {
+            Charge: '<Charge: 100 <User: TransactionUser #0>>',
+            Payment: '<Payment: 100 <User: TransactionUser #0>>',
+            WriteDown: '<WriteDown: 100 <User: TransactionUser #0>>',
+            Refund: '<Refund: 100 <User: TransactionUser #0>>',
+        }
+
+        entity = UserFactory()
+
+        for _class, _repr in CLASSES_TO_REPRS.items():
+            self.assertEqual(repr(_class(entity, D(100))), _repr)
+
+        entity2 = UserFactory()
+
+        self.assertEqual(
+            repr(TransferAmount(entity, entity2, D(100))),
+            "<TransferAmount: 100 from <User: TransactionUser #0> to <User: TransactionUser #1>>",  # nopep8
+        )
 
 
 class TestLedgerEntryAction(LedgerEntryActionSetUp):
