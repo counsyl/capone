@@ -45,15 +45,15 @@ endif
 migrate: develop
 	dropdb --if-exists ledger_test_db
 	createdb ledger_test_db
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=tests.settings --noinput
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=ledger.tests.settings --noinput
 
 .PHONY: shell
 shell: migrate
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=tests.settings
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=ledger.tests.settings
 
 .PHONY: runserver
 runserver: migrate
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py runserver --settings=tests.settings 0.0.0.0:8000
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py runserver --settings=ledger.tests.settings 0.0.0.0:8000
 
 .PHONY: clean
 clean:

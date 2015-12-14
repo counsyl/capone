@@ -296,11 +296,11 @@ From the repository root, run:
 
 Then you should be free to run
 
-    ./manage.py makemigrations --settings=tests.settings
+    ./manage.py makemigrations --settings=ledger.tests.settings
 
 or any other `manage.py` command, even those in the Makefile.
 
-Notice the `--settings=tests.settings` argument: because this repository
+Notice the `--settings=ledger.tests.settings` argument: because this repository
 is a django sub-module, it wouldn't make sense for it to come with its own
 default `settings.py` file.  Instead, it ships with one used to run its tests.
 To use `manage.py`, we have to pass an import path to it explicitly.

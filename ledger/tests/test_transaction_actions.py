@@ -15,7 +15,7 @@ from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LEDGER_CASH
 from ledger.models import LEDGER_REVENUE
 from ledger.models import Transaction
-from tests.factories import UserFactory
+from ledger.tests.factories import UserFactory
 
 
 class TestVoidBase(TestCase):

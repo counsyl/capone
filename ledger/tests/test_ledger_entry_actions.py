@@ -19,7 +19,7 @@ from ledger.models import LedgerEntry
 from ledger.models import LEDGER_REVENUE
 from ledger.models import Transaction
 from ledger.timezone import to_utc
-from tests.factories import UserFactory
+from ledger.tests.factories import UserFactory
 
 
 class LedgerEntryActionSetUp(TestCase):
