@@ -4,6 +4,7 @@ import os
 DEBUG = True
 
 INSTALLED_APPS = (
+    'ledger.tests',
     'ledger',
     'django_nose',
     'django.contrib.staticfiles',
