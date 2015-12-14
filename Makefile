@@ -89,7 +89,7 @@ test: venv
 	coverage_code=$$?; \
 	xunitmerge nosetests-*.xml $(TEST_OUTPUT); \
 	if [ $$coverage_code -ge 0 ] ; then echo "Failed: Test coverage is not 100%."; fi; \
-	exit $$status;
+	exit $$status + $$coverage_code;
 
 # Distribution
 VERSION=`$(WITH_VENV) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'`
