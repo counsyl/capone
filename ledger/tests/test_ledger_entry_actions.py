@@ -1,3 +1,4 @@
+import mock
 from datetime import datetime
 from decimal import Decimal as D
 
@@ -6,6 +7,7 @@ from django.utils.timezone import get_current_timezone
 from pytz import UTC
 
 from ledger.api.actions import Charge
+from ledger.api.actions import LedgerEntryAction
 from ledger.api.actions import Payment
 from ledger.api.actions import Refund
 from ledger.api.actions import TransactionContext
@@ -141,6 +143,38 @@ class TestWriteDown(_TestLedgerActionBase):
 
 class TestRefund(_TestLedgerActionBase):
     ACTION_CLASS = Refund
+
+
+class TestLedgerEntryAction(LedgerEntryActionSetUp):
+    """
+    Test Errors from LedgerEntryAction._get_debit_ledger and _get_credit_ledger
+    """
+    def test_not_implemented_errors(self):
+        amount = D(100)
+
+        with self.assertRaises(NotImplementedError):
+            with TransactionContext(
+                    self.creation_user, self.creation_user) as txn:
+                txn.record(LedgerEntryAction(amount))
+
+        ledger = Ledger.objects.last()
+
+        with mock.patch.object(
+                LedgerEntryAction, '_get_credit_ledger', return_value=ledger):
+            with self.assertRaises(NotImplementedError):
+                with TransactionContext(
+                        self.creation_user, self.creation_user) as txn:
+                    txn.record(LedgerEntryAction(amount))
+
+        with mock.patch.object(
+                LedgerEntryAction, '_get_credit_ledger', return_value=ledger):
+            with mock.patch.object(
+                    LedgerEntryAction,
+                    '_get_debit_ledger',
+                    return_value=ledger):
+                with TransactionContext(
+                        self.creation_user, self.creation_user) as txn:
+                    txn.record(LedgerEntryAction(amount))
 
 
 class TestTransferAction(LedgerEntryActionSetUp):
