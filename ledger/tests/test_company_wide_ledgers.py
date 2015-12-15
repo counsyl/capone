@@ -39,8 +39,8 @@ class TestCompanyWideLedgers(TestCase):
         # reference the Order
         with TransactionContext(order, user) as txn_recognize:
             txn_recognize.record_entries([
-                LedgerEntry(revenue, D(100)),
-                LedgerEntry(accounts_receivable, D(-100)),
+                LedgerEntry(ledger=revenue, amount=D(100)),
+                LedgerEntry(ledger=accounts_receivable, amount=D(-100)),
             ])
 
         # add an entry crediting AR and debiting Stripe/un: this entry should
@@ -48,8 +48,8 @@ class TestCompanyWideLedgers(TestCase):
         with TransactionContext(
                 credit_card_transaction, user) as txn_recognize:
             txn_recognize.record_entries([
-                LedgerEntry(accounts_receivable, D(100)),
-                LedgerEntry(stripe_unrecon, D(-100))
+                LedgerEntry(ledger=accounts_receivable, amount=D(100)),
+                LedgerEntry(ledger=stripe_unrecon, amount=D(-100))
             ])
 
         # add an entry crediting Stripe/un and debiting Stripe/recon: this
@@ -60,6 +60,6 @@ class TestCompanyWideLedgers(TestCase):
                 secondary_related_objects=[credit_card_transaction]
         ) as txn_recognize:
             txn_recognize.record_entries([
-                LedgerEntry(stripe_unrecon, D(100)),
-                LedgerEntry(stripe_recon, D(-100))
+                LedgerEntry(ledger=stripe_unrecon, amount=D(100)),
+                LedgerEntry(ledger=stripe_recon, amount=D(-100))
             ])
