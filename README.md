@@ -28,18 +28,18 @@ Let's record a charge of $900 to Wile E.
 from django.contrib.auth.models import User
 from counsyl.product.order.models import Product
 from ledger.api.actions import Charge
-from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransactionContext
 
 wilee = User.objects.latest('id')
-product = Product.objects.order_by('id')[0]
+product = Product.objects.earliest('id')
 
 # Business logic
-with TransactionCtx(product, wilee) as txn:
+with TransactionContext(product, wilee) as txn:
     txn.record(Charge(wilee, 900))
 ```
 
 Here you see the two important concepts of the Ledger system:
-TransactionContexts (shortened to TransactionCtx) and Actions. TransactionCtxs
+TransactionContexts and Actions. TransactionContexts
 are used to wrap a series of Actions into a single Transaction. They also
 perform necessary validation to ensure that credits and debits balance. In
 this example, `Charge` is the action we performed. It records a charge against
@@ -103,7 +103,7 @@ True, returns only those entries which haven't been voided and, when True,
 returns all Ledger Entries.
 
 ```python
-with TransactionCtx(product, wilee) as txn:
+with TransactionContext(product, wilee) as txn:
     txn.record(Charge(wilee, 100))
 
 invoice = Invoice(wilee)
@@ -128,7 +128,7 @@ $1000 worth of bitcoin into USD. Now we owe Wile E. a refund!
 
 ```python
 from ledger.api.actions import Payment
-with TransactionCtx(product, wilee) as txn:
+with TransactionContext(product, wilee) as txn:
     txn.record(Payment(wilee, 1000))
 ```
 
@@ -189,7 +189,7 @@ Recording a refund is easy
 
 ```python
 from ledger.api.actions import Refund
-with TransactionCtx(product, wilee) as txn:
+with TransactionContext(product, wilee) as txn:
     txn.record(Refund(wilee, -1 * invoice.amount))
 
 invoice = Invoice(wilee)
@@ -256,6 +256,60 @@ Note that, internally, credits are negative and debits are positive. Yes, it's
 weird to think of Revenue being recorded as a negative number, but just
 remember there is no spoon. Also note that the Sums at the end still balance.
 
+
+# Local Development
+
+## Setup:
+
+First, you must set up your working environment:
+
+    make setup
+
+This will build a local virtualenv and all other requirements for local
+development.
+
+
+## Running Commands:
+
+### Makefile
+
+Runserver:
+
+    make runserver
+
+Shell(plus):
+
+    make shell
+
+
+### `manage.py` commands
+
+Note: before any of these instructions, you may have to run `make develop` to
+set up a postgres database for this app.
+
+First, activate a virtualenv so that your commands have access to the
+environment built by `make setup`:
+
+From the repository root, run:
+
+    source .venv/bin/activate
+
+Then you should be free to run
+
+    ./manage.py makemigrations --settings=ledger.tests.settings
+
+or any other `manage.py` command, even those in the Makefile.
+
+To run individual tests, use the following:
+
+    ./manage.py test --settings=ledger.tests.settings ledger.tests
+
+Notice the `--settings=ledger.tests.settings` argument: because this repository
+is a django sub-module, it wouldn't make sense for it to come with its own
+default `settings.py` file.  Instead, it ships with one used to run its tests.
+To use `manage.py`, we have to pass an import path to it explicitly.
+
+
 # API
 
 This common setup is necessary to run the following examples:
@@ -269,24 +323,24 @@ from counsyl.product.order.models import Product
 from ledger.api.actions import Charge
 from ledger.api.actions import Payment
 from ledger.api.actions import Refund
-from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
 from ledger.api.actions import WriteDown
 from ledger.api.actions import VoidTransaction
 
-entity = User.objects.order_by('?')[0]
+entity = User.objects.earliest('?')
 user = User.objects.latest('id')
 product = Product.objects.latest('id')
 ```
 
 ## Transactions
 
-TransactionCtxs wrap every single action that can create LedgerEntries on a
-Ledger and put them in the same Transaction. TransactionCtxs act as context
+TransactionContexts wrap every single action that can create LedgerEntries on a
+Ledger and put them in the same Transaction. TransactionContexts act as context
 managers that perform necessary validation to ensure that credits and debits
 balance. 
 
-TransactionCtxs have two required arguments:
+TransactionContexts have two required arguments:
 
 * related_object - The object that caused this Transaction to be generated
 * created_by - The `User` that caused this Transaction to be generated
@@ -297,17 +351,17 @@ and one optional argument:
   was posted in an outside system. If not provided, the current UTC time is
   used
 
-At its most basic, a TransactionCtx looks like this:
+At its most basic, a TransactionContext looks like this:
 
 ```python
-with TransactionCtx(product, user) as txn:
+with TransactionContext(product, user) as txn:
     txn.record(Charge(entity, 1000))
 ```
 
-A TransactionCtx can also contain many different actions:
+A TransactionContext can also contain many different actions:
 
 ```python
-with TransactionCtx(product, user) as txn:
+with TransactionContext(product, user) as txn:
     txn.record(Charge(entity, 1000))
     txn.record(WriteDown(entity, 100))  # Good customer discount
 ```
@@ -319,18 +373,18 @@ In these cases it's helpful to backdate the payment:
 
 ```python
 backdate_timestamp = datetime.utcnow() - timedelta(days=10)
-with TransactionCtx(product, user, posted_timestamp=backdate_timestamp) as txn:
+with TransactionContext(product, user, posted_timestamp=backdate_timestamp) as txn:
     txn.record(Payment(entity, 1000))
 ```
 
 ### Voiding Transactions
 
-TransactionCtxs are context managers that give you a reference to the backing
+TransactionContexts are context managers that give you a reference to the backing
 financial transaction in the database (via the `transaction` attribute). This
 is useful when you need to, say, void a transaction:
 
 ```python
-with TransactionCtx(product, user) as charge_txn:
+with TransactionContext(product, user) as charge_txn:
     charge_txn.record(Charge(entity, 1000))
 
 VoidTransaction(charge_txn.transaction, user).record()
@@ -340,7 +394,7 @@ VoidTransaction(charge_txn.transaction, user).record()
 
 All actions which can be performed on a ledger are exposed as a subclass of
 `LedgerEntryAction`. All LedgerEntryActions must be performed inside a
-TransactionCtx.
+TransactionContext.
 
 The two types of LedgerEntryActions are
 
@@ -352,7 +406,7 @@ The two types of LedgerEntryActions are
 2. TransferAmount
 
 All LedgerEntryActions expose a `get_ledger_entries` method, which is called by
-TransactionCtx.record, that returns a list of `LedgerEntry` objects to be added
+TransactionContext.record, that returns a list of `LedgerEntry` objects to be added
 to the enclosing Transaction.
 
 ### SingleEntityLedgerEntryAction
@@ -368,7 +422,7 @@ A Charge debits AR and credits Revenue. Use this to record a charge for
 services performed.
 
 ```python
-with TransactionCtx(product, user) as txn:
+with TransactionContext(product, user) as txn:
     txn.record(Charge(entity, 1000))
 ```
 
@@ -380,7 +434,7 @@ transaction is important. It is used to determine if that `related_object` has
 been fully paid for.
 
 ```python
-with TransactionCtx(product, user) as txn:
+with TransactionContext(product, user) as txn:
     txn.record(Payment(entity, 1000))
 ```
 
@@ -390,7 +444,7 @@ Refunds credit Cash and debit AR. They are used to record when we refund a
 customer.
 
 ```python
-with TransactionCtx(product, user) as txn:
+with TransactionContext(product, user) as txn:
     txn.record(Refund(entity, 1000))
 ```
 
@@ -400,7 +454,7 @@ WriteDowns comp a customer a certain amount. This is typically used for
 out-of-pocket max discounts, prompt payment discounts, or as promotions.
 
 ```python
-with TransactionCtx(product, user) as txn:
+with TransactionContext(product, user) as txn:
     txn.record(Charge(entity, 1000))
     txn.record(WriteDown(entity, 100))  # Promotion 1234
 ```
@@ -415,6 +469,6 @@ responsibility
 * amount - The dollar amount to submit for this action
 
 ```python
-with TransactionCtx(product, user) as txn:
+with TransactionContext(product, user) as txn:
     txn.record(TransferAmount(entity, user, 500))
 ```

@@ -27,7 +27,7 @@ DATABASES = {
     },
 }
 
-ROOT_URLCONF = "ledger.tests.urls"
+ROOT_URLCONF = "tests.urls"
 
 ALLOWED_HOSTS = []
 

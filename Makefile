@@ -53,7 +53,6 @@ shell: migrate
 
 .PHONY: runserver
 runserver: migrate
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py createsuperuser --settings=ledger.tests.settings
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py runserver --settings=ledger.tests.settings 0.0.0.0:8000
 
 .PHONY: clean
@@ -86,9 +85,11 @@ test: venv
 	status=$$?; \
 	coverage combine; \
 	coverage html --directory=coverage --omit="*tests*"; \
-	coverage report; \
+	coverage report --fail-under=100 --show-missing; \
+	coverage_code=$$?; \
 	xunitmerge nosetests-*.xml $(TEST_OUTPUT); \
-	exit $$status;
+	if [ $$coverage_code -gt 0 ] ; then echo "Failed: Test coverage is not 100%."; fi; \
+	exit $$(($$status + $$coverage_code));
 
 # Distribution
 VERSION=`$(WITH_VENV) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'`

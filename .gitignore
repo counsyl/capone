@@ -19,3 +19,20 @@ coverage
 
 test.db
 .venv
+
+# Emacs
+.dir-locals.el
+.\#*
+*~
+\#*\#
+
+# Vim
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
+# Pycharm
+.idea/

@@ -6,10 +6,7 @@ from functools import partial
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from django.conf import settings
-try:
-    from django.contrib.contenttypes.fields import GenericForeignKey
-except ImportError:
-    from django.contrib.contenttypes.generic import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import DateTimeField
@@ -24,19 +21,15 @@ from ledger.timezone import to_utc
 
 
 class ExplicitTimestampQuerysetMixin(QuerySet):
-    # TODO: Clean this up and move it to common
-    timestamp_fields = ()
-
     def __init__(self, *args, **kwargs):
         super(ExplicitTimestampQuerysetMixin, self).__init__(*args, **kwargs)
         self.tz = UTC
         self.tz_name = 'utc'
-        if not self.timestamp_fields:
-            self.timestamp_fields = []
-            # Let's introspect and do this for every timestamp
-            for field in self.model._meta.fields:
-                if isinstance(field, DateTimeField):
-                    self.timestamp_fields.append(field.name)
+
+        self.timestamp_fields = [
+            field.name for field in self.model._meta.fields
+            if isinstance(field, DateTimeField)
+        ]
 
     def annotate_with_explicit_timestamp(self):
         select_dict = OrderedDict()
@@ -51,23 +44,24 @@ class ExplicitTimestampQuerysetMixin(QuerySet):
 
 
 def explicit_timestamp_field(field_name, *args, **kwargs):
-    def _set_timestamp_utc(self, attname, timestamp):
+    def _set_timestamp_utc(self, timestamp, attrname=None):
         """Set the given timestamp, assuming that we're being given a
         naive utc timestamp."""
         value = to_utc(timestamp)
-        setattr(self, attname, value)
-        setattr(self, "%s_utc" % attname, value.replace(tzinfo=None))
+        setattr(self, attrname, value)
+        setattr(self, "%s_utc" % attrname, value.replace(tzinfo=None))
 
-    def _get_timestamp_utc(self, attname):
-        attname_utc = "%s_utc" % attname
+    def _get_timestamp_utc(self, attrname=None):
+        attname_utc = "%s_utc" % attrname
         if not hasattr(self, attname_utc):
             setattr(self, attname_utc,
                     getattr(type(self)._default_manager.get(id=self.id),
                             attname_utc))
         return getattr(self, attname_utc)
 
-    getter = partial(_get_timestamp_utc, attname=field_name)
-    setter = partial(_set_timestamp_utc, attname=field_name)
+    getter = partial(_get_timestamp_utc, attrname=field_name)
+    setter = partial(_set_timestamp_utc, attrname=field_name)
+
     return property(getter, setter)
 
 
@@ -83,7 +77,9 @@ class InvoiceGenerationRecordManager(NoDeleteManager):
 
 
 class InvoiceGenerationRecord(NonDeletableModel, models.Model):
-    """An invoice is the amount owed at a given timestamp by a given entity.
+    """A record of an invoice being generated at a particular time.
+
+    An invoice is the amount owed at a given timestamp by a given entity.
 
     Invoices are recorded for historical reference. They should not be
     created directly. Instead you should go through ledger.invoice.Invoice.
@@ -119,7 +115,7 @@ class TransactionRelatedObjectManager(NoDeleteManager):
         kwargs['related_object_id'] = related_object.pk
         return self.create(**kwargs)
 
-    def get_for_objects(self, related_objects=None):
+    def get_for_objects(self, related_objects=()):
         """
         Get the TransactionRelatedObjects for an iterable of related_objects.
 
@@ -129,14 +125,6 @@ class TransactionRelatedObjectManager(NoDeleteManager):
                 will be returned. If the given queryset is empty then no
                 TransactionRelatedObjects will be returned.
         """
-        if related_objects is None:
-            return self
-        elif not related_objects:
-            return self.none()
-
-        if isinstance(related_objects, models.Model):
-            related_objects = [related_objects]
-
         # content_types is a dict(model_instance -> ContentType)
         content_types = ContentType.objects.get_for_models(*related_objects)
 
@@ -168,8 +156,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
 
 
 class TransactionQuerySet(ExplicitTimestampQuerysetMixin, QuerySet):
-    def filter_by_related_objects(self, related_objects=None,
-                                  require_all=True):
+    def filter_by_related_objects(self, related_objects=(), require_all=True):
         """Filter Transactions by arbitrary related objects.
 
         Args:
@@ -184,9 +171,6 @@ class TransactionQuerySet(ExplicitTimestampQuerysetMixin, QuerySet):
             return self
         elif not related_objects:
             return self.none()
-
-        if isinstance(related_objects, models.Model):
-            related_objects = [related_objects]
 
         if require_all:
             qs = self
@@ -324,7 +308,24 @@ class Transaction(NonDeletableModel, models.Model):
         pass
 
 
+LEDGER_ACCOUNTS_RECEIVABLE = "ar"
+LEDGER_REVENUE = "revenue"
+LEDGER_CASH = "cash"
+LEDGER_CHOICES = (
+    (LEDGER_ACCOUNTS_RECEIVABLE, "Accounts Receivable"),
+    (LEDGER_REVENUE, "Revenue"),
+    (LEDGER_CASH, "Cash")
+)
+
+
 class LedgerManager(NoDeleteManager):
+    # The value of `are_debits_positive` for this type of account.
+    ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE = {
+        LEDGER_ACCOUNTS_RECEIVABLE: True,
+        LEDGER_REVENUE: False,
+        LEDGER_CASH: True,
+    }
+
     def get_or_create_ledger(self, entity, ledger_type):
         """Convenience method to get the correct ledger.
 
@@ -336,7 +337,10 @@ class LedgerManager(NoDeleteManager):
         return Ledger.objects.get_or_create(
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
-            entity_id=entity.pk)
+            entity_id=entity.pk,
+            are_debits_positive=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
+                ledger_type]
+        )
 
     def get_ledger(self, entity, ledger_type):
         """Convenience method to get the correct ledger.
@@ -349,37 +353,63 @@ class LedgerManager(NoDeleteManager):
         return Ledger.objects.get(
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
-            entity_id=entity.pk)
+            entity_id=entity.pk,
+            are_debits_positive=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
+                ledger_type]
+        )
 
 
 class Ledger(NonDeletableModel, models.Model):
-    """Ledgers are the record of debits and credits for a given entity.
-
-    Currently the only two kinds of entities with a ledger are
-    InsurancePayer and CustomerProfile.
-    """
-    objects = LedgerManager()
-    transactions = models.ManyToManyField(Transaction, through='LedgerEntry')
-
-    LEDGER_ACCOUNTS_RECEIVABLE = "ar"
-    LEDGER_REVENUE = "revenue"
-    LEDGER_CASH = "cash"
-    LEDGER_CHOICES = (
-        (LEDGER_ACCOUNTS_RECEIVABLE, "Accounts Receivable"),
-        (LEDGER_REVENUE, "Revenue"),
-        (LEDGER_CASH, "Cash")
-    )
+    """Ledgers are the record of debits and credits for a given entity."""
+    # Fields for object-attached Ledgers
     type = models.CharField(
         _("The ledger type, eg Accounts Receivable, Revenue, etc"),
-        choices=LEDGER_CHOICES, max_length=128)
+        choices=LEDGER_CHOICES,
+        max_length=128,
+        # A blank `type` here means that the type of account represented by
+        # this ledger is not of the types in LEDGER_CHOICES: it most likely has
+        # a null `entity` and is a Counsyl-wide account like "Unreconciled
+        # Cash".
+        blank=True,
+    )
 
-    entity_content_type = models.ForeignKey(ContentType)
-    entity_id = models.PositiveIntegerField(db_index=True)
-    entity = GenericForeignKey('entity_content_type', 'entity_id')
+    # The non-Ledger object that this Ledger is attached to.
+    # TODO: Consider removing this GFK and moving its functionality to the
+    # similar GFKs on Transaction.
+    entity_content_type = models.ForeignKey(
+        ContentType,
+        blank=True,
+        null=True,
+    )
+    entity_id = models.PositiveIntegerField(
+        db_index=True,
+        blank=True,
+        null=True,
+    )
+    entity = GenericForeignKey(
+        'entity_content_type',
+        'entity_id',
+    )
 
+    # Fields for company-wide ledgers
+
+    # TODO: Add field `ledger_number` here: Accounting likes to refer to
+    # Ledgers via unique numbers that they can set when creating a Ledger.
     name = models.CharField(
         _("Name of this ledger"),
         max_length=255)
+    are_debits_positive = models.BooleanField(
+        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits are positive and credits negative, or debits are negative and credits are positive.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
+    )
+
+    # Fields for both types of Ledgers
+
+    transactions = models.ManyToManyField(
+        Transaction,
+        through='LedgerEntry',
+    )
+
+    objects = LedgerManager()
 
     class Meta:
         unique_together = ('type', 'entity_content_type', 'entity_id')
@@ -418,7 +448,8 @@ class LedgerEntryManager(NoDeleteManager):
 class LedgerEntry(NonDeletableModel, models.Model):
     """A single entry in a single column in a ledger.
 
-    LedgerEntries must always be part of a transaction.
+    LedgerEntries must always be part of a transaction so that they balance
+    according to double-entry bookkeeping.
     """
     objects = LedgerEntryManager()
 

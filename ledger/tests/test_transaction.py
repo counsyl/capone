@@ -5,10 +5,11 @@ from django.core.exceptions import PermissionDenied
 from django.test import TestCase
 
 from ledger.models import Ledger
+from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
-from ledger.tests.factories import UserFactory
 from ledger.timezone import to_utc
+from ledger.tests.factories import UserFactory
 
 
 class TransactionBase(TestCase):
@@ -17,16 +18,41 @@ class TransactionBase(TestCase):
         self.user2 = UserFactory()
         self.user1_ledger, _ = Ledger.objects.get_or_create_ledger(
             self.user1,
-            Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            LEDGER_ACCOUNTS_RECEIVABLE)
         self.user2_ledger, _ = Ledger.objects.get_or_create_ledger(
             self.user2,
-            Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            LEDGER_ACCOUNTS_RECEIVABLE)
         self.posted_timestamp = to_utc(datetime.utcnow())
 
     def new_transaction(self, related_object, created_by):
         return Transaction.objects.create_for_related_object(
             related_object, created_by=created_by,
             _posted_timestamp=self.posted_timestamp)
+
+
+class TestLedgerEntry(TransactionBase):
+    def test_repr(self):
+        transaction = self.new_transaction(self.user2, self.user1)
+        entry = LedgerEntry.objects.create(
+            ledger=self.user1_ledger,
+            transaction=transaction,
+            amount=D('-500'))
+        self.assertEqual(
+            repr(entry),
+            "<LedgerEntry: LedgerEntry (%s)  for $-500>" % entry.entry_id,
+        )
+
+
+class TestSettingExplicitTimestampField(TransactionBase):
+    def test_repr(self):
+        transaction = self.new_transaction(self.user2, self.user1)
+        old_posted_timestamp = transaction.posted_timestamp
+        transaction.posted_timestamp = datetime.now()
+        transaction.save()
+        self.assertNotEqual(
+            old_posted_timestamp,
+            transaction.posted_timestamp,
+        )
 
 
 class TestUnBalance(TransactionBase):

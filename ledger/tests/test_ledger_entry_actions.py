@@ -1,22 +1,28 @@
+import mock
 from datetime import datetime
 from decimal import Decimal as D
 
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.utils.timezone import get_current_timezone
 from pytz import UTC
 
 from ledger.api.actions import Charge
+from ledger.api.actions import LedgerEntryAction
 from ledger.api.actions import Payment
 from ledger.api.actions import Refund
-from ledger.api.actions import TransactionCtx
+from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
 from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
 from ledger.models import Ledger
+from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
+from ledger.models import LEDGER_CASH
 from ledger.models import LedgerEntry
+from ledger.models import LEDGER_REVENUE
 from ledger.models import Transaction
-from ledger.tests.factories import UserFactory
 from ledger.timezone import to_utc
+from ledger.tests.factories import UserFactory
 
 
 class LedgerEntryActionSetUp(TestCase):
@@ -26,17 +32,17 @@ class LedgerEntryActionSetUp(TestCase):
         self.entity_2 = UserFactory()
         self.creation_user = UserFactory()
         self.entity_1_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity_1, LEDGER_ACCOUNTS_RECEIVABLE)
         self.entity_1_rev_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, Ledger.LEDGER_REVENUE)
+            self.entity_1, LEDGER_REVENUE)
         self.entity_1_cash_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, Ledger.LEDGER_CASH)
+            self.entity_1, LEDGER_CASH)
         self.entity_2_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, Ledger.LEDGER_ACCOUNTS_RECEIVABLE)
+            self.entity_2, LEDGER_ACCOUNTS_RECEIVABLE)
         self.entity_2_rev_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, Ledger.LEDGER_REVENUE)
+            self.entity_2, LEDGER_REVENUE)
         self.entity_2_cash_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, Ledger.LEDGER_CASH)
+            self.entity_2, LEDGER_CASH)
 
 
 class TestPostedTimestampTimezonesMixin(object):
@@ -68,7 +74,7 @@ class _TestLedgerActionBase(TestCase,
         super(_TestLedgerActionBase, self).setUp()
         self.entity = UserFactory()
         self.creation_user = UserFactory()
-        self.transaction = TransactionCtx(
+        self.transaction = TransactionContext(
             self.creation_user, self.creation_user)
         self._populate_timezones()
 
@@ -87,19 +93,26 @@ class _TestLedgerActionBase(TestCase,
         self.assertTrue(self.ACTION_CLASS.validate_amount(D(0)))
         self.assertRaises(ValueError, self.ACTION_CLASS.validate_amount, D(-1))
 
+        # Test that the ValueError above is properly propagated
+        self.assertRaises(ValueError, self.ACTION_CLASS, self.entity, D(-1))
+
     def test_multiple_entries_in_transaction(self):
         """Multiple LedgerEntries can be put into a single transaction."""
-        with TransactionCtx(self.creation_user, self.creation_user) as txn_1:
+        with TransactionContext(
+                self.creation_user, self.creation_user) as txn_1:
             txn_1.record(self.ACTION_CLASS(self.entity, D(100)))
-        with TransactionCtx(self.creation_user, self.creation_user) as txn_2:
+        with TransactionContext(
+                self.creation_user, self.creation_user) as txn_2:
             txn_2.record(self.ACTION_CLASS(self.entity, D(100)))
             txn_2.record(self.ACTION_CLASS(self.entity, D(10)))
         self.assertNotEqual(txn_1, txn_2)
         self.assertEqual(txn_2.transaction.entries.count(), 4)
 
     def _test_timestamp(self, timestamp):
-        with TransactionCtx(self.creation_user, self.creation_user,
-                            posted_timestamp=timestamp) as txn:
+        with TransactionContext(
+                self.creation_user,
+                self.creation_user,
+                posted_timestamp=timestamp) as txn:
             txn.record(self.ACTION_CLASS(self.entity, D(100)))
         self.assertEqual(
             to_utc(txn.transaction.posted_timestamp), timestamp)
@@ -136,6 +149,65 @@ class TestRefund(_TestLedgerActionBase):
     ACTION_CLASS = Refund
 
 
+class TestReprs(TestCase):
+    def test_reprs(self):
+        User.objects.all().delete()
+
+        CLASSES_TO_REPRS = {
+            Charge: '<Charge: 100 <User: %s>>',
+            Payment: '<Payment: 100 <User: %s>>',
+            WriteDown: '<WriteDown: 100 <User: %s>>',
+            Refund: '<Refund: 100 <User: %s>>',
+        }
+
+        entity = UserFactory()
+
+        for _class, _repr in CLASSES_TO_REPRS.items():
+            self.assertEqual(
+                repr(_class(entity, D(100))),
+                _repr % entity.username)
+
+        entity2 = UserFactory()
+
+        self.assertEqual(
+            repr(TransferAmount(entity, entity2, D(100))),
+            "<TransferAmount: 100 from <User: %s> to <User: %s>>"  # nopep8
+            % (entity.username, entity2.username),
+        )
+
+
+class TestLedgerEntryAction(LedgerEntryActionSetUp):
+    """
+    Test Errors from LedgerEntryAction._get_debit_ledger and _get_credit_ledger
+    """
+    def test_not_implemented_errors(self):
+        amount = D(100)
+
+        with self.assertRaises(NotImplementedError):
+            with TransactionContext(
+                    self.creation_user, self.creation_user) as txn:
+                txn.record(LedgerEntryAction(amount))
+
+        ledger = Ledger.objects.last()
+
+        with mock.patch.object(
+                LedgerEntryAction, '_get_credit_ledger', return_value=ledger):
+            with self.assertRaises(NotImplementedError):
+                with TransactionContext(
+                        self.creation_user, self.creation_user) as txn:
+                    txn.record(LedgerEntryAction(amount))
+
+        with mock.patch.object(
+                LedgerEntryAction, '_get_credit_ledger', return_value=ledger):
+            with mock.patch.object(
+                    LedgerEntryAction,
+                    '_get_debit_ledger',
+                    return_value=ledger):
+                with TransactionContext(
+                        self.creation_user, self.creation_user) as txn:
+                    txn.record(LedgerEntryAction(amount))
+
+
 class TestTransferAction(LedgerEntryActionSetUp):
     def test_simple_transfer(self):
         amount = D(100)
@@ -143,7 +215,7 @@ class TestTransferAction(LedgerEntryActionSetUp):
         self.assertEqual(Transaction.objects.count(), 0)
 
         # First charge entity_1
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Charge(self.entity_1, amount))
         self.assertEqual(Transaction.objects.count(), 1)
 
@@ -151,7 +223,7 @@ class TestTransferAction(LedgerEntryActionSetUp):
         self.assertEqual(self.entity_1_rev_ledger.get_balance(), -amount)
 
         # And transfer the entire balance to entity_2
-        with TransactionCtx(self.creation_user, self.creation_user)\
+        with TransactionContext(self.creation_user, self.creation_user)\
                 as transfer_txn:
             transfer_txn.record(
                 TransferAmount(self.entity_1, self.entity_2, amount))
@@ -167,9 +239,9 @@ class TestTransferAction(LedgerEntryActionSetUp):
 
     def test_void_transfer(self):
         amount = D(100)
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Charge(self.entity_1, amount))
-        with TransactionCtx(self.creation_user, self.creation_user)\
+        with TransactionContext(self.creation_user, self.creation_user)\
                 as transfer_txn:
             transfer_txn.record(
                 TransferAmount(self.entity_1, self.entity_2, amount))
@@ -193,15 +265,15 @@ class TestRefundBalance(LedgerEntryActionSetUp):
         self.charge_amount = D(1000)
         self.payment_amount = D(1500)
 
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Charge(self.entity_1, self.charge_amount))
 
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Payment(self.entity_1, self.payment_amount))
 
     def test_refund(self):
         refund_amount = self.payment_amount - self.charge_amount
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Refund(self.entity_1, refund_amount))
 
         self.assertEqual(self.entity_1_ar_ledger.get_balance(), D(0))
@@ -217,7 +289,7 @@ class TestRefundBalance(LedgerEntryActionSetUp):
                          -1 * self.charge_amount)
         # Refund the entire payment and ensure they still owe money
         refund_amount = self.payment_amount
-        with TransactionCtx(self.creation_user, self.creation_user) as txn:
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
             txn.record(Refund(self.entity_1, refund_amount))
 
         self.assertEqual(self.entity_1_ar_ledger.get_balance(),
