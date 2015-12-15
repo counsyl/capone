@@ -217,3 +217,16 @@ class TestSecondaryRelatedObject(TestCase):
         self.assertEqual(
             set(charge_txn.transaction.secondary_related_objects),
             {self.user2, user3})
+
+
+class TestFinalizedTransaction(TestVoidBase):
+    def test_reentering_transaction_raises_error(self):
+        amount = D(100)
+        transaction = None
+        with TransactionContext(self.creation_user, self.creation_user) as txn:
+            transaction = txn
+            txn.record(Charge(self.entity, amount))
+
+        with self.assertRaises(Transaction.UnmodifiableTransactionException):
+            with transaction as txn:
+                txn.record(Charge(self.entity, amount))
