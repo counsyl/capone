@@ -358,6 +358,15 @@ class LedgerManager(NoDeleteManager):
                 ledger_type]
         )
 
+    def get_or_create_ledger_by_name(self, name, are_debits_positive):
+        return Ledger.objects.get_or_create(
+            type='',
+            entity_content_type=None,
+            entity_id=None,
+            name=name,
+            are_debits_positive=are_debits_positive,
+        )[0]
+
 
 class Ledger(NonDeletableModel, models.Model):
     """Ledgers are the record of debits and credits for a given entity."""
