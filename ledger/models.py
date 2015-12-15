@@ -115,7 +115,7 @@ class TransactionRelatedObjectManager(NoDeleteManager):
         kwargs['related_object_id'] = related_object.pk
         return self.create(**kwargs)
 
-    def get_for_objects(self, related_objects=None):
+    def get_for_objects(self, related_objects=[]):
         """
         Get the TransactionRelatedObjects for an iterable of related_objects.
 
@@ -125,14 +125,6 @@ class TransactionRelatedObjectManager(NoDeleteManager):
                 will be returned. If the given queryset is empty then no
                 TransactionRelatedObjects will be returned.
         """
-        if related_objects is None:
-            return self
-        elif not related_objects:
-            return self.none()
-
-        if isinstance(related_objects, models.Model):
-            related_objects = [related_objects]
-
         # content_types is a dict(model_instance -> ContentType)
         content_types = ContentType.objects.get_for_models(*related_objects)
 
@@ -164,8 +156,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
 
 
 class TransactionQuerySet(ExplicitTimestampQuerysetMixin, QuerySet):
-    def filter_by_related_objects(self, related_objects=None,
-                                  require_all=True):
+    def filter_by_related_objects(self, related_objects=[], require_all=True):
         """Filter Transactions by arbitrary related objects.
 
         Args:
