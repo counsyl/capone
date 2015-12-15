@@ -172,9 +172,6 @@ class TransactionQuerySet(ExplicitTimestampQuerysetMixin, QuerySet):
         elif not related_objects:
             return self.none()
 
-        if isinstance(related_objects, models.Model):
-            related_objects = [related_objects]
-
         if require_all:
             qs = self
             ctypes = ContentType.objects.get_for_models(*related_objects)
