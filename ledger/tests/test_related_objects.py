@@ -77,7 +77,7 @@ class _TestRelatedObjectBase(TestCase):
 
     def test_filter_by_single_related_object(self):
         related_txns = self.get_queryset().filter_by_related_objects(
-            self.charge)
+            [self.charge])
         self.assertEqual(1, related_txns.count())
 
 
@@ -119,15 +119,15 @@ class TestRelatedObjectAllRequired(TestCase):
         for require_all in [True, False]:
             self.assertEqual(
                 Transaction.objects.filter_by_related_objects(
-                    self.ro1, require_all=require_all).count(),
+                    [self.ro1], require_all=require_all).count(),
                 2)
             self.assertEqual(
                 Transaction.objects.filter_by_related_objects(
-                    self.ro2, require_all=require_all).count(),
+                    [self.ro2], require_all=require_all).count(),
                 1)
             self.assertEqual(
                 Transaction.objects.filter_by_related_objects(
-                    self.ro3, require_all=require_all).count(),
+                    [self.ro3], require_all=require_all).count(),
                 1)
 
     def test_all(self):
