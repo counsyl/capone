@@ -320,7 +320,7 @@ LEDGER_CHOICES = (
 
 class LedgerManager(NoDeleteManager):
     # The value of `are_debits_positive` for this type of account.
-    ACCOUNT_TYPE_TO_LEDGER_POLARITY = {
+    ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE = {
         LEDGER_ACCOUNTS_RECEIVABLE: True,
         LEDGER_REVENUE: False,
         LEDGER_CASH: True,
@@ -338,7 +338,7 @@ class LedgerManager(NoDeleteManager):
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
-            are_debits_positive=self.ACCOUNT_TYPE_TO_LEDGER_POLARITY[
+            are_debits_positive=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
                 ledger_type]
         )
 
@@ -354,7 +354,7 @@ class LedgerManager(NoDeleteManager):
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
-            are_debits_positive=self.ACCOUNT_TYPE_TO_LEDGER_POLARITY[
+            are_debits_positive=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
                 ledger_type]
         )
 
