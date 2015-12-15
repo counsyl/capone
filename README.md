@@ -300,6 +300,10 @@ Then you should be free to run
 
 or any other `manage.py` command, even those in the Makefile.
 
+To run individual tests, use the following:
+
+    ./manage.py test --settings=ledger.tests.settings ledger.tests
+
 Notice the `--settings=ledger.tests.settings` argument: because this repository
 is a django sub-module, it wouldn't make sense for it to come with its own
 default `settings.py` file.  Instead, it ships with one used to run its tests.
