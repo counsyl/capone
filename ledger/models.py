@@ -115,7 +115,7 @@ class TransactionRelatedObjectManager(NoDeleteManager):
         kwargs['related_object_id'] = related_object.pk
         return self.create(**kwargs)
 
-    def get_for_objects(self, related_objects=[]):
+    def get_for_objects(self, related_objects=()):
         """
         Get the TransactionRelatedObjects for an iterable of related_objects.
 
@@ -156,7 +156,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
 
 
 class TransactionQuerySet(ExplicitTimestampQuerysetMixin, QuerySet):
-    def filter_by_related_objects(self, related_objects=[], require_all=True):
+    def filter_by_related_objects(self, related_objects=(), require_all=True):
         """Filter Transactions by arbitrary related objects.
 
         Args:
