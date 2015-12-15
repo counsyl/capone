@@ -154,22 +154,25 @@ class TestReprs(TestCase):
         User.objects.all().delete()
 
         CLASSES_TO_REPRS = {
-            Charge: '<Charge: 100 <User: TransactionUser #0>>',
-            Payment: '<Payment: 100 <User: TransactionUser #0>>',
-            WriteDown: '<WriteDown: 100 <User: TransactionUser #0>>',
-            Refund: '<Refund: 100 <User: TransactionUser #0>>',
+            Charge: '<Charge: 100 <User: %s>>',
+            Payment: '<Payment: 100 <User: %s>>',
+            WriteDown: '<WriteDown: 100 <User: %s>>',
+            Refund: '<Refund: 100 <User: %s>>',
         }
 
         entity = UserFactory()
 
         for _class, _repr in CLASSES_TO_REPRS.items():
-            self.assertEqual(repr(_class(entity, D(100))), _repr)
+            self.assertEqual(
+                repr(_class(entity, D(100))),
+                _repr % entity.username)
 
         entity2 = UserFactory()
 
         self.assertEqual(
             repr(TransferAmount(entity, entity2, D(100))),
-            "<TransferAmount: 100 from <User: TransactionUser #0> to <User: TransactionUser #1>>",  # nopep8
+            "<TransferAmount: 100 from <User: %s> to <User: %s>>"  # nopep8
+            % (entity.username, entity2.username),
         )
 
 
