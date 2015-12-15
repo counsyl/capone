@@ -21,18 +21,15 @@ from ledger.timezone import to_utc
 
 
 class ExplicitTimestampQuerysetMixin(QuerySet):
-    timestamp_fields = ()
-
     def __init__(self, *args, **kwargs):
         super(ExplicitTimestampQuerysetMixin, self).__init__(*args, **kwargs)
         self.tz = UTC
         self.tz_name = 'utc'
-        if not self.timestamp_fields:
-            self.timestamp_fields = []
-            # Let's introspect and do this for every timestamp
-            for field in self.model._meta.fields:
-                if isinstance(field, DateTimeField):
-                    self.timestamp_fields.append(field.name)
+
+        self.timestamp_fields = [
+            field.name for field in self.model._meta.fields
+            if isinstance(field, DateTimeField)
+        ]
 
     def annotate_with_explicit_timestamp(self):
         select_dict = OrderedDict()
