@@ -44,14 +44,14 @@ class ExplicitTimestampQuerysetMixin(QuerySet):
 
 
 def explicit_timestamp_field(field_name, *args, **kwargs):
-    def _set_timestamp_utc(self, attname, timestamp):
+    def _set_timestamp_utc(self, timestamp, attrname=None):
         """Set the given timestamp, assuming that we're being given a
         naive utc timestamp."""
         value = to_utc(timestamp)
         setattr(self, attrname, value)
         setattr(self, "%s_utc" % attrname, value.replace(tzinfo=None))
 
-    def _get_timestamp_utc(self, attname):
+    def _get_timestamp_utc(self, attrname=None):
         attname_utc = "%s_utc" % attrname
         if not hasattr(self, attname_utc):
             setattr(self, attname_utc,
