@@ -37,11 +37,11 @@ class TestVoidTransaction(TestVoidBase):
         amount = D(100)
         # First record a charge
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Charge(self.entity, amount))
+            txn.record_action(Charge(self.entity, amount))
 
         # Then void it
         void_txn = VoidTransaction(
-            txn.transaction, self.creation_user).record()
+            txn.transaction, self.creation_user).record_action()
 
         self.assertEqual(void_txn.voids, txn.transaction)
 
@@ -52,31 +52,31 @@ class TestVoidTransaction(TestVoidBase):
         amount = D(100)
         # First record a charge
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Charge(self.entity, amount))
+            txn.record_action(Charge(self.entity, amount))
 
         # Then void it
-        VoidTransaction(txn.transaction, self.creation_user).record()
+        VoidTransaction(txn.transaction, self.creation_user).record_action()
 
         # Trying to void the same transaction again will not succeed
         self.assertRaises(
             Transaction.UnvoidableTransactionException,
-            VoidTransaction(txn.transaction, self.creation_user).record)
+            VoidTransaction(txn.transaction, self.creation_user).record_action)
 
     def test_can_void_void(self):
         # A void transaction can be voided, thus re-instating the original txn
         amount = D(100)
         # First record a charge
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Charge(self.entity, amount))
+            txn.record_action(Charge(self.entity, amount))
 
         # Then void it
         void_txn = VoidTransaction(
-            txn.transaction, self.creation_user).record()
+            txn.transaction, self.creation_user).record_action()
 
         self.assertEqual(void_txn.voids, txn.transaction)
 
         # And void the void
-        void_void_txn = VoidTransaction(void_txn, self.creation_user).record()
+        void_void_txn = VoidTransaction(void_txn, self.creation_user).record_action()
         self.assertEqual(void_void_txn.voids, void_txn)
 
         self.assertEqual(self.entity_ar_ledger.get_balance(), amount)
@@ -88,14 +88,14 @@ class TestVoidTransaction(TestVoidBase):
 
         with TransactionContext(
                 self.creation_user, self.creation_user) as txn_1:
-            txn_1.record(Charge(self.entity, amount_1))
+            txn_1.record_action(Charge(self.entity, amount_1))
         with TransactionContext(
                 self.creation_user, self.creation_user) as txn_2:
-            txn_2.record(Charge(self.entity, amount_2))
+            txn_2.record_action(Charge(self.entity, amount_2))
         self.assertNotEqual(txn_1, txn_2)
         self.assertNotEqual(txn_1.transaction, txn_2.transaction)
 
-        VoidTransaction(txn_1.transaction, self.creation_user).record()
+        VoidTransaction(txn_1.transaction, self.creation_user).record_action()
 
         self.assertEqual(self.entity_ar_ledger.get_balance(), amount_2)
         self.assertEqual(self.entity_rev_ledger.get_balance(), -amount_2)
@@ -106,15 +106,15 @@ class TestVoidTransaction(TestVoidBase):
 
         with TransactionContext(
                 self.creation_user, self.creation_user) as charge_txn:
-            charge_txn.record(Charge(self.entity, amount))
+            charge_txn.record_action(Charge(self.entity, amount))
         with TransactionContext(
                 self.creation_user, self.creation_user) as pay_txn:
-            pay_txn.record(Payment(self.entity, amount))
+            pay_txn.record_action(Payment(self.entity, amount))
 
         # Void the charge
-        VoidTransaction(charge_txn.transaction, self.creation_user).record()
+        VoidTransaction(charge_txn.transaction, self.creation_user).record_action()
         # And void the payment
-        VoidTransaction(pay_txn.transaction, self.creation_user).record()
+        VoidTransaction(pay_txn.transaction, self.creation_user).record_action()
         self.assertEqual(self.entity_ar_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_rev_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_cash_ledger.get_balance(), D(0))
@@ -132,18 +132,18 @@ class TestVoidTransaction(TestVoidBase):
         comp_amount = D(701)
 
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Charge(self.entity, charge_amount))
+            txn.record_action(Charge(self.entity, charge_amount))
 
         with TransactionContext(
                 self.creation_user, self.creation_user) as txn2:
-            txn2.record(EntityTransferAmount(
+            txn2.record_action(EntityTransferAmount(
                 self.entity, self.creation_user, transfer_amount))
-            txn2.record(WriteDown(self.creation_user, comp_amount))
+            txn2.record_action(WriteDown(self.creation_user, comp_amount))
 
         self.assertEqual(self.creation_user_ar_ledger.get_balance(), D(99))
         self.assertEqual(self.entity_ar_ledger.get_balance(), D(200))
 
-        VoidTransaction(txn2.transaction, self.creation_user).record()
+        VoidTransaction(txn2.transaction, self.creation_user).record_action()
         self.assertEqual(self.creation_user_ar_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_ar_ledger.get_balance(), charge_amount)
 
@@ -156,11 +156,11 @@ class TestVoidTimestamps(TestVoidBase):
         # First record a charge
         with TransactionContext(
                 self.creation_user, self.creation_user) as charge_txn:
-            charge_txn.record(Charge(self.entity, amount))
+            charge_txn.record_action(Charge(self.entity, amount))
 
         # Then void it
         void_txn = VoidTransaction(
-            charge_txn.transaction, self.creation_user).record()
+            charge_txn.transaction, self.creation_user).record_action()
         self.assertEqual(charge_txn.transaction.posted_timestamp,
                          void_txn.posted_timestamp)
 
@@ -170,13 +170,13 @@ class TestVoidTimestamps(TestVoidBase):
         # First record a charge
         with TransactionContext(
                 self.creation_user, self.creation_user) as charge_txn:
-            charge_txn.record(Charge(self.entity, amount))
+            charge_txn.record_action(Charge(self.entity, amount))
 
         # Then void it
         now = datetime.utcnow()
         void_txn = VoidTransaction(
             charge_txn.transaction, self.creation_user,
-            posted_timestamp=now).record()
+            posted_timestamp=now).record_action()
         self.assertEqual(now, void_txn.posted_timestamp)
 
 
@@ -193,7 +193,7 @@ class TestSecondaryRelatedObject(TestCase):
         with TransactionContext(
                 self.user, self.user,
                 secondary_related_objects=[self.user2]) as charge_txn:
-            charge_txn.record(Charge(self.entity, D(100)))
+            charge_txn.record_action(Charge(self.entity, D(100)))
         self.assertEqual(
             charge_txn.transaction.primary_related_object, self.user)
         self.assertEqual(
@@ -211,7 +211,7 @@ class TestSecondaryRelatedObject(TestCase):
         with TransactionContext(
                 self.user, self.user,
                 secondary_related_objects=[self.user2, user3]) as charge_txn:
-            charge_txn.record(Charge(self.entity, D(100)))
+            charge_txn.record_action(Charge(self.entity, D(100)))
         self.assertEqual(
             charge_txn.transaction.primary_related_object, self.user)
         self.assertEqual(
@@ -225,8 +225,8 @@ class TestFinalizedTransaction(TestVoidBase):
         transaction = None
         with TransactionContext(self.creation_user, self.creation_user) as txn:
             transaction = txn
-            txn.record(Charge(self.entity, amount))
+            txn.record_action(Charge(self.entity, amount))
 
         with self.assertRaises(Transaction.UnmodifiableTransactionException):
             with transaction as txn:
-                txn.record(Charge(self.entity, amount))
+                txn.record_action(Charge(self.entity, amount))

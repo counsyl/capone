@@ -83,7 +83,7 @@ class _TestLedgerActionBase(TestCase,
         self.assertEqual(Ledger.objects.count(), 0)
         self.assertEqual(LedgerEntry.objects.count(), 0)
         with self.transaction as txn:
-            txn.record(self.ACTION_CLASS(self.entity, D(100)))
+            txn.record_action(self.ACTION_CLASS(self.entity, D(100)))
         self.assertEqual(Ledger.objects.count(), 2)
         self.assertEqual(LedgerEntry.objects.count(), 2)
 
@@ -100,11 +100,11 @@ class _TestLedgerActionBase(TestCase,
         """Multiple LedgerEntries can be put into a single transaction."""
         with TransactionContext(
                 self.creation_user, self.creation_user) as txn_1:
-            txn_1.record(self.ACTION_CLASS(self.entity, D(100)))
+            txn_1.record_action(self.ACTION_CLASS(self.entity, D(100)))
         with TransactionContext(
                 self.creation_user, self.creation_user) as txn_2:
-            txn_2.record(self.ACTION_CLASS(self.entity, D(100)))
-            txn_2.record(self.ACTION_CLASS(self.entity, D(10)))
+            txn_2.record_action(self.ACTION_CLASS(self.entity, D(100)))
+            txn_2.record_action(self.ACTION_CLASS(self.entity, D(10)))
         self.assertNotEqual(txn_1, txn_2)
         self.assertEqual(txn_2.transaction.entries.count(), 4)
 
@@ -113,7 +113,7 @@ class _TestLedgerActionBase(TestCase,
                 self.creation_user,
                 self.creation_user,
                 posted_timestamp=timestamp) as txn:
-            txn.record(self.ACTION_CLASS(self.entity, D(100)))
+            txn.record_action(self.ACTION_CLASS(self.entity, D(100)))
         self.assertEqual(
             to_utc(txn.transaction.posted_timestamp), timestamp)
         txn = Transaction.objects.get(id=txn.transaction.id)
@@ -186,7 +186,7 @@ class TestLedgerEntryAction(LedgerEntryActionSetUp):
         with self.assertRaises(NotImplementedError):
             with TransactionContext(
                     self.creation_user, self.creation_user) as txn:
-                txn.record(LedgerEntryAction(amount))
+                txn.record_action(LedgerEntryAction(amount))
 
         ledger = Ledger.objects.last()
 
@@ -195,7 +195,7 @@ class TestLedgerEntryAction(LedgerEntryActionSetUp):
             with self.assertRaises(NotImplementedError):
                 with TransactionContext(
                         self.creation_user, self.creation_user) as txn:
-                    txn.record(LedgerEntryAction(amount))
+                    txn.record_action(LedgerEntryAction(amount))
 
         with mock.patch.object(
                 LedgerEntryAction, '_get_credit_ledger', return_value=ledger):
@@ -205,7 +205,7 @@ class TestLedgerEntryAction(LedgerEntryActionSetUp):
                     return_value=ledger):
                 with TransactionContext(
                         self.creation_user, self.creation_user) as txn:
-                    txn.record(LedgerEntryAction(amount))
+                    txn.record_action(LedgerEntryAction(amount))
 
 
 class TestTransferAction(LedgerEntryActionSetUp):
@@ -216,7 +216,7 @@ class TestTransferAction(LedgerEntryActionSetUp):
 
         # First charge entity_1
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Charge(self.entity_1, amount))
+            txn.record_action(Charge(self.entity_1, amount))
         self.assertEqual(Transaction.objects.count(), 1)
 
         self.assertEqual(self.entity_1_ar_ledger.get_balance(), amount)
@@ -225,7 +225,7 @@ class TestTransferAction(LedgerEntryActionSetUp):
         # And transfer the entire balance to entity_2
         with TransactionContext(self.creation_user, self.creation_user)\
                 as transfer_txn:
-            transfer_txn.record(
+            transfer_txn.record_action(
                 EntityTransferAmount(self.entity_1, self.entity_2, amount))
         # This should have only created a single new transaction
         self.assertEqual(Transaction.objects.count(), 2)
@@ -240,15 +240,15 @@ class TestTransferAction(LedgerEntryActionSetUp):
     def test_void_transfer(self):
         amount = D(100)
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Charge(self.entity_1, amount))
+            txn.record_action(Charge(self.entity_1, amount))
         with TransactionContext(self.creation_user, self.creation_user)\
                 as transfer_txn:
-            transfer_txn.record(
+            transfer_txn.record_action(
                 EntityTransferAmount(self.entity_1, self.entity_2, amount))
 
         # Void the charge
         void_txn = VoidTransaction(
-            transfer_txn.transaction, self.creation_user).record()
+            transfer_txn.transaction, self.creation_user).record_action()
 
         self.assertEqual(void_txn.voids, transfer_txn.transaction)
 
@@ -266,15 +266,15 @@ class TestRefundBalance(LedgerEntryActionSetUp):
         self.payment_amount = D(1500)
 
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Charge(self.entity_1, self.charge_amount))
+            txn.record_action(Charge(self.entity_1, self.charge_amount))
 
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Payment(self.entity_1, self.payment_amount))
+            txn.record_action(Payment(self.entity_1, self.payment_amount))
 
     def test_refund(self):
         refund_amount = self.payment_amount - self.charge_amount
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Refund(self.entity_1, refund_amount))
+            txn.record_action(Refund(self.entity_1, refund_amount))
 
         self.assertEqual(self.entity_1_ar_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_1_cash_ledger.get_balance(),
@@ -290,7 +290,7 @@ class TestRefundBalance(LedgerEntryActionSetUp):
         # Refund the entire payment and ensure they still owe money
         refund_amount = self.payment_amount
         with TransactionContext(self.creation_user, self.creation_user) as txn:
-            txn.record(Refund(self.entity_1, refund_amount))
+            txn.record_action(Refund(self.entity_1, refund_amount))
 
         self.assertEqual(self.entity_1_ar_ledger.get_balance(),
                          self.charge_amount)

@@ -195,13 +195,24 @@ class TransactionContext(object):
         self.transaction.finalized = True
         self.transaction.save()
 
-    def record(self, action):
+    def record_action(self, action):
         """Record an Action in this Transaction.
 
         Args:
             action - A FinancialAction to include in this Transaction
         """
         self.transaction.entries.add(*action.get_ledger_entries())
+
+    def record_entries(self, entries):
+        """Record raw LedgerEntries: useful for cases not covered in api.actions
+
+        Args:
+            entries - An iterable of already-constructed LedgerEntry ORM
+                objects to be added to this Transaction.  They are validated as
+                having equal debits and credits, so that a Transaction will
+                always balance.
+        """
+        self.transaction.entries.add(*entries)
 
 
 class VoidTransaction(object):
@@ -216,9 +227,10 @@ class VoidTransaction(object):
     The do have a similar syntax to TransactionContext, though:
 
     with TransactionContext(related_object, created_by) as txn:
-        txn.record(Charge(entity, 100))
+        txn.record_action(Charge(entity, 100))
 
-    VoidTransaction(txn.transaction, created_by[, posted_timestamp]).record()
+    VoidTransaction(
+        txn.transaction, created_by[, posted_timestamp]).record_action()
 
     It is assumed that the related_object must be the same as the transaction
     you're voiding.
@@ -243,7 +255,7 @@ class VoidTransaction(object):
     def get_ledger_entries(self):
         if not hasattr(self, 'context'):
             raise Transaction.UnvoidableTransactionException(
-                "You can only use VoidTransaciton.record() to void "
+                "You can only use VoidTransaciton.record_action() to void "
                 "transactions")
 
         entries = []
@@ -254,7 +266,7 @@ class VoidTransaction(object):
                 action_type=type(self).__name__))
         return entries
 
-    def record(self):
+    def record_action(self):
         try:
             self.other_transaction.voided_by
         except Transaction.DoesNotExist:
@@ -277,6 +289,6 @@ class VoidTransaction(object):
             txn.transaction.notes = ("Voiding transaction %s" %
                                      self.other_transaction)
             self.context = txn
-            txn.record(self)  # Will call self.get_ledger_entries()
+            txn.record_action(self)  # Will call self.get_ledger_entries()
             delattr(self, 'context')
         return txn.transaction

@@ -30,6 +30,6 @@ class TestLedgerEntry(TestLedgerEntryBase):
 
     def test_cant_delete(self):
         with TransactionContext(self.user, self.user) as txn:
-            txn.record(Charge(self.entity, D(100)))
+            txn.record_action(Charge(self.entity, D(100)))
         ledger_entries = txn.transaction.entries.all()
         self.assertRaises(PermissionDenied, ledger_entries[0].delete)
