@@ -4,5 +4,5 @@ include README.md
 include requirements*.txt
 recursive-include ledger/static *
 recursive-include ledger/templates *
-exclude tests
+prune ledger/tests
 exclude Makefile
