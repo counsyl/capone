@@ -88,7 +88,7 @@ test: venv
 	coverage report --fail-under=100 --show-missing; \
 	coverage_code=$$?; \
 	xunitmerge nosetests-*.xml $(TEST_OUTPUT); \
-	if [ $$coverage_code -ge 0 ] ; then echo "Failed: Test coverage is not 100%."; fi; \
+	if [ $$coverage_code -gt 0 ] ; then echo "Failed: Test coverage is not 100%."; fi; \
 	exit $$(($$status + $$coverage_code));
 
 # Distribution
