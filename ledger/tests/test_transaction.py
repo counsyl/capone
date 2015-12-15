@@ -43,6 +43,18 @@ class TestLedgerEntry(TransactionBase):
         )
 
 
+class TestSettingExplicitTimestampField(TransactionBase):
+    def test_repr(self):
+        transaction = self.new_transaction(self.user2, self.user1)
+        old_posted_timestamp = transaction.posted_timestamp
+        transaction.posted_timestamp = datetime.now()
+        transaction.save()
+        self.assertNotEqual(
+            old_posted_timestamp,
+            transaction.posted_timestamp,
+        )
+
+
 class TestUnBalance(TransactionBase):
     def test_only_credits(self):
         # User 1 trying to pay User 2, but only debits from own ledger
