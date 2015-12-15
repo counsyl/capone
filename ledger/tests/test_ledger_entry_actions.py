@@ -93,6 +93,9 @@ class _TestLedgerActionBase(TestCase,
         self.assertTrue(self.ACTION_CLASS.validate_amount(D(0)))
         self.assertRaises(ValueError, self.ACTION_CLASS.validate_amount, D(-1))
 
+        # Test that the ValueError above is properly propagated
+        self.assertRaises(ValueError, self.ACTION_CLASS, self.entity, D(-1))
+
     def test_multiple_entries_in_transaction(self):
         """Multiple LedgerEntries can be put into a single transaction."""
         with TransactionContext(

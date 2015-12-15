@@ -19,7 +19,11 @@ class LedgerEntryAction(object):
     """A LedgerEntryAction is a common LedgerEntry-based operation."""
     def __init__(self, amount):
         super(LedgerEntryAction, self).__init__()
-        if self.validate_amount(amount):
+        try:
+            self.validate_amount(amount)
+        except ValueError:
+            raise
+        else:
             self.amount = amount
 
     @classmethod
