@@ -30,6 +30,19 @@ class TransactionBase(TestCase):
             _posted_timestamp=self.posted_timestamp)
 
 
+class TestLedgerEntry(TransactionBase):
+    def test_repr(self):
+        transaction = self.new_transaction(self.user2, self.user1)
+        entry = LedgerEntry.objects.create(
+            ledger=self.user1_ledger,
+            transaction=transaction,
+            amount=D('-500'))
+        self.assertEqual(
+            repr(entry),
+            "<LedgerEntry: LedgerEntry (%s)  for $-500>" % entry.entry_id,
+        )
+
+
 class TestUnBalance(TransactionBase):
     def test_only_credits(self):
         # User 1 trying to pay User 2, but only debits from own ledger
