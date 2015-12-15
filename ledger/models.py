@@ -48,19 +48,20 @@ def explicit_timestamp_field(field_name, *args, **kwargs):
         """Set the given timestamp, assuming that we're being given a
         naive utc timestamp."""
         value = to_utc(timestamp)
-        setattr(self, attname, value)
-        setattr(self, "%s_utc" % attname, value.replace(tzinfo=None))
+        setattr(self, attrname, value)
+        setattr(self, "%s_utc" % attrname, value.replace(tzinfo=None))
 
     def _get_timestamp_utc(self, attname):
-        attname_utc = "%s_utc" % attname
+        attname_utc = "%s_utc" % attrname
         if not hasattr(self, attname_utc):
             setattr(self, attname_utc,
                     getattr(type(self)._default_manager.get(id=self.id),
                             attname_utc))
         return getattr(self, attname_utc)
 
-    getter = partial(_get_timestamp_utc, attname=field_name)
-    setter = partial(_set_timestamp_utc, attname=field_name)
+    getter = partial(_get_timestamp_utc, attrname=field_name)
+    setter = partial(_set_timestamp_utc, attrname=field_name)
+
     return property(getter, setter)
 
 
