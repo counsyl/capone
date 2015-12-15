@@ -3,8 +3,8 @@ from decimal import Decimal as D
 from django.test import TestCase
 
 from ledger.models import Ledger
+from ledger.models import LedgerEntry
 from ledger.api.actions import TransactionContext
-from ledger.api.actions import TransferAmount
 from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import OrderFactory
 from ledger.tests.factories import UserFactory
@@ -38,23 +38,19 @@ class TestCompanyWideLedgers(TestCase):
         # add an entry debiting AR and crediting Revenue: this entry should
         # reference the Order
         with TransactionContext(order, user) as txn_recognize:
-            txn_recognize.record(
-                TransferAmount(
-                    revenue,
-                    accounts_receivable,
-                    D(100))
-            )
+            txn_recognize.record_entries([
+                LedgerEntry(revenue, D(100)),
+                LedgerEntry(accounts_receivable, D(-100)),
+            ])
 
         # add an entry crediting AR and debiting Stripe/un: this entry should
         # reference the PGXX
         with TransactionContext(
                 credit_card_transaction, user) as txn_recognize:
-            txn_recognize.record(
-                TransferAmount(
-                    accounts_receivable,
-                    stripe_unrecon,
-                    D(100))
-            )
+            txn_recognize.record_entries([
+                LedgerEntry(accounts_receivable, D(100)),
+                LedgerEntry(stripe_unrecon, D(-100))
+            ])
 
         # add an entry crediting Stripe/un and debiting Stripe/recon: this
         # entry should reference both an Order and a PGXX
@@ -63,9 +59,7 @@ class TestCompanyWideLedgers(TestCase):
                 user,
                 secondary_related_objects=[credit_card_transaction]
         ) as txn_recognize:
-            txn_recognize.record(
-                TransferAmount(
-                    stripe_unrecon,
-                    stripe_recon,
-                    D(100))
-            )
+            txn_recognize.record_entries([
+                LedgerEntry(stripe_unrecon, D(100)),
+                LedgerEntry(stripe_recon, D(-100))
+            ])
