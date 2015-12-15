@@ -43,7 +43,6 @@ class LedgerEntryAction(object):
         Args:
             amount: The amount to charge the entity.
         """
-        # Remember! Debits are positive, credits are negative!
         credit = LedgerEntry(
             ledger=self._get_credit_ledger(),
             amount=-self.amount,
