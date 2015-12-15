@@ -12,7 +12,7 @@ from ledger.api.actions import LedgerEntryAction
 from ledger.api.actions import Payment
 from ledger.api.actions import Refund
 from ledger.api.actions import TransactionContext
-from ledger.api.actions import TransferAmount
+from ledger.api.actions import EntityTransferAmount
 from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
 from ledger.models import Ledger
@@ -170,8 +170,8 @@ class TestReprs(TestCase):
         entity2 = UserFactory()
 
         self.assertEqual(
-            repr(TransferAmount(entity, entity2, D(100))),
-            "<TransferAmount: 100 from <User: %s> to <User: %s>>"  # nopep8
+            repr(EntityTransferAmount(entity, entity2, D(100))),
+            "<EntityTransferAmount: 100 from <User: %s> to <User: %s>>"  # nopep8
             % (entity.username, entity2.username),
         )
 
@@ -226,7 +226,7 @@ class TestTransferAction(LedgerEntryActionSetUp):
         with TransactionContext(self.creation_user, self.creation_user)\
                 as transfer_txn:
             transfer_txn.record(
-                TransferAmount(self.entity_1, self.entity_2, amount))
+                EntityTransferAmount(self.entity_1, self.entity_2, amount))
         # This should have only created a single new transaction
         self.assertEqual(Transaction.objects.count(), 2)
         # ...with four ledger entries
@@ -244,7 +244,7 @@ class TestTransferAction(LedgerEntryActionSetUp):
         with TransactionContext(self.creation_user, self.creation_user)\
                 as transfer_txn:
             transfer_txn.record(
-                TransferAmount(self.entity_1, self.entity_2, amount))
+                EntityTransferAmount(self.entity_1, self.entity_2, amount))
 
         # Void the charge
         void_txn = VoidTransaction(

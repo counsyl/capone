@@ -7,7 +7,7 @@ from django.test import TestCase
 from ledger.api.actions import Charge
 from ledger.api.actions import Payment
 from ledger.api.actions import TransactionContext
-from ledger.api.actions import TransferAmount
+from ledger.api.actions import EntityTransferAmount
 from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
 from ledger.models import Ledger
@@ -136,7 +136,7 @@ class TestVoidTransaction(TestVoidBase):
 
         with TransactionContext(
                 self.creation_user, self.creation_user) as txn2:
-            txn2.record(TransferAmount(
+            txn2.record(EntityTransferAmount(
                 self.entity, self.creation_user, transfer_amount))
             txn2.record(WriteDown(self.creation_user, comp_amount))
 
