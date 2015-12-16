@@ -427,6 +427,9 @@ class Ledger(NonDeletableModel, models.Model):
         """Get the current balance on this Ledger."""
         return self.entries.aggregate(balance=Sum('amount'))['balance']
 
+    def __unicode__(self):
+        return self.name or self.entity
+
 
 class LedgerEntryQuerySet(QuerySet):
     def filter_by_related_objects(self, related_objects=None, **kwargs):
@@ -472,7 +475,6 @@ class LedgerEntry(NonDeletableModel, models.Model):
 
     amount = models.DecimalField(
         _("Amount of this entry."),
-        help_text=_("Debits are positive, credits are negative."),
         max_digits=24, decimal_places=4)
     action_type = models.CharField(
         _("Type of action that created this LedgerEntry"),
