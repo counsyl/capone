@@ -250,6 +250,22 @@ class Transaction(NonDeletableModel, models.Model):
         _("Finalized transactions cannot be modified."),
         default=False)
 
+    AUTOMATIC = 'Automatic'
+    MANUAL = 'Manual'
+    RECONCILIATION = 'Reconciliation'
+    TRANSACTION_TYPE_CHOICES = (
+        (AUTOMATIC, AUTOMATIC),
+        (MANUAL, MANUAL),
+        (RECONCILIATION, RECONCILIATION),
+    )
+
+    type = models.CharField(
+        _("The type of ledger"),
+        choices=TRANSACTION_TYPE_CHOICES,
+        max_length=128,
+        default=MANUAL,
+    )
+
     @property
     def primary_related_object(self):
         """Get the primary related object for this Transaction."""
