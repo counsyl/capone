@@ -12,6 +12,7 @@ from ledger.tests.factories import UserFactory
 
 class TestCompanyWideLedgers(TestCase):
     def test_using_company_wide_ledgers_for_reconciliation(self):
+        AMOUNT = D(100)
         user = UserFactory()
         order = OrderFactory()
         credit_card_transaction = CreditCardTransactionFactory()
@@ -39,8 +40,8 @@ class TestCompanyWideLedgers(TestCase):
         # reference the Order
         with TransactionContext(order, user) as txn_recognize:
             txn_recognize.record_entries([
-                LedgerEntry(ledger=revenue, amount=D(100)),
-                LedgerEntry(ledger=accounts_receivable, amount=D(-100)),
+                LedgerEntry(ledger=revenue, amount=AMOUNT),
+                LedgerEntry(ledger=accounts_receivable, amount=-AMOUNT),
             ])
 
         # add an entry crediting AR and debiting Stripe/un: this entry should
@@ -48,8 +49,8 @@ class TestCompanyWideLedgers(TestCase):
         with TransactionContext(
                 credit_card_transaction, user) as txn_recognize:
             txn_recognize.record_entries([
-                LedgerEntry(ledger=accounts_receivable, amount=D(100)),
-                LedgerEntry(ledger=stripe_unrecon, amount=D(-100))
+                LedgerEntry(ledger=accounts_receivable, amount=AMOUNT),
+                LedgerEntry(ledger=stripe_unrecon, amount=-AMOUNT)
             ])
 
         # add an entry crediting Stripe/un and debiting Stripe/recon: this
@@ -60,6 +61,6 @@ class TestCompanyWideLedgers(TestCase):
                 secondary_related_objects=[credit_card_transaction]
         ) as txn_recognize:
             txn_recognize.record_entries([
-                LedgerEntry(ledger=stripe_unrecon, amount=D(100)),
-                LedgerEntry(ledger=stripe_recon, amount=D(-100))
+                LedgerEntry(ledger=stripe_unrecon, amount=AMOUNT),
+                LedgerEntry(ledger=stripe_recon, amount=-AMOUNT)
             ])
