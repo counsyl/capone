@@ -27,8 +27,7 @@ def get_all_transactions_for_object(obj, ledgers=()):
     return transactions
 
 
-def get_balances_for_object(obj):
-    transactions = get_all_transactions_for_object(obj)
+def get_ledger_balances_for_transactions(transactions):
     balances = defaultdict(lambda: Decimal(0))
 
     for transaction in transactions:
@@ -36,3 +35,8 @@ def get_balances_for_object(obj):
             balances[entry.ledger] += entry.amount
 
     return balances
+
+
+def get_balances_for_object(obj):
+    return get_ledger_balances_for_transactions(
+        get_all_transactions_for_object(obj))
