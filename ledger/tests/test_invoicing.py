@@ -346,10 +346,12 @@ class TestInvoiceBackdatedTransactions(TestInvoicingBase):
         self.payment_txn = txn.transaction
 
         # Void the write_down and the transfer
-        VoidTransaction(
-            self.transfer_txn, self.user,
-            posted_timestamp=(
-                self.transfer_txn.posted_timestamp).record_action())
+        (
+            VoidTransaction(
+                self.transfer_txn, self.user,
+                posted_timestamp=self.transfer_txn.posted_timestamp)
+            .record_action()
+        )
 
         self.user_invoice_2 = Invoice(self.user, timestamp=self.invoice_2_date)
         self.entity_invoice_2 = Invoice(
