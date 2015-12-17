@@ -134,10 +134,10 @@ class WriteDown(SingleEntityLedgerEntryAction):
         return ledger
 
 
-class EntityTransferAmount(LedgerEntryAction):
+class TransferAmount(LedgerEntryAction):
     """Transfer an amount from one entity's ledger to another."""
     def __init__(self, entity_from, entity_to, amount):
-        super(EntityTransferAmount, self).__init__(amount=amount)
+        super(TransferAmount, self).__init__(amount=amount)
         self.entity_from = entity_from
         self.entity_to = entity_to
 

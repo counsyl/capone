@@ -7,7 +7,7 @@ from ledger.api.actions import Charge
 from ledger.api.actions import Payment
 from ledger.api.actions import Refund
 from ledger.api.actions import TransactionContext
-from ledger.api.actions import EntityTransferAmount
+from ledger.api.actions import TransferAmount
 from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
 from ledger.api.invoice import Invoice
@@ -71,7 +71,7 @@ class TestInvoiceReversals(TestInvoicingBase):
             txn.record_action(Charge(self.entity_1, self.charge_amount))
 
         with TransactionContext(self.user, self.user) as txn:
-            txn.record_action(EntityTransferAmount(self.entity_1, self.entity_2,
+            txn.record_action(TransferAmount(self.entity_1, self.entity_2,
                                       self.transfer_amount))
             txn.record_action(WriteDown(self.entity_2, self.comp_amount_1))
         self.transfer_txn = txn.transaction
@@ -324,7 +324,7 @@ class TestInvoiceBackdatedTransactions(TestInvoicingBase):
                 self.user, self.user,
                 posted_timestamp=self.write_down_date) as txn:
             txn.record_action(
-                EntityTransferAmount(self.entity_1, self.user, self.charge_amount))
+                TransferAmount(self.entity_1, self.user, self.charge_amount))
             txn.record_action(
                 WriteDown(self.user,
                           self.charge_amount - self.customer_responsibility))
