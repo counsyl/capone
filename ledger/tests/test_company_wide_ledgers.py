@@ -250,3 +250,9 @@ class TestCompanyWideLedgers(TestCase):
             create_recon_report(),
             "1,2015-12-16 12:00:00,100.0000,0,1,2015-12-16 12:00:00,100.0000\n2,2015-12-16 12:00:00,100.0000,1,2,2015-12-16 12:00:00,100.0000\n",  # nopep8
         )
+
+
+class TestLedger(TestCompanyWideLedgers):
+    def test_unicode(self):
+        self.assertEqual(
+            unicode(self.accounts_receivable), "Accounts Receivable")

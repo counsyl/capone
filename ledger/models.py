@@ -444,7 +444,7 @@ class Ledger(NonDeletableModel, models.Model):
         return self.entries.aggregate(balance=Sum('amount'))['balance']
 
     def __unicode__(self):
-        return self.name or self.entity
+        return self.name or repr(self.entity)
 
 
 class LedgerEntryQuerySet(QuerySet):
