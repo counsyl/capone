@@ -27,10 +27,6 @@ def get_all_transactions_for_object(obj, ledgers=()):
     return transactions
 
 
-def is_object_in_ledgers(obj, ledgers):
-    return get_all_transactions_for_object(obj, ledgers=ledgers).exists()
-
-
 def get_balances_for_object(obj):
     transactions = get_all_transactions_for_object(obj)
     balances = defaultdict(lambda: Decimal(0))
