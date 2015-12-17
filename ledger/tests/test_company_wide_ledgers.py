@@ -248,7 +248,15 @@ class TestCompanyWideLedgers(TestCase):
 
         self.assertEqual(
             create_recon_report(),
-            "1,2015-12-16 12:00:00,100.0000,0,1,2015-12-16 12:00:00,100.0000\n2,2015-12-16 12:00:00,100.0000,1,2,2015-12-16 12:00:00,100.0000\n",  # nopep8
+            "%s,2015-12-16 12:00:00,100.0000,%s,%s,2015-12-16 12:00:00,100.0000\n%s,2015-12-16 12:00:00,100.0000,%s,%s,2015-12-16 12:00:00,100.0000\n" %  # nopep8
+            (
+                order1.id,
+                order1.barcode,
+                credit_card_transaction1.id,
+                order2.id,
+                order2.barcode,
+                credit_card_transaction2.id,
+            ),
         )
 
 
