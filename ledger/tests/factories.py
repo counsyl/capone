@@ -23,6 +23,7 @@ class OrderFactory(factory.DjangoModelFactory):
         model = Order
 
     patient_name = factory.Sequence(lambda n: "Patient %s" % n)
+    barcode = factory.Sequence(lambda n: str(n))
 
 
 class CreditCardTransactionFactory(factory.DjangoModelFactory):
