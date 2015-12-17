@@ -215,6 +215,13 @@ class TransactionContext(object):
         self.transaction.entries.add(*entries)
 
 
+class ReconciliationTransactionContext(TransactionContext):
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.transaction.type = Transaction.RECONCILIATION
+        super(ReconciliationTransactionContext, self).__exit__(
+            exc_type, exc_val, exc_tb)
+
+
 class VoidTransaction(object):
     """Void a given Transaction.
 
