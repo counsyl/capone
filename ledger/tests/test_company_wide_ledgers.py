@@ -264,3 +264,43 @@ class TestLedger(TestCompanyWideLedgers):
     def test_unicode(self):
         self.assertEqual(
             unicode(self.accounts_receivable), "Accounts Receivable")
+
+
+class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
+    def test_restricting_get_all_transactions_by_ledger(self):
+        order = OrderFactory(amount=self.AMOUNT)
+
+        with TransactionContext(order, self.user) as txn_recognize:
+            txn_recognize.record_entries([
+                LedgerEntry(
+                    ledger=self.revenue, amount=self.AMOUNT),
+                LedgerEntry(
+                    ledger=self.accounts_receivable, amount=-self.AMOUNT),
+            ])
+
+            # NOTE: I'm fudging this TransactionContext a bit for the sake of
+            # this test: I'm attaching the txn_take_payment LedgerEntries to
+            # `order` and not to a CreditCardTransaction.
+        with TransactionContext(order, self.user) as txn_take_payment:
+            txn_take_payment.record_entries([
+                LedgerEntry(
+                    ledger=self.accounts_receivable, amount=self.AMOUNT),
+                LedgerEntry(
+                    ledger=self.stripe_unrecon, amount=-self.AMOUNT)
+            ])
+
+        self.assertEqual(
+            set(get_all_transactions_for_object(order)),
+            {txn_recognize.transaction, txn_take_payment.transaction})
+        self.assertEqual(
+            set(get_all_transactions_for_object(
+                order, ledgers=[self.revenue])),
+            {txn_recognize.transaction})
+        self.assertEqual(
+            set(get_all_transactions_for_object(
+                order, ledgers=[self.stripe_unrecon])),
+            {txn_take_payment.transaction})
+        self.assertEqual(
+            set(get_all_transactions_for_object(
+                order, ledgers=[self.revenue, self.stripe_unrecon])),
+            {txn_recognize.transaction, txn_take_payment.transaction})
