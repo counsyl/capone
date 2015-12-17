@@ -76,7 +76,8 @@ class TestVoidTransaction(TestVoidBase):
         self.assertEqual(void_txn.voids, txn.transaction)
 
         # And void the void
-        void_void_txn = VoidTransaction(void_txn, self.creation_user).record_action()
+        void_void_txn = (
+            VoidTransaction(void_txn, self.creation_user).record_action())
         self.assertEqual(void_void_txn.voids, void_txn)
 
         self.assertEqual(self.entity_ar_ledger.get_balance(), amount)
@@ -112,9 +113,15 @@ class TestVoidTransaction(TestVoidBase):
             pay_txn.record_action(Payment(self.entity, amount))
 
         # Void the charge
-        VoidTransaction(charge_txn.transaction, self.creation_user).record_action()
+        (
+            VoidTransaction(charge_txn.transaction, self.creation_user)
+            .record_action()
+        )
         # And void the payment
-        VoidTransaction(pay_txn.transaction, self.creation_user).record_action()
+        (
+            VoidTransaction(pay_txn.transaction, self.creation_user)
+            .record_action()
+        )
         self.assertEqual(self.entity_ar_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_rev_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_cash_ledger.get_balance(), D(0))
