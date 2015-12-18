@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
+from decimal import Decimal
 
 
 class Migration(migrations.Migration):
@@ -15,6 +16,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('cardholder_name', models.CharField(max_length=255)),
+                ('datetime', models.DateTimeField(auto_now_add=True)),
+                ('amount', models.DecimalField(default=Decimal('0'), max_digits=24, decimal_places=4)),
             ],
         ),
         migrations.CreateModel(
@@ -22,6 +25,9 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('patient_name', models.CharField(max_length=255)),
+                ('datetime', models.DateTimeField(auto_now_add=True)),
+                ('amount', models.DecimalField(default=Decimal('0'), max_digits=24, decimal_places=4)),
+                ('barcode', models.CharField(unique=True, max_length=255)),
             ],
         ),
     ]
