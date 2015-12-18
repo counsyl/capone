@@ -85,16 +85,16 @@ class Invoice(object):
         Given this set up:
 
             with TransactionContext(related_object, user) as txn:
-                txn.record(Charge(entity_1, 1000))
+                txn.record_action(Charge(entity_1, 1000))
 
             with TransactionContext(related_object, user) as transfer_txn:
-                transfer_txn.record(Transfer(entity_1, entity_2, 1000))
-                transfer_txn.record(WriteDown(entity_2, 800))
+                transfer_txn.record_action(Transfer(entity_1, entity_2, 1000))
+                transfer_txn.record_action(WriteDown(entity_2, 800))
 
         Now the list of LedgerEntries for entity_2 contains a Transfer and
         a WriteDown. Say we then voided example_txn.
 
-            VoidTransaction(transfer_txn.transaction).record()
+            VoidTransaction(transfer_txn.transaction).record_action()
 
         Then entity_2's ledger entries are a Transfer, WriteDown, -Transfer,
         -WriteDown. Note the first two and the last two share transactions.

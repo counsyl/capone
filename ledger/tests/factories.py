@@ -2,6 +2,8 @@ import factory  # FactoryBoy
 from django.contrib.auth import get_user_model
 
 from ledger.models import Ledger
+from ledger.tests.models import CreditCardTransaction
+from ledger.tests.models import Order
 
 
 class UserFactory(factory.DjangoModelFactory):
@@ -14,3 +16,18 @@ class UserFactory(factory.DjangoModelFactory):
 class LedgerFactory(factory.DjangoModelFactory):
     class Meta:
         model = Ledger
+
+
+class OrderFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Order
+
+    patient_name = factory.Sequence(lambda n: "Patient %s" % n)
+    barcode = factory.Sequence(lambda n: str(n))
+
+
+class CreditCardTransactionFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = CreditCardTransaction
+
+    cardholder_name = factory.Sequence(lambda n: "Cardholder %s" % n)

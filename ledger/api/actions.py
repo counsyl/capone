@@ -2,7 +2,9 @@
 """
 import itertools
 from datetime import datetime
+from functools import partial
 
+from django.conf import settings
 from django.db.transaction import atomic
 
 from ledger.models import Ledger
@@ -43,7 +45,6 @@ class LedgerEntryAction(object):
         Args:
             amount: The amount to charge the entity.
         """
-        # Remember! Debits are positive, credits are negative!
         credit = LedgerEntry(
             ledger=self._get_credit_ledger(),
             amount=-self.amount,
@@ -196,13 +197,34 @@ class TransactionContext(object):
         self.transaction.finalized = True
         self.transaction.save()
 
-    def record(self, action):
+    def record_action(self, action):
         """Record an Action in this Transaction.
 
         Args:
             action - A FinancialAction to include in this Transaction
         """
         self.transaction.entries.add(*action.get_ledger_entries())
+
+    def record_entries(self, entries):
+        """Record raw LedgerEntries: useful for cases not covered in api.actions
+
+        Args:
+            entries - An iterable of already-constructed LedgerEntry ORM
+                objects to be added to this Transaction.  They are validated as
+                having equal debits and credits, so that a Transaction will
+                always balance.
+        """
+        self.transaction.entries.add(*entries)
+
+
+class ReconciliationTransactionContext(TransactionContext):
+    """
+    A TransactionContext that produces a Recon Transaction
+    """
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.transaction.type = Transaction.RECONCILIATION
+        super(ReconciliationTransactionContext, self).__exit__(
+            exc_type, exc_val, exc_tb)
 
 
 class VoidTransaction(object):
@@ -217,9 +239,10 @@ class VoidTransaction(object):
     The do have a similar syntax to TransactionContext, though:
 
     with TransactionContext(related_object, created_by) as txn:
-        txn.record(Charge(entity, 100))
+        txn.record_action(Charge(entity, 100))
 
-    VoidTransaction(txn.transaction, created_by[, posted_timestamp]).record()
+    VoidTransaction(
+        txn.transaction, created_by[, posted_timestamp]).record_action()
 
     It is assumed that the related_object must be the same as the transaction
     you're voiding.
@@ -244,7 +267,7 @@ class VoidTransaction(object):
     def get_ledger_entries(self):
         if not hasattr(self, 'context'):
             raise Transaction.UnvoidableTransactionException(
-                "You can only use VoidTransaciton.record() to void "
+                "You can only use VoidTransaciton.record_action() to void "
                 "transactions")
 
         entries = []
@@ -255,7 +278,7 @@ class VoidTransaction(object):
                 action_type=type(self).__name__))
         return entries
 
-    def record(self):
+    def record_action(self):
         try:
             self.other_transaction.voided_by
         except Transaction.DoesNotExist:
@@ -278,6 +301,29 @@ class VoidTransaction(object):
             txn.transaction.notes = ("Voiding transaction %s" %
                                      self.other_transaction)
             self.context = txn
-            txn.record(self)  # Will call self.get_ledger_entries()
+            txn.record_action(self)  # Will call self.get_ledger_entries()
             delattr(self, 'context')
         return txn.transaction
+
+
+def _credit_or_debit(amount, reverse):
+    """
+    Return the correctly signed `amount`, abiding by `DEBITS_ARE_NEGATIVE`
+
+    This function is used to build `credit` and `debit`, which are convenience
+    functions so that keeping credit and debit signs consistent is abstracted
+    from the user.
+
+    By default, debits should be positive and credits are negative, however
+    `DEBITS_ARE_NEGATIVE` can be used to reverse this convention.
+    """
+    if amount < 0:
+        raise ValueError(
+            "Please express your Debits and Credits as positive numbers.")
+    if getattr(settings, 'DEBITS_ARE_NEGATIVE', False):
+        return amount if reverse else -amount
+    else:
+        return -amount if reverse else amount
+
+credit = partial(_credit_or_debit, reverse=True)
+debit = partial(_credit_or_debit, reverse=False)

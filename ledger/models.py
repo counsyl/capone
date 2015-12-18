@@ -250,6 +250,22 @@ class Transaction(NonDeletableModel, models.Model):
         _("Finalized transactions cannot be modified."),
         default=False)
 
+    AUTOMATIC = 'Automatic'
+    MANUAL = 'Manual'
+    RECONCILIATION = 'Reconciliation'
+    TRANSACTION_TYPE_CHOICES = (
+        (AUTOMATIC, AUTOMATIC),
+        (MANUAL, MANUAL),
+        (RECONCILIATION, RECONCILIATION),
+    )
+
+    type = models.CharField(
+        _("The type of transaction.  AUTOMATIC is for recurring tasks, and RECONCILIATION is for special Reconciliation transactions."),  # nopep8
+        choices=TRANSACTION_TYPE_CHOICES,
+        max_length=128,
+        default=MANUAL,
+    )
+
     @property
     def primary_related_object(self):
         """Get the primary related object for this Transaction."""
@@ -319,7 +335,7 @@ LEDGER_CHOICES = (
 
 
 class LedgerManager(NoDeleteManager):
-    # The value of `are_debits_positive` for this type of account.
+    # The value of `increased_by_debits` for this type of account.
     ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE = {
         LEDGER_ACCOUNTS_RECEIVABLE: True,
         LEDGER_REVENUE: False,
@@ -338,7 +354,7 @@ class LedgerManager(NoDeleteManager):
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
-            are_debits_positive=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
+            increased_by_debits=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
                 ledger_type]
         )
 
@@ -354,9 +370,18 @@ class LedgerManager(NoDeleteManager):
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
-            are_debits_positive=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
+            increased_by_debits=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
                 ledger_type]
         )
+
+    def get_or_create_ledger_by_name(self, name, increased_by_debits):
+        return Ledger.objects.get_or_create(
+            type='',
+            entity_content_type=None,
+            entity_id=None,
+            name=name,
+            increased_by_debits=increased_by_debits,
+        )[0]
 
 
 class Ledger(NonDeletableModel, models.Model):
@@ -398,8 +423,8 @@ class Ledger(NonDeletableModel, models.Model):
     name = models.CharField(
         _("Name of this ledger"),
         max_length=255)
-    are_debits_positive = models.BooleanField(
-        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits are positive and credits negative, or debits are negative and credits are positive.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
+    increased_by_debits = models.BooleanField(
+        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
     )
 
     # Fields for both types of Ledgers
@@ -417,6 +442,9 @@ class Ledger(NonDeletableModel, models.Model):
     def get_balance(self):
         """Get the current balance on this Ledger."""
         return self.entries.aggregate(balance=Sum('amount'))['balance']
+
+    def __unicode__(self):
+        return self.name or repr(self.entity)
 
 
 class LedgerEntryQuerySet(QuerySet):
@@ -463,7 +491,6 @@ class LedgerEntry(NonDeletableModel, models.Model):
 
     amount = models.DecimalField(
         _("Amount of this entry."),
-        help_text=_("Debits are positive, credits are negative."),
         max_digits=24, decimal_places=4)
     action_type = models.CharField(
         _("Type of action that created this LedgerEntry"),

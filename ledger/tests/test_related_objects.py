@@ -28,7 +28,7 @@ class _TestRelatedObjectBase(TestCase):
         amount = D(100)
         for related_object in self.related_objects_user_list:
             with TransactionContext(related_object, self.user) as txn:
-                txn.record(Charge(self.entity, amount))
+                txn.record_action(Charge(self.entity, amount))
         self.charge = txn.transaction
 
         self.related_objects_different_types = [self.charge] + \
@@ -36,7 +36,7 @@ class _TestRelatedObjectBase(TestCase):
         # Related objects can be anything, so just make it the last used
         # Charge from above
         with TransactionContext(self.charge, self.user) as txn:
-            txn.record(Charge(self.entity, amount))
+            txn.record_action(Charge(self.entity, amount))
 
     def get_queryset(self):
         raise NotImplementedError(
@@ -107,11 +107,11 @@ class TestRelatedObjectAllRequired(TestCase):
         with TransactionContext(
                 self.ro1, self.user,
                 secondary_related_objects=[self.ro2]) as txn:
-            txn.record(Charge(self.entity, D(100)))
+            txn.record_action(Charge(self.entity, D(100)))
         with TransactionContext(
                 self.ro1, self.user,
                 secondary_related_objects=[self.ro3]) as txn:
-            txn.record(Charge(self.entity, D(100)))
+            txn.record_action(Charge(self.entity, D(100)))
 
     def test_any(self):
         # When selecting for a single object, require_all has no noticeable
@@ -178,7 +178,7 @@ class TestRelatedObjectAllRequired(TestCase):
         with TransactionContext(
                 self.ro1, self.user,
                 secondary_related_objects=[self.ro2]) as txn:
-            txn.record(Charge(self.entity, D(100)))
+            txn.record_action(Charge(self.entity, D(100)))
         self.assertEqual(
             Transaction.objects.filter_by_related_objects(
                 [self.ro1, self.ro2], require_all=True).count(),
@@ -189,7 +189,7 @@ class TestRelatedObjectAllRequired(TestCase):
         with TransactionContext(
                 self.ro1, self.user,
                 secondary_related_objects=[self.ro2, self.ledger]) as txn:
-            txn.record(Charge(self.entity, D(100)))
+            txn.record_action(Charge(self.entity, D(100)))
         self.assertEqual(
             Transaction.objects.filter_by_related_objects(
                 [self.ro1, self.ro2], require_all=True).count(),
