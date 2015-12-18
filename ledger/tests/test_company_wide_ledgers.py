@@ -6,6 +6,8 @@ from django.test import TestCase
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
+from ledger.api.actions import credit
+from ledger.api.actions import debit
 from ledger.api.actions import ReconciliationTransactionContext
 from ledger.api.actions import TransactionContext
 from ledger.api.queries import get_all_transactions_for_object
@@ -106,9 +108,11 @@ class TestCompanyWideLedgers(TestCase):
         with TransactionContext(order, self.user) as txn_recognize:
             txn_recognize.record_entries([
                 LedgerEntry(
-                    ledger=self.revenue, amount=self.AMOUNT),
+                    ledger=self.revenue,
+                    amount=credit(self.AMOUNT)),
                 LedgerEntry(
-                    ledger=self.accounts_receivable, amount=-self.AMOUNT),
+                    ledger=self.accounts_receivable,
+                    amount=debit(self.AMOUNT)),
             ])
 
         # assert that the correct entries were created
@@ -119,8 +123,8 @@ class TestCompanyWideLedgers(TestCase):
         self.assertEqual(
             get_balances_for_object(order),
             {
-                self.revenue: self.AMOUNT,
-                self.accounts_receivable: -self.AMOUNT,
+                self.revenue: -self.AMOUNT,
+                self.accounts_receivable: self.AMOUNT,
             },
         )
 
@@ -130,9 +134,11 @@ class TestCompanyWideLedgers(TestCase):
                 credit_card_transaction, self.user) as txn_take_payment:
             txn_take_payment.record_entries([
                 LedgerEntry(
-                    ledger=self.accounts_receivable, amount=self.AMOUNT),
+                    ledger=self.accounts_receivable,
+                    amount=credit(self.AMOUNT)),
                 LedgerEntry(
-                    ledger=self.stripe_unrecon, amount=-self.AMOUNT)
+                    ledger=self.stripe_unrecon,
+                    amount=debit(self.AMOUNT))
             ])
 
         # assert that the correct entries were created
@@ -143,8 +149,8 @@ class TestCompanyWideLedgers(TestCase):
         self.assertEqual(
             get_balances_for_object(credit_card_transaction),
             {
-                self.accounts_receivable: self.AMOUNT,
-                self.stripe_unrecon: -self.AMOUNT,
+                self.accounts_receivable: -self.AMOUNT,
+                self.stripe_unrecon: self.AMOUNT,
             },
         )
 
@@ -156,8 +162,12 @@ class TestCompanyWideLedgers(TestCase):
                 secondary_related_objects=[credit_card_transaction]
         ) as txn_reconcile:
             txn_reconcile.record_entries([
-                LedgerEntry(ledger=self.stripe_unrecon, amount=self.AMOUNT),
-                LedgerEntry(ledger=self.stripe_recon, amount=-self.AMOUNT)
+                LedgerEntry(
+                    ledger=self.stripe_unrecon,
+                    amount=credit(self.AMOUNT)),
+                LedgerEntry(
+                    ledger=self.stripe_recon,
+                    amount=debit(self.AMOUNT))
             ])
 
         # assert that the correct entries were created
@@ -172,8 +182,8 @@ class TestCompanyWideLedgers(TestCase):
             {
                 self.accounts_receivable: 0,
                 self.stripe_unrecon: 0,
-                self.stripe_recon: -self.AMOUNT,
-                self.revenue: self.AMOUNT,
+                self.stripe_recon: self.AMOUNT,
+                self.revenue: -self.AMOUNT,
             },
         )
 
@@ -203,18 +213,22 @@ class TestCompanyWideLedgers(TestCase):
             with TransactionContext(order, self.user) as txn_recognize:
                 txn_recognize.record_entries([
                     LedgerEntry(
-                        ledger=self.revenue, amount=self.AMOUNT),
+                        ledger=self.revenue,
+                        amount=credit(self.AMOUNT)),
                     LedgerEntry(
-                        ledger=self.accounts_receivable, amount=-self.AMOUNT),
+                        ledger=self.accounts_receivable,
+                        amount=debit(self.AMOUNT)),
                 ])
 
             with TransactionContext(
                     credit_card_transaction, self.user) as txn_take_payment:
                 txn_take_payment.record_entries([
                     LedgerEntry(
-                        ledger=self.accounts_receivable, amount=self.AMOUNT),
+                        ledger=self.accounts_receivable,
+                        amount=credit(self.AMOUNT)),
                     LedgerEntry(
-                        ledger=self.stripe_unrecon, amount=-self.AMOUNT)
+                        ledger=self.stripe_unrecon,
+                        amount=debit(self.AMOUNT))
                 ])
 
             with ReconciliationTransactionContext(
@@ -224,9 +238,11 @@ class TestCompanyWideLedgers(TestCase):
             ) as txn_reconcile:
                 txn_reconcile.record_entries([
                     LedgerEntry(
-                        ledger=self.stripe_unrecon, amount=self.AMOUNT),
+                        ledger=self.stripe_unrecon,
+                        amount=credit(self.AMOUNT)),
                     LedgerEntry(
-                        ledger=self.stripe_recon, amount=-self.AMOUNT)
+                        ledger=self.stripe_recon,
+                        amount=debit(self.AMOUNT))
                 ])
 
             self.assertEqual(
@@ -236,15 +252,15 @@ class TestCompanyWideLedgers(TestCase):
                 {
                     self.accounts_receivable: 0,
                     self.stripe_unrecon: 0,
-                    self.stripe_recon: -self.AMOUNT,
-                    self.revenue: self.AMOUNT,
+                    self.stripe_recon: self.AMOUNT,
+                    self.revenue: -self.AMOUNT,
                 },
             )
 
         self.assertEqual(self.accounts_receivable.get_balance(), 0)
-        self.assertEqual(self.stripe_recon.get_balance(), -self.AMOUNT * 2)
+        self.assertEqual(self.stripe_recon.get_balance(), self.AMOUNT * 2)
         self.assertEqual(self.stripe_unrecon.get_balance(), 0)
-        self.assertEqual(self.revenue.get_balance(), self.AMOUNT * 2)
+        self.assertEqual(self.revenue.get_balance(), -self.AMOUNT * 2)
 
         self.assertEqual(
             create_recon_report(),
@@ -273,9 +289,11 @@ class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
         with TransactionContext(order, self.user) as txn_recognize:
             txn_recognize.record_entries([
                 LedgerEntry(
-                    ledger=self.revenue, amount=self.AMOUNT),
+                    ledger=self.revenue,
+                    amount=credit(self.AMOUNT)),
                 LedgerEntry(
-                    ledger=self.accounts_receivable, amount=-self.AMOUNT),
+                    ledger=self.accounts_receivable,
+                    amount=debit(self.AMOUNT)),
             ])
 
         # NOTE: I'm fudging this TransactionContext a bit for the sake of this
@@ -284,9 +302,11 @@ class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
         with TransactionContext(order, self.user) as txn_take_payment:
             txn_take_payment.record_entries([
                 LedgerEntry(
-                    ledger=self.accounts_receivable, amount=self.AMOUNT),
+                    ledger=self.accounts_receivable,
+                    amount=credit(self.AMOUNT)),
                 LedgerEntry(
-                    ledger=self.stripe_unrecon, amount=-self.AMOUNT)
+                    ledger=self.stripe_unrecon,
+                    amount=debit(self.AMOUNT))
             ])
 
         self.assertEqual(

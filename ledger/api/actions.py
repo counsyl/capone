@@ -2,7 +2,9 @@
 """
 import itertools
 from datetime import datetime
+from functools import partial
 
+from django.conf import settings
 from django.db.transaction import atomic
 
 from ledger.models import Ledger
@@ -299,3 +301,17 @@ class VoidTransaction(object):
             txn.record_action(self)  # Will call self.get_ledger_entries()
             delattr(self, 'context')
         return txn.transaction
+
+
+def _credit_or_debit(amount, reverse):
+    if amount < 0:
+        raise ValueError(
+            "Please express your Debits and Credits as positive numbers.")
+    if getattr(settings, 'DEBITS_ARE_NEGATIVE', False):
+        return amount if reverse else -amount
+    else:
+        return -amount if reverse else amount
+
+
+credit = partial(_credit_or_debit, reverse=True)
+debit = partial(_credit_or_debit, reverse=False)
