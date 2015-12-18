@@ -278,9 +278,9 @@ class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
                     ledger=self.accounts_receivable, amount=-self.AMOUNT),
             ])
 
-            # NOTE: I'm fudging this TransactionContext a bit for the sake of
-            # this test: I'm attaching the txn_take_payment LedgerEntries to
-            # `order` and not to a CreditCardTransaction.
+        # NOTE: I'm fudging this TransactionContext a bit for the sake of this
+        # test: I'm attaching the txn_take_payment LedgerEntries to `order` and
+        # not to a CreditCardTransaction.
         with TransactionContext(order, self.user) as txn_take_payment:
             txn_take_payment.record_entries([
                 LedgerEntry(
