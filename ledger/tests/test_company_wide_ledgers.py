@@ -51,7 +51,7 @@ def get_full_ledger_for_object_using_reconciliation(obj):
     for linked_object in linked_objects:
         transactions.extend(get_all_transactions_for_object(linked_object))
 
-    # Cast to set() to de-dupe entries, since obj should appear twice for
+    # Cast to set() to de-dupe entries, since `obj` should appear twice for
     # a reconciled entry.
     return set(transactions)
 
@@ -96,8 +96,8 @@ class TestCompanyWideLedgers(TestCase):
         self.AMOUNT = D(100)
         self.user = UserFactory()
 
-        # create four company-wide ledgers: "Stripe Cash (unreconciled)",
-        # "Stripe Cash (reconciled)", "A/R", and "Revenue"
+        # Create four company-wide ledgers: "Stripe Cash (unreconciled)",
+        # "Stripe Cash (reconciled)", "A/R", and "Revenue".
         self.accounts_receivable = Ledger.objects.get_or_create_ledger_by_name(
             'Accounts Receivable',
             increased_by_debits=True,
@@ -138,14 +138,14 @@ class TestCompanyWideLedgers(TestCase):
         order = OrderFactory()
         credit_card_transaction = CreditCardTransactionFactory()
 
-        # assert that this Order looks "unrecognized"
+        # Assert that this Order looks "unrecognized".
         self.assertEqual(
             get_balances_for_object(order),
             {},
         )
 
-        # add an entry debiting AR and crediting Revenue: this entry should
-        # reference the Order
+        # Add an entry debiting AR and crediting Revenue: this entry should
+        # reference the Order.
         with TransactionContext(order, self.user) as txn_recognize:
             txn_recognize.record_entries([
                 LedgerEntry(
@@ -156,11 +156,11 @@ class TestCompanyWideLedgers(TestCase):
                     amount=debit(self.AMOUNT)),
             ])
 
-        # assert that the correct entries were created
+        # Assert that the correct entries were created.
         self.assertEqual(LedgerEntry.objects.count(), 2)
         self.assertEqual(Transaction.objects.count(), 1)
 
-        # assert that this Order looks "recognized"
+        # Assert that this Order looks "recognized".
         self.assertEqual(
             get_balances_for_object(order),
             {
@@ -169,8 +169,9 @@ class TestCompanyWideLedgers(TestCase):
             },
         )
 
-        # add an entry crediting AR and debiting Stripe/un: this entry should
-        # reference the PGXX
+        # Add an entry crediting "A/R" and debiting "Stripe Cash
+        # (unreconciled)": this entry should reference the
+        # CreditCardTransaction.
         with TransactionContext(
                 credit_card_transaction, self.user) as txn_take_payment:
             txn_take_payment.record_entries([
@@ -182,11 +183,11 @@ class TestCompanyWideLedgers(TestCase):
                     amount=debit(self.AMOUNT))
             ])
 
-        # assert that the correct entries were created
+        # Assert that the correct entries were created
         self.assertEqual(LedgerEntry.objects.count(), 4)
         self.assertEqual(Transaction.objects.count(), 2)
 
-        # assert the credit card transaction is in stripe_unrecon
+        # Assert the CreditCardTransaction is in "Stripe Cash (unreconciled)".
         self.assertEqual(
             get_balances_for_object(credit_card_transaction),
             {
@@ -195,8 +196,9 @@ class TestCompanyWideLedgers(TestCase):
             },
         )
 
-        # add an entry crediting Stripe/un and debiting Stripe/recon: this
-        # entry should reference both an Order and a PGXX
+        # Add an entry crediting "Stripe Cash (Unreconciled)" and debiting
+        # "Stripe Cash Reconciled": this entry should reference both an Order
+        # and a CreditCardTransaction.
         with ReconciliationTransactionContext(
                 order,
                 self.user,
@@ -211,11 +213,11 @@ class TestCompanyWideLedgers(TestCase):
                     amount=debit(self.AMOUNT))
             ])
 
-        # assert that the correct entries were created
+        # Assert that the correct entries were created.
         self.assertEqual(LedgerEntry.objects.count(), 6)
         self.assertEqual(Transaction.objects.count(), 3)
 
-        # assert that revenue is recognized and reconciled
+        # Assert that revenue is recognized and reconciled.
         self.assertEqual(
             get_ledger_balances_for_transactions(
                 get_full_ledger_for_object_using_reconciliation(
