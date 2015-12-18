@@ -21,6 +21,21 @@ from ledger.tests.models import Order
 
 
 def get_full_ledger_for_object_using_reconciliation(obj):
+    """
+    Get all Transactions for all objects related to `obj`.
+
+    "Related to" above is defined as any object that is in
+    `Transaction.related_objects` along with `obj` where that Transaction is of
+    type `RECONCILIATION`.
+
+    For instance, if a CreditCardTransaction has been reconciled with
+    a particular Order, this function should first find that Reconciliation
+    Transaction, and then get all Transactions that are either attached to
+    `obj` or any other object that was attached to the Reconciliation
+    Transaction, in this case the Revenue Recognition for the original Order,
+    the original ledger entry for the CreditCardTransaction, and then finally,
+    the Reconciliation entry.
+    """
     recon_transactions = (
         get_all_transactions_for_object(obj)
         .filter(type=Transaction.RECONCILIATION)
@@ -42,6 +57,18 @@ def get_full_ledger_for_object_using_reconciliation(obj):
 
 
 def create_recon_report():
+    """
+    Return a report for all existing Orders showing their Recon status
+
+    This report has one entry for each order and gives important information
+    about that Order: ID, datetime created, the amount originally charged for
+    it, and its barcode: its unique identifier in the lab.  Then the remaining
+    three columns contain the ID, create datetime, and barcode for the
+    CreditCardTransaction that is reconciled to it.
+
+    This report is meant to mimic the one with the same columns we create in
+    Looker to perform Revenue Recognition.
+    """
     report = ""
     for transaction in Transaction.objects.filter(
             type=Transaction.RECONCILIATION):
@@ -92,8 +119,22 @@ class TestCompanyWideLedgers(TestCase):
         """
         Test ledger behavior with a Recon and Recog proof-of-principle
 
-        TODO: more
-        """
+        This test creates an Order and a CreditCardTransaction and using the
+        four Ledgers created in setUp, it makes all of the ledger entries that
+        an Order and Transaction would be expected to have.  There are three,
+        specifically: Revenue Recognition (CR: Revenue, DR:A/R), recording
+        incoming cash (CR: A/R, DR: Stripe Cash (unreconciled)) and
+        Reconciliation (CR: Stripe Cash (reconciled), DR: Stripe Cash
+        (unreconciled)).
+
+        In table form:
+
+        Event                   | Accounts Receivable (unreconciled) | Revenue | Cash (unreconciled) | Cash (reconciled) | Evidence Models
+        ----------------------- | ---------------------------------- | ------- | ------------------- | ----------------- | --------------------------------------------------------------
+        Test is complete        | -$500                              | +$500   |                     |                   | `Order`
+        Patient pays            | +$500                              |         | -$500               |                   | `CreditCardTransaction`
+        Payments are reconciled |                                    |         | +$500               | -$500             | both `Order` and `CreditCardTransaction`
+        """  # nopep8
         order = OrderFactory()
         credit_card_transaction = CreditCardTransactionFactory()
 
@@ -188,6 +229,11 @@ class TestCompanyWideLedgers(TestCase):
         )
 
     def test_creating_demo_reconciliation_report(self):
+        """
+        Create a Reconciliation Report like the one we need in Website.
+
+        See `create_recon_report` for more details.
+        """
         new_now = datetime(2015, 12, 16, 12, 0, 0, 0)
         order1 = OrderFactory(amount=self.AMOUNT)
         order2 = OrderFactory(amount=self.AMOUNT)

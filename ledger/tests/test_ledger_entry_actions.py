@@ -304,6 +304,9 @@ class TestRefundBalance(LedgerEntryActionSetUp):
 
 
 class TestCreditAndDebit(TestCase):
+    """
+    Test that `credit` and `debit` return the correctly signed amounts.
+    """
     AMOUNT = D(100)
 
     def assertPositive(self, amount):

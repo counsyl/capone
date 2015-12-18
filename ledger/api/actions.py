@@ -218,6 +218,9 @@ class TransactionContext(object):
 
 
 class ReconciliationTransactionContext(TransactionContext):
+    """
+    A TransactionContext that produces a Recon Transaction
+    """
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.transaction.type = Transaction.RECONCILIATION
         super(ReconciliationTransactionContext, self).__exit__(
@@ -304,6 +307,16 @@ class VoidTransaction(object):
 
 
 def _credit_or_debit(amount, reverse):
+    """
+    Return the correctly signed `amount`, abiding by `DEBITS_ARE_NEGATIVE`
+
+    This function is used to build `credit` and `debit`, which are convenience
+    functions so that keeping credit and debit signs consistent is abstracted
+    from the user.
+
+    By default, debits should be positive and credits are negative, however
+    `DEBITS_ARE_NEGATIVE` can be used to reverse this convention.
+    """
     if amount < 0:
         raise ValueError(
             "Please express your Debits and Credits as positive numbers.")
@@ -311,7 +324,6 @@ def _credit_or_debit(amount, reverse):
         return amount if reverse else -amount
     else:
         return -amount if reverse else amount
-
 
 credit = partial(_credit_or_debit, reverse=True)
 debit = partial(_credit_or_debit, reverse=False)
