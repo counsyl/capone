@@ -73,19 +73,19 @@ class TestCompanyWideLedgers(TestCase):
         # "Stripe Cash (reconciled)", "A/R", and "Revenue"
         self.accounts_receivable = Ledger.objects.get_or_create_ledger_by_name(
             'Accounts Receivable',
-            are_debits_positive=True,
+            increased_by_debits=True,
         )
         self.stripe_unrecon = Ledger.objects.get_or_create_ledger_by_name(
             'Stripe Cash (unreconciled)',
-            are_debits_positive=True,
+            increased_by_debits=True,
         )
         self.stripe_recon = Ledger.objects.get_or_create_ledger_by_name(
             'Stripe Cash (reconciled)',
-            are_debits_positive=True,
+            increased_by_debits=True,
         )
         self.revenue = Ledger.objects.get_or_create_ledger_by_name(
             'Revenue',
-            are_debits_positive=False,
+            increased_by_debits=False,
         )
 
     def test_using_company_wide_ledgers_for_reconciliation(self):

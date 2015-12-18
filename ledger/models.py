@@ -335,7 +335,7 @@ LEDGER_CHOICES = (
 
 
 class LedgerManager(NoDeleteManager):
-    # The value of `are_debits_positive` for this type of account.
+    # The value of `increased_by_debits` for this type of account.
     ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE = {
         LEDGER_ACCOUNTS_RECEIVABLE: True,
         LEDGER_REVENUE: False,
@@ -354,7 +354,7 @@ class LedgerManager(NoDeleteManager):
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
-            are_debits_positive=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
+            increased_by_debits=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
                 ledger_type]
         )
 
@@ -370,17 +370,17 @@ class LedgerManager(NoDeleteManager):
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
-            are_debits_positive=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
+            increased_by_debits=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
                 ledger_type]
         )
 
-    def get_or_create_ledger_by_name(self, name, are_debits_positive):
+    def get_or_create_ledger_by_name(self, name, increased_by_debits):
         return Ledger.objects.get_or_create(
             type='',
             entity_content_type=None,
             entity_id=None,
             name=name,
-            are_debits_positive=are_debits_positive,
+            increased_by_debits=increased_by_debits,
         )[0]
 
 
@@ -423,8 +423,8 @@ class Ledger(NonDeletableModel, models.Model):
     name = models.CharField(
         _("Name of this ledger"),
         max_length=255)
-    are_debits_positive = models.BooleanField(
-        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits are positive and credits negative, or debits are negative and credits are positive.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
+    increased_by_debits = models.BooleanField(
+        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
     )
 
     # Fields for both types of Ledgers
