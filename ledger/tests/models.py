@@ -1,6 +1,6 @@
 """
 These models are used by the `ledger` tests to demonstrate how Orders and
-CreditCardTransactions could he handeled in your system.
+CreditCardTransactions could be handled in your system.
 """
 from decimal import Decimal
 
