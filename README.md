@@ -20,6 +20,13 @@ we actually have a new ledger for every customer. In paper Ledgers this is
 often just condensed down into a single ledger, but we don't have the
 constraints of paper!)
 
+Note that the default convention in `ledger` is to store debits as positive
+numbers and credits as negative numbers.  This convention is common but
+completely arbitrary.  If you want to switch the convention around, you can set
+`DEBITS_ARE_NEGATIVE` to `True` in your settings.py file.  By default, that
+constant doesn't need to be defined, and if it remains undefined, `ledger` will
+interpret its value as `False`.
+
 ### Charges
 Let's record a charge of $900 to Wile E.
 
