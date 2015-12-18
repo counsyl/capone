@@ -96,18 +96,18 @@ class TestCompanyWideLedgers(TestCase):
         self.AMOUNT = D(100)
         self.user = UserFactory()
 
-        # Create four company-wide ledgers: "Stripe Cash (unreconciled)",
-        # "Stripe Cash (reconciled)", "A/R", and "Revenue".
+        # Create four company-wide ledgers: "Cash (unreconciled)",
+        # "Cash (reconciled)", "A/R", and "Revenue".
         self.accounts_receivable = Ledger.objects.get_or_create_ledger_by_name(
             'Accounts Receivable',
             increased_by_debits=True,
         )
-        self.stripe_unrecon = Ledger.objects.get_or_create_ledger_by_name(
-            'Stripe Cash (unreconciled)',
+        self.cash_unrecon = Ledger.objects.get_or_create_ledger_by_name(
+            'Cash (unreconciled)',
             increased_by_debits=True,
         )
-        self.stripe_recon = Ledger.objects.get_or_create_ledger_by_name(
-            'Stripe Cash (reconciled)',
+        self.cash_recon = Ledger.objects.get_or_create_ledger_by_name(
+            'Cash (reconciled)',
             increased_by_debits=True,
         )
         self.revenue = Ledger.objects.get_or_create_ledger_by_name(
@@ -123,9 +123,8 @@ class TestCompanyWideLedgers(TestCase):
         four Ledgers created in setUp, it makes all of the ledger entries that
         an Order and Transaction would be expected to have.  There are three,
         specifically: Revenue Recognition (CR: Revenue, DR:A/R), recording
-        incoming cash (CR: A/R, DR: Stripe Cash (unreconciled)) and
-        Reconciliation (CR: Stripe Cash (reconciled), DR: Stripe Cash
-        (unreconciled)).
+        incoming cash (CR: A/R, DR: Cash (unreconciled)) and Reconciliation
+        (CR: Cash (reconciled), DR: Cash (unreconciled)).
 
         In table form:
 
@@ -169,9 +168,8 @@ class TestCompanyWideLedgers(TestCase):
             },
         )
 
-        # Add an entry crediting "A/R" and debiting "Stripe Cash
-        # (unreconciled)": this entry should reference the
-        # CreditCardTransaction.
+        # Add an entry crediting "A/R" and debiting "Cash (unreconciled)": this
+        # entry should reference the CreditCardTransaction.
         with TransactionContext(
                 credit_card_transaction, self.user) as txn_take_payment:
             txn_take_payment.record_entries([
@@ -179,7 +177,7 @@ class TestCompanyWideLedgers(TestCase):
                     ledger=self.accounts_receivable,
                     amount=credit(self.AMOUNT)),
                 LedgerEntry(
-                    ledger=self.stripe_unrecon,
+                    ledger=self.cash_unrecon,
                     amount=debit(self.AMOUNT))
             ])
 
@@ -187,18 +185,18 @@ class TestCompanyWideLedgers(TestCase):
         self.assertEqual(LedgerEntry.objects.count(), 4)
         self.assertEqual(Transaction.objects.count(), 2)
 
-        # Assert the CreditCardTransaction is in "Stripe Cash (unreconciled)".
+        # Assert the CreditCardTransaction is in "Cash (unreconciled)".
         self.assertEqual(
             get_balances_for_object(credit_card_transaction),
             {
                 self.accounts_receivable: -self.AMOUNT,
-                self.stripe_unrecon: self.AMOUNT,
+                self.cash_unrecon: self.AMOUNT,
             },
         )
 
-        # Add an entry crediting "Stripe Cash (Unreconciled)" and debiting
-        # "Stripe Cash Reconciled": this entry should reference both an Order
-        # and a CreditCardTransaction.
+        # Add an entry crediting "Cash (Unreconciled)" and debiting "Cash
+        # (Reconciled)": this entry should reference both an Order and
+        # a CreditCardTransaction.
         with ReconciliationTransactionContext(
                 order,
                 self.user,
@@ -206,10 +204,10 @@ class TestCompanyWideLedgers(TestCase):
         ) as txn_reconcile:
             txn_reconcile.record_entries([
                 LedgerEntry(
-                    ledger=self.stripe_unrecon,
+                    ledger=self.cash_unrecon,
                     amount=credit(self.AMOUNT)),
                 LedgerEntry(
-                    ledger=self.stripe_recon,
+                    ledger=self.cash_recon,
                     amount=debit(self.AMOUNT))
             ])
 
@@ -224,8 +222,8 @@ class TestCompanyWideLedgers(TestCase):
                     order)),
             {
                 self.accounts_receivable: 0,
-                self.stripe_unrecon: 0,
-                self.stripe_recon: self.AMOUNT,
+                self.cash_unrecon: 0,
+                self.cash_recon: self.AMOUNT,
                 self.revenue: -self.AMOUNT,
             },
         )
@@ -275,7 +273,7 @@ class TestCompanyWideLedgers(TestCase):
                         ledger=self.accounts_receivable,
                         amount=credit(self.AMOUNT)),
                     LedgerEntry(
-                        ledger=self.stripe_unrecon,
+                        ledger=self.cash_unrecon,
                         amount=debit(self.AMOUNT))
                 ])
 
@@ -286,10 +284,10 @@ class TestCompanyWideLedgers(TestCase):
             ) as txn_reconcile:
                 txn_reconcile.record_entries([
                     LedgerEntry(
-                        ledger=self.stripe_unrecon,
+                        ledger=self.cash_unrecon,
                         amount=credit(self.AMOUNT)),
                     LedgerEntry(
-                        ledger=self.stripe_recon,
+                        ledger=self.cash_recon,
                         amount=debit(self.AMOUNT))
                 ])
 
@@ -299,15 +297,15 @@ class TestCompanyWideLedgers(TestCase):
                         order)),
                 {
                     self.accounts_receivable: 0,
-                    self.stripe_unrecon: 0,
-                    self.stripe_recon: self.AMOUNT,
+                    self.cash_unrecon: 0,
+                    self.cash_recon: self.AMOUNT,
                     self.revenue: -self.AMOUNT,
                 },
             )
 
         self.assertEqual(self.accounts_receivable.get_balance(), 0)
-        self.assertEqual(self.stripe_recon.get_balance(), self.AMOUNT * 2)
-        self.assertEqual(self.stripe_unrecon.get_balance(), 0)
+        self.assertEqual(self.cash_recon.get_balance(), self.AMOUNT * 2)
+        self.assertEqual(self.cash_unrecon.get_balance(), 0)
         self.assertEqual(self.revenue.get_balance(), -self.AMOUNT * 2)
 
         self.assertEqual(
@@ -353,7 +351,7 @@ class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
                     ledger=self.accounts_receivable,
                     amount=credit(self.AMOUNT)),
                 LedgerEntry(
-                    ledger=self.stripe_unrecon,
+                    ledger=self.cash_unrecon,
                     amount=debit(self.AMOUNT))
             ])
 
@@ -366,9 +364,9 @@ class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
             {txn_recognize.transaction})
         self.assertEqual(
             set(get_all_transactions_for_object(
-                order, ledgers=[self.stripe_unrecon])),
+                order, ledgers=[self.cash_unrecon])),
             {txn_take_payment.transaction})
         self.assertEqual(
             set(get_all_transactions_for_object(
-                order, ledgers=[self.revenue, self.stripe_unrecon])),
+                order, ledgers=[self.revenue, self.cash_unrecon])),
             {txn_recognize.transaction, txn_take_payment.transaction})
