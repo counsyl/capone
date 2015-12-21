@@ -425,6 +425,7 @@ class Ledger(NonDeletableModel, models.Model):
         max_length=255)
     increased_by_debits = models.BooleanField(
         help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
+        default=None,
     )
 
     # Fields for both types of Ledgers
