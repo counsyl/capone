@@ -336,7 +336,7 @@ LEDGER_CHOICES = (
 
 class LedgerManager(NoDeleteManager):
     # The value of `increased_by_debits` for this type of account.
-    ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE = {
+    ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS = {
         LEDGER_ACCOUNTS_RECEIVABLE: True,
         LEDGER_REVENUE: False,
         LEDGER_CASH: True,
@@ -354,7 +354,7 @@ class LedgerManager(NoDeleteManager):
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
-            increased_by_debits=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
+            increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
                 ledger_type]
         )
 
@@ -370,7 +370,7 @@ class LedgerManager(NoDeleteManager):
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
-            increased_by_debits=self.ACCOUNT_TYPE_TO_DEBITS_ARE_POSITIVE[
+            increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
                 ledger_type]
         )
 
