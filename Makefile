@@ -47,6 +47,10 @@ migrate: develop
 	createdb ledger_test_db
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=ledger.tests.settings --noinput
 
+.PHONY: makemigrations
+makemigrations: develop
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py makemigrations --settings=ledger.tests.settings
+
 .PHONY: shell
 shell: migrate
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=ledger.tests.settings
