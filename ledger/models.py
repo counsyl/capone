@@ -364,11 +364,6 @@ class Ledger(NonDeletableModel, models.Model):
 
     # Fields for both types of Ledgers
 
-    transactions = models.ManyToManyField(
-        Transaction,
-        through='LedgerEntry',
-    )
-
     objects = LedgerManager()
 
     class Meta:
