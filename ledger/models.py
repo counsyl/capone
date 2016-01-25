@@ -174,7 +174,10 @@ class TransactionQuerySet(ExplicitTimestampQuerysetMixin, QuerySet):
 
         if require_all:
             qs = self
-            ctypes = ContentType.objects.get_for_models(*related_objects)
+            ctypes = {
+                related_object: ContentType.objects.get_for_model(related_object)  # nopep8
+                for related_object in related_objects
+            }
             for related_object in related_objects:
                 ctype = ctypes[related_object]
                 qs = qs.filter(
