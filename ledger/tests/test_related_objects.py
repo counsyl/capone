@@ -1,5 +1,6 @@
 from decimal import Decimal as D
 
+from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 
 from ledger.api.actions import Charge
@@ -76,6 +77,12 @@ class _TestRelatedObjectBase(TestCase):
                          related_txns.count())
 
     def test_filter_by_single_related_object(self):
+        related_txns = self.get_queryset().filter_by_related_objects(
+            [self.charge])
+        self.assertEqual(1, related_txns.count())
+
+    def test_filter_by_single_related_object_no_content_type_cache(self):
+        ContentType.objects.clear_cache()
         related_txns = self.get_queryset().filter_by_related_objects(
             [self.charge])
         self.assertEqual(1, related_txns.count())
