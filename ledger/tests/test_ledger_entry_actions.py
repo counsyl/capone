@@ -4,8 +4,6 @@ from decimal import Decimal as D
 
 from django.contrib.auth.models import User
 from django.test import TestCase
-from django.utils.timezone import get_current_timezone
-from pytz import UTC
 
 from ledger.api.actions import Charge
 from ledger.api.actions import credit
@@ -46,28 +44,7 @@ class LedgerEntryActionSetUp(TestCase):
             self.entity_2, LEDGER_CASH)
 
 
-class TestPostedTimestampTimezonesMixin(object):
-    def _populate_timezones(self):
-        self.local_timezone = get_current_timezone()
-        # A timestamp that happens shortly before a US/Pacific
-        # daylight savings time fall-back event.
-        self.fall_back_utc = datetime(2002, 10, 27, 8, 30, 0, tzinfo=UTC)
-        self.fall_back_local = self._localize(self.fall_back_utc)
-
-        # A timestamp whose naive version, when interpreted as if
-        # it was in US/Pacific, happens shortly after a daylight
-        # savings time fall-forward event.
-        self.spring_forward_utc = datetime(2002, 4, 7, 2, 30, 0, tzinfo=UTC)
-        self.spring_forward_local = self._localize(self.spring_forward_utc)
-
-    def _localize(self, timestamp):
-        if not hasattr(timestamp, 'tzinfo') or not timestamp.tzinfo:
-            timestamp = self.local_timezone.localize(timestamp)
-        return timestamp.astimezone(self.local_timezone)
-
-
-class _TestLedgerActionBase(TestCase,
-                            TestPostedTimestampTimezonesMixin):
+class _TestLedgerActionBase(TestCase):
     """Child classes must define ACTION_CLASS."""
     ACTION_CLASS = None
 
@@ -77,7 +54,6 @@ class _TestLedgerActionBase(TestCase,
         self.creation_user = UserFactory()
         self.transaction = TransactionContext(
             self.creation_user, self.creation_user)
-        self._populate_timezones()
 
     def test_number_entries(self):
         """Test that recording an amount generates two LedgerEntries."""
@@ -109,7 +85,8 @@ class _TestLedgerActionBase(TestCase,
         self.assertNotEqual(txn_1, txn_2)
         self.assertEqual(txn_2.transaction.entries.count(), 4)
 
-    def _test_timestamp(self, timestamp):
+    def test_timestamp(self):
+        timestamp = datetime.now()
         with TransactionContext(
                 self.creation_user,
                 self.creation_user,
@@ -118,18 +95,6 @@ class _TestLedgerActionBase(TestCase,
         self.assertEqual(txn.transaction.posted_timestamp, timestamp)
         txn = Transaction.objects.get(id=txn.transaction.id)
         self.assertEqual(txn.posted_timestamp, timestamp)
-
-    def test_fall_back_local(self):
-        self._test_timestamp(self.fall_back_local)
-
-    def test_fall_back_utc(self):
-        self._test_timestamp(self.fall_back_utc)
-
-    def test_spring_forward_local(self):
-        self._test_timestamp(self.spring_forward_local)
-
-    def test_spring_forward_utc(self):
-        self._test_timestamp(self.spring_forward_utc)
 
 
 class TestCharge(_TestLedgerActionBase):
