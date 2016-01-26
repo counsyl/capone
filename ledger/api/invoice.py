@@ -20,7 +20,7 @@ class Invoice(object):
                 of objects of different types. If not supplied, all objects
                 in the requested time range will be considered.
             timestamp: The UTC time to filter Transactions by posted_timestamp.
-                Defaults to datetime.utcnow().
+                Defaults to datetime.now().
             creation_timestamp: The UTC time to filter Transactions by
                 creation_timestamp. This allows you to regenerate an Invoice
                 from the past that doesn't include any recent, backdated,
@@ -33,10 +33,10 @@ class Invoice(object):
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk)
         if not timestamp:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now()
         self.timestamp = timestamp
         if not creation_timestamp:
-            creation_timestamp = datetime.utcnow()
+            creation_timestamp = datetime.now()
         self.creation_timestamp = creation_timestamp
         InvoiceGenerationRecord.objects.create(
             _invoice_timestamp=timestamp,

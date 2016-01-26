@@ -170,12 +170,12 @@ class TransactionContext(object):
                 eg an Order.
             created_by: The User that initiated this Transaction.
             posted_timestamp: The UTC time at which this transaction was
-                posted. Defaults to utcnow.
+                posted. Defaults to now.
             secondary_related_objects: A list or queryset of other related
                 objects you want to associate with this transaction.
         """
         if not posted_timestamp:
-            posted_timestamp = datetime.utcnow()
+            posted_timestamp = datetime.now()
         posted_timestamp = posted_timestamp
 
         self.transaction = Transaction.objects.create_for_related_object(

@@ -180,7 +180,7 @@ class TestVoidTimestamps(TestVoidBase):
             charge_txn.record_action(Charge(self.entity, amount))
 
         # Then void it
-        now = datetime.utcnow()
+        now = datetime.now()
         void_txn = VoidTransaction(
             charge_txn.transaction, self.creation_user,
             posted_timestamp=now).record_action()
