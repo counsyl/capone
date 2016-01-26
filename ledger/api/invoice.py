@@ -6,7 +6,6 @@ from django.contrib.contenttypes.models import ContentType
 from ledger.models import InvoiceGenerationRecord
 from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
-from ledger.timezone import to_utc
 
 
 class Invoice(object):
@@ -35,10 +34,10 @@ class Invoice(object):
             entity_id=entity.pk)
         if not timestamp:
             timestamp = datetime.utcnow()
-        self.timestamp = to_utc(timestamp)
+        self.timestamp = timestamp
         if not creation_timestamp:
             creation_timestamp = datetime.utcnow()
-        self.creation_timestamp = to_utc(creation_timestamp)
+        self.creation_timestamp = creation_timestamp
         InvoiceGenerationRecord.objects.create(
             _invoice_timestamp=timestamp,
             ledger=self.ledger,

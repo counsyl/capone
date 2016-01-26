@@ -23,7 +23,6 @@ from ledger.models import LEDGER_CASH
 from ledger.models import LedgerEntry
 from ledger.models import LEDGER_REVENUE
 from ledger.models import Transaction
-from ledger.timezone import to_utc
 from ledger.tests.factories import UserFactory
 
 
@@ -116,11 +115,9 @@ class _TestLedgerActionBase(TestCase,
                 self.creation_user,
                 posted_timestamp=timestamp) as txn:
             txn.record_action(self.ACTION_CLASS(self.entity, D(100)))
-        self.assertEqual(
-            to_utc(txn.transaction.posted_timestamp), timestamp)
+        self.assertEqual(txn.transaction.posted_timestamp, timestamp)
         txn = Transaction.objects.get(id=txn.transaction.id)
-        self.assertEqual(
-            to_utc(txn.posted_timestamp), timestamp)
+        self.assertEqual(txn.posted_timestamp, timestamp)
 
     def test_fall_back_local(self):
         self._test_timestamp(self.fall_back_local)

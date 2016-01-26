@@ -14,7 +14,6 @@ from ledger.models import LEDGER_REVENUE
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.models import TransactionRelatedObject
-from ledger.timezone import to_utc
 
 
 class LedgerEntryAction(object):
@@ -177,7 +176,7 @@ class TransactionContext(object):
         """
         if not posted_timestamp:
             posted_timestamp = datetime.utcnow()
-        posted_timestamp = to_utc(posted_timestamp)
+        posted_timestamp = posted_timestamp
 
         self.transaction = Transaction.objects.create_for_related_object(
             related_object,
@@ -262,7 +261,7 @@ class VoidTransaction(object):
         self.created_by = created_by
         if not posted_timestamp:
             posted_timestamp = other_transaction.posted_timestamp
-        self.posted_timestamp = to_utc(posted_timestamp)
+        self.posted_timestamp = posted_timestamp
 
     def get_ledger_entries(self):
         if not hasattr(self, 'context'):

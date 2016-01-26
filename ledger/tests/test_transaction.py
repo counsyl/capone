@@ -8,7 +8,6 @@ from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
-from ledger.timezone import to_utc
 from ledger.tests.factories import UserFactory
 
 
@@ -22,7 +21,7 @@ class TransactionBase(TestCase):
         self.user2_ledger, _ = Ledger.objects.get_or_create_ledger(
             self.user2,
             LEDGER_ACCOUNTS_RECEIVABLE)
-        self.posted_timestamp = to_utc(datetime.utcnow())
+        self.posted_timestamp = datetime.now()
 
     def new_transaction(self, related_object, created_by):
         return Transaction.objects.create_for_related_object(
