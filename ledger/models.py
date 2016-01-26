@@ -14,14 +14,6 @@ from django.utils.translation import ugettext_lazy as _
 from uuidfield.fields import UUIDField
 
 
-class InvoiceGenerationRecordQuerySet(QuerySet):
-    pass
-
-
-class InvoiceGenerationRecordManager(NoDeleteManager):
-    pass
-
-
 class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     """A record of an invoice being generated at a particular time.
 
@@ -35,8 +27,6 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     a customer. It also allows a customer to look up their invoice by
     a unique ID.
     """
-    objects = InvoiceGenerationRecordManager()
-
     creation_timestamp = models.DateTimeField(
         _("UTC time this invoice was generated"),
         auto_now_add=True,
