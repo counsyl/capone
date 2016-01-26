@@ -39,7 +39,7 @@ class Invoice(object):
             creation_timestamp = datetime.now()
         self.creation_timestamp = creation_timestamp
         InvoiceGenerationRecord.objects.create(
-            _invoice_timestamp=timestamp,
+            invoice_timestamp=timestamp,
             ledger=self.ledger,
             amount=self.amount)
 
@@ -141,7 +141,7 @@ class Invoice(object):
         # First get those in the timestamp
         entries = entries.filter(
             transaction__posted_timestamp__lte=self.timestamp,
-            transaction___creation_timestamp__lte=self.creation_timestamp)
+            transaction__creation_timestamp__lte=self.creation_timestamp)
         # And then filter by related objects
         entries = entries.filter_by_related_objects(self.related_objects)
         # Exclude voided transactions, if applicable
