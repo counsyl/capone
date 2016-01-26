@@ -1,7 +1,6 @@
 """Do NOT use Ledger models directly. Use ledger.actions instead."""
 from collections import OrderedDict
 from decimal import Decimal
-from functools import partial
 
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
@@ -16,8 +15,6 @@ from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
 from pytz import UTC
 from uuidfield.fields import UUIDField
-
-from ledger.timezone import to_utc
 
 
 class ExplicitTimestampQuerysetMixin(QuerySet):
@@ -41,28 +38,6 @@ class ExplicitTimestampQuerysetMixin(QuerySet):
             select_dict[column_name] = column + " at time zone %s"
             select_params.append(self.tz.zone)
         return self.extra(select=select_dict, select_params=select_params)
-
-
-def explicit_timestamp_field(field_name, *args, **kwargs):
-    def _set_timestamp_utc(self, timestamp, attrname=None):
-        """Set the given timestamp, assuming that we're being given a
-        naive utc timestamp."""
-        value = to_utc(timestamp)
-        setattr(self, attrname, value)
-        setattr(self, "%s_utc" % attrname, value.replace(tzinfo=None))
-
-    def _get_timestamp_utc(self, attrname=None):
-        attname_utc = "%s_utc" % attrname
-        if not hasattr(self, attname_utc):
-            setattr(self, attname_utc,
-                    getattr(type(self)._default_manager.get(id=self.id),
-                            attname_utc))
-        return getattr(self, attname_utc)
-
-    getter = partial(_get_timestamp_utc, attrname=field_name)
-    setter = partial(_set_timestamp_utc, attrname=field_name)
-
-    return property(getter, setter)
 
 
 class InvoiceGenerationRecordQuerySet(
@@ -91,13 +66,11 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     """
     objects = InvoiceGenerationRecordManager()
 
-    creation_timestamp = explicit_timestamp_field('_creation_timestamp')
-    _creation_timestamp = models.DateTimeField(
+    creation_timestamp = models.DateTimeField(
         _("UTC time this invoice was generated"),
         auto_now_add=True,
         db_index=True)
-    invoice_timestamp = explicit_timestamp_field('_invoice_timestamp')
-    _invoice_timestamp = models.DateTimeField(
+    invoice_timestamp = models.DateTimeField(
         _("UTC time of the Invoice"),
         db_index=True)
     ledger = models.ForeignKey('Ledger')
@@ -238,13 +211,11 @@ class Transaction(NonDeletableModel, models.Model):
         _("Any notes to go along with this Transaction."),
         blank=True, null=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
-    creation_timestamp = explicit_timestamp_field('_creation_timestamp')
-    _creation_timestamp = models.DateTimeField(
+    creation_timestamp = models.DateTimeField(
         _("UTC time this transaction was recorded locally"),
         auto_now_add=True,
         db_index=True)
-    posted_timestamp = explicit_timestamp_field('_posted_timestamp')
-    _posted_timestamp = models.DateTimeField(
+    posted_timestamp = models.DateTimeField(
         _("UTC time the transaction was posted"),
         null=False,
         db_index=True)
