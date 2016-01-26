@@ -172,11 +172,11 @@ class Transaction(NonDeletableModel, models.Model):
         blank=True, null=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
     creation_timestamp = models.DateTimeField(
-        _("Time this transaction was recorded locally"),
+        help_text=_("Time this transaction was recorded locally.  This field should *always* equal when this object was created."),  # nopep8
         auto_now_add=True,
         db_index=True)
     posted_timestamp = models.DateTimeField(
-        _("Time the transaction was posted"),
+        help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         null=False,
         db_index=True)
 
