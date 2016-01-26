@@ -1,5 +1,4 @@
 """Do NOT use Ledger models directly. Use ledger.actions instead."""
-from collections import OrderedDict
 from decimal import Decimal
 
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
@@ -8,47 +7,19 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import DateTimeField
 from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
-from pytz import UTC
 from uuidfield.fields import UUIDField
 
 
-class ExplicitTimestampQuerysetMixin(QuerySet):
-    def __init__(self, *args, **kwargs):
-        super(ExplicitTimestampQuerysetMixin, self).__init__(*args, **kwargs)
-        self.tz = UTC
-        self.tz_name = 'utc'
-
-        self.timestamp_fields = [
-            field.name for field in self.model._meta.fields
-            if isinstance(field, DateTimeField)
-        ]
-
-    def annotate_with_explicit_timestamp(self):
-        select_dict = OrderedDict()
-        select_params = []
-        for column in self.timestamp_fields:
-            column_name = "%s_%s" % (column, self.tz_name)
-            # Can't use select_params for `column` because it makes it a
-            # sql string instead of a column select
-            select_dict[column_name] = column + " at time zone %s"
-            select_params.append(self.tz.zone)
-        return self.extra(select=select_dict, select_params=select_params)
-
-
-class InvoiceGenerationRecordQuerySet(
-        ExplicitTimestampQuerysetMixin, QuerySet):
+class InvoiceGenerationRecordQuerySet(QuerySet):
     pass
 
 
 class InvoiceGenerationRecordManager(NoDeleteManager):
-    def get_queryset(self):
-        return InvoiceGenerationRecordQuerySet(self.model).\
-            annotate_with_explicit_timestamp()
+    pass
 
 
 class InvoiceGenerationRecord(NonDeletableModel, models.Model):
@@ -128,7 +99,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
                            'related_object_id')
 
 
-class TransactionQuerySet(ExplicitTimestampQuerysetMixin, QuerySet):
+class TransactionQuerySet(QuerySet):
     def filter_by_related_objects(self, related_objects=(), require_all=True):
         """Filter Transactions by arbitrary related objects.
 
@@ -175,10 +146,6 @@ class TransactionManager(NoDeleteManager):
         TransactionRelatedObject.objects.create_for_object(
             related_object, primary=True, transaction=transaction)
         return transaction
-
-    def get_queryset(self):
-        return TransactionQuerySet(self.model).\
-            annotate_with_explicit_timestamp()
 
     def filter_by_related_objects(self, related_objects=None, **kwargs):
         return self.get_queryset().filter_by_related_objects(
