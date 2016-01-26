@@ -19,9 +19,9 @@ class Invoice(object):
             related_objects: A queryset of objects of the same type, or a list
                 of objects of different types. If not supplied, all objects
                 in the requested time range will be considered.
-            timestamp: The UTC time to filter Transactions by posted_timestamp.
+            timestamp: The time to filter Transactions by posted_timestamp.
                 Defaults to datetime.now().
-            creation_timestamp: The UTC time to filter Transactions by
+            creation_timestamp: The time to filter Transactions by
                 creation_timestamp. This allows you to regenerate an Invoice
                 from the past that doesn't include any recent, backdated,
                 Transactions.

@@ -28,11 +28,11 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     a unique ID.
     """
     creation_timestamp = models.DateTimeField(
-        _("UTC time this invoice was generated"),
+        _("Time this invoice was generated"),
         auto_now_add=True,
         db_index=True)
     invoice_timestamp = models.DateTimeField(
-        _("UTC time of the Invoice"),
+        _("Time of the Invoice"),
         db_index=True)
     ledger = models.ForeignKey('Ledger')
     amount = models.DecimalField(
@@ -172,11 +172,11 @@ class Transaction(NonDeletableModel, models.Model):
         blank=True, null=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
     creation_timestamp = models.DateTimeField(
-        _("UTC time this transaction was recorded locally"),
+        _("Time this transaction was recorded locally"),
         auto_now_add=True,
         db_index=True)
     posted_timestamp = models.DateTimeField(
-        _("UTC time the transaction was posted"),
+        _("Time the transaction was posted"),
         null=False,
         db_index=True)
 

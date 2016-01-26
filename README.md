@@ -354,9 +354,8 @@ TransactionContexts have two required arguments:
 
 and one optional argument:
 
-* posted_timestamp - The (assumed UTC) datetime that this transaction
-  was posted in an outside system. If not provided, the current UTC time is
-  used
+* posted_timestamp - The datetime that this transaction was posted in an
+  outside system.
 
 At its most basic, a TransactionContext looks like this:
 

@@ -169,7 +169,7 @@ class TransactionContext(object):
             related_object: The object related to this Transaction,
                 eg an Order.
             created_by: The User that initiated this Transaction.
-            posted_timestamp: The UTC time at which this transaction was
+            posted_timestamp: The time at which this transaction was
                 posted. Defaults to now.
             secondary_related_objects: A list or queryset of other related
                 objects you want to associate with this transaction.
@@ -254,8 +254,7 @@ class VoidTransaction(object):
             created_by: The user responsible for this void
             posted_timestamp: Optional timestamp for when this was posted.
                 If none provided, then default to the posted_timestamp of
-                the transaction we're voiding. If no timezone is attached
-                to this timestamp, it is assumed to be naive UTC.
+                the transaction we're voiding.
         """
         self.other_transaction = other_transaction
         self.created_by = created_by
