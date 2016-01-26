@@ -26,7 +26,7 @@ class TransactionBase(TestCase):
     def new_transaction(self, related_object, created_by):
         return Transaction.objects.create_for_related_object(
             related_object, created_by=created_by,
-            _posted_timestamp=self.posted_timestamp)
+            posted_timestamp=self.posted_timestamp)
 
 
 class TestLedgerEntry(TransactionBase):

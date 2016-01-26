@@ -181,7 +181,7 @@ class TransactionContext(object):
         self.transaction = Transaction.objects.create_for_related_object(
             related_object,
             created_by=created_by,
-            _posted_timestamp=posted_timestamp)
+            posted_timestamp=posted_timestamp)
         if secondary_related_objects:
             for robj in secondary_related_objects:
                 TransactionRelatedObject.objects.create_for_object(

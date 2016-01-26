@@ -66,7 +66,7 @@ class Invoice(object):
         # earlier transactions and need to be in the transactions dict
         entries_with_transactions = entries.select_related(
             'transaction', 'transaction__voids').order_by(
-                'transaction___posted_timestamp', 'transaction__id')
+                'transaction__posted_timestamp', 'transaction__id')
 
         """
         This is clever:
@@ -140,7 +140,7 @@ class Invoice(object):
         entries = self.ledger.entries
         # First get those in the timestamp
         entries = entries.filter(
-            transaction___posted_timestamp__lte=self.timestamp,
+            transaction__posted_timestamp__lte=self.timestamp,
             transaction___creation_timestamp__lte=self.creation_timestamp)
         # And then filter by related objects
         entries = entries.filter_by_related_objects(self.related_objects)
@@ -148,7 +148,7 @@ class Invoice(object):
         if exclude_voids:
             entries = self._exclude_voids(entries)
         # And always order by time, oldest first
-        entries = entries.order_by('transaction___posted_timestamp',
+        entries = entries.order_by('transaction__posted_timestamp',
                                    'transaction__id')
         return entries
 
