@@ -137,6 +137,9 @@ class TransactionManager(NoDeleteManager):
             related_object, primary=True, transaction=transaction)
         return transaction
 
+    def get_queryset(self):
+        return TransactionQuerySet(self.model)
+
     def filter_by_related_objects(self, related_objects=None, **kwargs):
         return self.get_queryset().filter_by_related_objects(
             related_objects, **kwargs)
