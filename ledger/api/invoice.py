@@ -6,7 +6,6 @@ from django.contrib.contenttypes.models import ContentType
 from ledger.models import InvoiceGenerationRecord
 from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
-from ledger.timezone import to_utc
 
 
 class Invoice(object):
@@ -20,9 +19,9 @@ class Invoice(object):
             related_objects: A queryset of objects of the same type, or a list
                 of objects of different types. If not supplied, all objects
                 in the requested time range will be considered.
-            timestamp: The UTC time to filter Transactions by posted_timestamp.
-                Defaults to datetime.utcnow().
-            creation_timestamp: The UTC time to filter Transactions by
+            timestamp: The time to filter Transactions by posted_timestamp.
+                Defaults to datetime.now().
+            creation_timestamp: The time to filter Transactions by
                 creation_timestamp. This allows you to regenerate an Invoice
                 from the past that doesn't include any recent, backdated,
                 Transactions.
@@ -34,13 +33,13 @@ class Invoice(object):
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk)
         if not timestamp:
-            timestamp = datetime.utcnow()
-        self.timestamp = to_utc(timestamp)
+            timestamp = datetime.now()
+        self.timestamp = timestamp
         if not creation_timestamp:
-            creation_timestamp = datetime.utcnow()
-        self.creation_timestamp = to_utc(creation_timestamp)
+            creation_timestamp = datetime.now()
+        self.creation_timestamp = creation_timestamp
         InvoiceGenerationRecord.objects.create(
-            _invoice_timestamp=timestamp,
+            invoice_timestamp=timestamp,
             ledger=self.ledger,
             amount=self.amount)
 
@@ -67,7 +66,7 @@ class Invoice(object):
         # earlier transactions and need to be in the transactions dict
         entries_with_transactions = entries.select_related(
             'transaction', 'transaction__voids').order_by(
-                'transaction___posted_timestamp', 'transaction__id')
+                'transaction__posted_timestamp', 'transaction__id')
 
         """
         This is clever:
@@ -141,15 +140,15 @@ class Invoice(object):
         entries = self.ledger.entries
         # First get those in the timestamp
         entries = entries.filter(
-            transaction___posted_timestamp__lte=self.timestamp,
-            transaction___creation_timestamp__lte=self.creation_timestamp)
+            transaction__posted_timestamp__lte=self.timestamp,
+            transaction__creation_timestamp__lte=self.creation_timestamp)
         # And then filter by related objects
         entries = entries.filter_by_related_objects(self.related_objects)
         # Exclude voided transactions, if applicable
         if exclude_voids:
             entries = self._exclude_voids(entries)
         # And always order by time, oldest first
-        entries = entries.order_by('transaction___posted_timestamp',
+        entries = entries.order_by('transaction__posted_timestamp',
                                    'transaction__id')
         return entries
 

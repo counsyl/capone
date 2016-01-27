@@ -14,7 +14,6 @@ from ledger.models import LEDGER_REVENUE
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.models import TransactionRelatedObject
-from ledger.timezone import to_utc
 
 
 class LedgerEntryAction(object):
@@ -170,19 +169,19 @@ class TransactionContext(object):
             related_object: The object related to this Transaction,
                 eg an Order.
             created_by: The User that initiated this Transaction.
-            posted_timestamp: The UTC time at which this transaction was
-                posted. Defaults to utcnow.
+            posted_timestamp: The time at which this transaction was
+                posted. Defaults to now.
             secondary_related_objects: A list or queryset of other related
                 objects you want to associate with this transaction.
         """
         if not posted_timestamp:
-            posted_timestamp = datetime.utcnow()
-        posted_timestamp = to_utc(posted_timestamp)
+            posted_timestamp = datetime.now()
+        posted_timestamp = posted_timestamp
 
         self.transaction = Transaction.objects.create_for_related_object(
             related_object,
             created_by=created_by,
-            _posted_timestamp=posted_timestamp)
+            posted_timestamp=posted_timestamp)
         if secondary_related_objects:
             for robj in secondary_related_objects:
                 TransactionRelatedObject.objects.create_for_object(
@@ -255,14 +254,13 @@ class VoidTransaction(object):
             created_by: The user responsible for this void
             posted_timestamp: Optional timestamp for when this was posted.
                 If none provided, then default to the posted_timestamp of
-                the transaction we're voiding. If no timezone is attached
-                to this timestamp, it is assumed to be naive UTC.
+                the transaction we're voiding.
         """
         self.other_transaction = other_transaction
         self.created_by = created_by
         if not posted_timestamp:
             posted_timestamp = other_transaction.posted_timestamp
-        self.posted_timestamp = to_utc(posted_timestamp)
+        self.posted_timestamp = posted_timestamp
 
     def get_ledger_entries(self):
         if not hasattr(self, 'context'):

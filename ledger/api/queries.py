@@ -22,7 +22,7 @@ def get_all_transactions_for_object(obj, ledgers=()):
     )
 
     if ledgers:
-        transactions = transactions.filter(ledger__in=ledgers)
+        transactions = transactions.filter(ledgers__in=ledgers)
 
     return transactions
 

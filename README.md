@@ -354,9 +354,8 @@ TransactionContexts have two required arguments:
 
 and one optional argument:
 
-* posted_timestamp - The (assumed UTC) datetime that this transaction
-  was posted in an outside system. If not provided, the current UTC time is
-  used
+* posted_timestamp - The datetime that this transaction was posted in an
+  outside system.
 
 At its most basic, a TransactionContext looks like this:
 
@@ -379,7 +378,7 @@ Sometimes we got paid a while ago but we didn't get notification of payment.
 In these cases it's helpful to backdate the payment:
 
 ```python
-backdate_timestamp = datetime.utcnow() - timedelta(days=10)
+backdate_timestamp = datetime.now() - timedelta(days=10)
 with TransactionContext(product, user, posted_timestamp=backdate_timestamp) as txn:
     txn.record(Payment(entity, 1000))
 ```

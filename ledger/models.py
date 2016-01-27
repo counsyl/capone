@@ -1,7 +1,5 @@
 """Do NOT use Ledger models directly. Use ledger.actions instead."""
-from collections import OrderedDict
 from decimal import Decimal
-from functools import partial
 
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
@@ -9,71 +7,11 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import DateTimeField
 from django.db.models import Q
 from django.db.models import Sum
 from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
-from pytz import UTC
 from uuidfield.fields import UUIDField
-
-from ledger.timezone import to_utc
-
-
-class ExplicitTimestampQuerysetMixin(QuerySet):
-    def __init__(self, *args, **kwargs):
-        super(ExplicitTimestampQuerysetMixin, self).__init__(*args, **kwargs)
-        self.tz = UTC
-        self.tz_name = 'utc'
-
-        self.timestamp_fields = [
-            field.name for field in self.model._meta.fields
-            if isinstance(field, DateTimeField)
-        ]
-
-    def annotate_with_explicit_timestamp(self):
-        select_dict = OrderedDict()
-        select_params = []
-        for column in self.timestamp_fields:
-            column_name = "%s_%s" % (column, self.tz_name)
-            # Can't use select_params for `column` because it makes it a
-            # sql string instead of a column select
-            select_dict[column_name] = column + " at time zone %s"
-            select_params.append(self.tz.zone)
-        return self.extra(select=select_dict, select_params=select_params)
-
-
-def explicit_timestamp_field(field_name, *args, **kwargs):
-    def _set_timestamp_utc(self, timestamp, attrname=None):
-        """Set the given timestamp, assuming that we're being given a
-        naive utc timestamp."""
-        value = to_utc(timestamp)
-        setattr(self, attrname, value)
-        setattr(self, "%s_utc" % attrname, value.replace(tzinfo=None))
-
-    def _get_timestamp_utc(self, attrname=None):
-        attname_utc = "%s_utc" % attrname
-        if not hasattr(self, attname_utc):
-            setattr(self, attname_utc,
-                    getattr(type(self)._default_manager.get(id=self.id),
-                            attname_utc))
-        return getattr(self, attname_utc)
-
-    getter = partial(_get_timestamp_utc, attrname=field_name)
-    setter = partial(_set_timestamp_utc, attrname=field_name)
-
-    return property(getter, setter)
-
-
-class InvoiceGenerationRecordQuerySet(
-        ExplicitTimestampQuerysetMixin, QuerySet):
-    pass
-
-
-class InvoiceGenerationRecordManager(NoDeleteManager):
-    def get_queryset(self):
-        return InvoiceGenerationRecordQuerySet(self.model).\
-            annotate_with_explicit_timestamp()
 
 
 class InvoiceGenerationRecord(NonDeletableModel, models.Model):
@@ -89,16 +27,12 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     a customer. It also allows a customer to look up their invoice by
     a unique ID.
     """
-    objects = InvoiceGenerationRecordManager()
-
-    creation_timestamp = explicit_timestamp_field('_creation_timestamp')
-    _creation_timestamp = models.DateTimeField(
-        _("UTC time this invoice was generated"),
+    creation_timestamp = models.DateTimeField(
+        _("Time this invoice was generated"),
         auto_now_add=True,
         db_index=True)
-    invoice_timestamp = explicit_timestamp_field('_invoice_timestamp')
-    _invoice_timestamp = models.DateTimeField(
-        _("UTC time of the Invoice"),
+    invoice_timestamp = models.DateTimeField(
+        _("Time of the Invoice"),
         db_index=True)
     ledger = models.ForeignKey('Ledger')
     amount = models.DecimalField(
@@ -155,7 +89,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
                            'related_object_id')
 
 
-class TransactionQuerySet(ExplicitTimestampQuerysetMixin, QuerySet):
+class TransactionQuerySet(QuerySet):
     def filter_by_related_objects(self, related_objects=(), require_all=True):
         """Filter Transactions by arbitrary related objects.
 
@@ -204,8 +138,7 @@ class TransactionManager(NoDeleteManager):
         return transaction
 
     def get_queryset(self):
-        return TransactionQuerySet(self.model).\
-            annotate_with_explicit_timestamp()
+        return TransactionQuerySet(self.model)
 
     def filter_by_related_objects(self, related_objects=None, **kwargs):
         return self.get_queryset().filter_by_related_objects(
@@ -238,14 +171,12 @@ class Transaction(NonDeletableModel, models.Model):
         _("Any notes to go along with this Transaction."),
         blank=True, null=False)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
-    creation_timestamp = explicit_timestamp_field('_creation_timestamp')
-    _creation_timestamp = models.DateTimeField(
-        _("UTC time this transaction was recorded locally"),
+    creation_timestamp = models.DateTimeField(
+        help_text=_("Time this transaction was recorded locally.  This field should *always* equal when this object was created."),  # nopep8
         auto_now_add=True,
         db_index=True)
-    posted_timestamp = explicit_timestamp_field('_posted_timestamp')
-    _posted_timestamp = models.DateTimeField(
-        _("UTC time the transaction was posted"),
+    posted_timestamp = models.DateTimeField(
+        help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         null=False,
         db_index=True)
 
@@ -432,11 +363,6 @@ class Ledger(NonDeletableModel, models.Model):
     )
 
     # Fields for both types of Ledgers
-
-    transactions = models.ManyToManyField(
-        Transaction,
-        through='LedgerEntry',
-    )
 
     objects = LedgerManager()
 
