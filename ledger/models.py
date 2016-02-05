@@ -413,6 +413,9 @@ class LedgerEntry(NonDeletableModel, models.Model):
     LedgerEntries must always be part of a transaction so that they balance
     according to double-entry bookkeeping.
     """
+    class Meta:
+        verbose_name_plural = "ledger entries"
+
     objects = LedgerEntryManager()
 
     ledger = models.ForeignKey(Ledger, related_name='entries')
