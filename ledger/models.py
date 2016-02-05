@@ -360,6 +360,7 @@ class Ledger(NonDeletableModel, models.Model):
     # Ledgers via unique numbers that they can set when creating a Ledger.
     name = models.CharField(
         _("Name of this ledger"),
+        unique=True,
         max_length=255)
     increased_by_debits = models.BooleanField(
         help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
