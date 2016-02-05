@@ -44,8 +44,8 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
 
 class TransactionRelatedObjectManager(NoDeleteManager):
     def create_for_object(self, related_object, **kwargs):
-        kwargs['related_object_content_type'] = \
-            ContentType.objects.get_for_model(related_object)
+        kwargs['related_object_content_type'] = (
+            ContentType.objects.get_for_model(related_object))
         kwargs['related_object_id'] = related_object.pk
         return self.create(**kwargs)
 
