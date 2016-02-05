@@ -72,7 +72,9 @@ class TransactionRelatedObjectManager(NoDeleteManager):
 
 
 class TransactionRelatedObject(NonDeletableModel, models.Model):
-    objects = TransactionRelatedObjectManager()
+    class Meta:
+        unique_together = ('transaction', 'related_object_content_type',
+                           'related_object_id')
 
     transaction = models.ForeignKey(
         'Transaction', related_name='related_objects')
@@ -84,9 +86,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     related_object = GenericForeignKey(
         'related_object_content_type', 'related_object_id')
 
-    class Meta:
-        unique_together = ('transaction', 'related_object_content_type',
-                           'related_object_id')
+    objects = TransactionRelatedObjectManager()
 
 
 class TransactionQuerySet(QuerySet):
@@ -154,8 +154,6 @@ class Transaction(NonDeletableModel, models.Model):
     For accountability, all Transactions are required to have a user
     associated with them.
     """
-    objects = TransactionManager()
-
     # By linking Transaction with Ledger with a M2M through LedgerEntry, we
     # have access to a Ledger's transactions *and* ledger entries through one
     # attribute per relation.
@@ -203,6 +201,8 @@ class Transaction(NonDeletableModel, models.Model):
         max_length=128,
         default=MANUAL,
     )
+
+    objects = TransactionManager()
 
     @property
     def primary_related_object(self):
@@ -324,6 +324,9 @@ class LedgerManager(NoDeleteManager):
 
 class Ledger(NonDeletableModel, models.Model):
     """Ledgers are the record of debits and credits for a given entity."""
+    class Meta:
+        unique_together = ('type', 'entity_content_type', 'entity_id')
+
     # Fields for object-attached Ledgers
     type = models.CharField(
         _("The ledger type, eg Accounts Receivable, Revenue, etc"),
@@ -374,9 +377,6 @@ class Ledger(NonDeletableModel, models.Model):
 
     objects = LedgerManager()
 
-    class Meta:
-        unique_together = ('type', 'entity_content_type', 'entity_id')
-
     def get_balance(self):
         """Get the current balance on this Ledger."""
         return self.entries.aggregate(balance=Sum('amount'))['balance']
@@ -420,8 +420,6 @@ class LedgerEntry(NonDeletableModel, models.Model):
     class Meta:
         verbose_name_plural = "ledger entries"
 
-    objects = LedgerEntryManager()
-
     ledger = models.ForeignKey(Ledger, related_name='entries')
     transaction = models.ForeignKey(Transaction, related_name='entries')
 
@@ -436,6 +434,8 @@ class LedgerEntry(NonDeletableModel, models.Model):
     action_type = models.CharField(
         _("Type of action that created this LedgerEntry"),
         max_length=128, null=False, blank=True)
+
+    objects = LedgerEntryManager()
 
     def __unicode__(self):
         return u"LedgerEntry ({id}) {action} for ${amount}".format(
