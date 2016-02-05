@@ -155,6 +155,10 @@ class Transaction(NonDeletableModel, models.Model):
     associated with them.
     """
     objects = TransactionManager()
+
+    # By linking Transaction with Ledger with a M2M through LedgerEntry, we
+    # have access to a Ledger's transactions *and* ledger entries through one
+    # attribute per relation.
     ledgers = models.ManyToManyField('Ledger', through='LedgerEntry')
 
     transaction_id = UUIDField(
