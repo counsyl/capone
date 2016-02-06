@@ -15,7 +15,8 @@ from uuidfield.fields import UUIDField
 
 
 class InvoiceGenerationRecord(NonDeletableModel, models.Model):
-    """A record of an invoice being generated at a particular time.
+    """
+    A record of an invoice being generated at a particular time.
 
     An invoice is the amount owed at a given timestamp by a given entity.
 
@@ -72,6 +73,13 @@ class TransactionRelatedObjectManager(NoDeleteManager):
 
 
 class TransactionRelatedObject(NonDeletableModel, models.Model):
+    """
+    A piece of evidence for a particular Transaction.
+
+    TransactionRelatedObject has a FK to a Transaction and a GFK that can point
+    to any object in the database.  We create as many TransactionRelatedObjects
+    as there are pieces of evidence.
+    """
     class Meta:
         unique_together = ('transaction', 'related_object_content_type',
                            'related_object_id')
@@ -146,7 +154,8 @@ class TransactionManager(NoDeleteManager):
 
 
 class Transaction(NonDeletableModel, models.Model):
-    """Transactions link together many LedgerEntries.
+    """
+    Transactions link together many LedgerEntries.
 
     A LedgerEntry cannot exist on its own, it must have an equal and opposite
     LedgerEntry (or set of LedgerEntries) that completely balance out.
@@ -323,7 +332,9 @@ class LedgerManager(NoDeleteManager):
 
 
 class Ledger(NonDeletableModel, models.Model):
-    """Ledgers are the record of debits and credits for a given entity."""
+    """
+    Ledgers are the record of debits and credits for a given entity.
+    """
     class Meta:
         unique_together = ('type', 'entity_content_type', 'entity_id')
 
