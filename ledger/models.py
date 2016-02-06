@@ -203,7 +203,6 @@ class Transaction(NonDeletableModel, models.Model):
         db_index=True)
     posted_timestamp = models.DateTimeField(
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
-        null=False,
         db_index=True)
 
     finalized = models.BooleanField(
