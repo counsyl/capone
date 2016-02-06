@@ -33,11 +33,11 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     a unique ID.
     """
     creation_timestamp = models.DateTimeField(
-        _("Time this invoice was generated"),
+        help_text=_("Time this invoice was generated"),
         auto_now_add=True,
         db_index=True)
     invoice_timestamp = models.DateTimeField(
-        _("Time of the Invoice"),
+        help_text=_("Time of the Invoice"),
         db_index=True)
     ledger = models.ForeignKey('Ledger')
     amount = models.DecimalField(
@@ -94,7 +94,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     transaction = models.ForeignKey(
         'Transaction', related_name='related_objects')
     primary = models.BooleanField(
-        _("Is this the primary related object?"),
+        help_text=_("Is this the primary related object?"),
         default=False)
     related_object_content_type = models.ForeignKey(ContentType)
     related_object_id = models.PositiveIntegerField(db_index=True)
@@ -176,7 +176,7 @@ class Transaction(NonDeletableModel, models.Model):
     ledgers = models.ManyToManyField('Ledger', through='LedgerEntry')
 
     transaction_id = UUIDField(
-        verbose_name=_("UUID for this transaction"),
+        help_text=_("UUID for this transaction"),
         auto=True,
         version=4)
     voids = models.OneToOneField(
@@ -186,9 +186,10 @@ class Transaction(NonDeletableModel, models.Model):
         related_name='voided_by')
 
     notes = models.TextField(
-        _("Any notes to go along with this Transaction."),
-        blank=True, null=False)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
+        help_text=_("Any notes to go along with this Transaction."),
+        blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL)
     creation_timestamp = models.DateTimeField(
         help_text=_("Time this transaction was recorded locally.  This field should *always* equal when this object was created."),  # nopep8
         auto_now_add=True,
@@ -212,7 +213,7 @@ class Transaction(NonDeletableModel, models.Model):
     )
 
     type = models.CharField(
-        _("The type of transaction.  AUTOMATIC is for recurring tasks, and RECONCILIATION is for special Reconciliation transactions."),  # nopep8
+        help_text=_("The type of transaction.  AUTOMATIC is for recurring tasks, and RECONCILIATION is for special Reconciliation transactions."),  # nopep8
         choices=TRANSACTION_TYPE_CHOICES,
         max_length=128,
         default=MANUAL,
@@ -347,7 +348,7 @@ class Ledger(NonDeletableModel, models.Model):
 
     # Fields for object-attached Ledgers
     type = models.CharField(
-        _("The ledger type, eg Accounts Receivable, Revenue, etc"),
+        help_text=_("The ledger type, eg Accounts Receivable, Revenue, etc"),
         choices=LEDGER_CHOICES,
         max_length=128,
         # A blank `type` here means that the type of account represented by
@@ -380,7 +381,7 @@ class Ledger(NonDeletableModel, models.Model):
     # TODO: Add field `ledger_number` here: Accounting likes to refer to
     # Ledgers via unique numbers that they can set when creating a Ledger.
     name = models.CharField(
-        _("Name of this ledger"),
+        help_text=_("Name of this ledger"),
         unique=True,
         max_length=255)
     description = models.TextField(
@@ -442,7 +443,7 @@ class LedgerEntry(NonDeletableModel, models.Model):
     transaction = models.ForeignKey(Transaction, related_name='entries')
 
     entry_id = UUIDField(
-        verbose_name=_("UUID for this ledger entry"),
+        help_text=_("UUID for this ledger entry"),
         auto=True,
         version=4)
 
@@ -455,8 +456,9 @@ class LedgerEntry(NonDeletableModel, models.Model):
         max_digits=24,
         decimal_places=4)
     action_type = models.CharField(
-        _("Type of action that created this LedgerEntry"),
-        max_length=128, null=False, blank=True)
+        help_text=_("Type of action that created this LedgerEntry"),
+        max_length=128,
+        blank=True)
 
     objects = LedgerEntryManager()
 
