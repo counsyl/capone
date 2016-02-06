@@ -188,12 +188,9 @@ class TransactionContext(object):
                     robj, transaction=self.transaction)
 
     def __enter__(self):
-        if self.transaction.finalized:
-            raise Transaction.UnmodifiableTransactionException
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.transaction.finalized = True
         self.transaction.save()
 
     def record_action(self, action):
