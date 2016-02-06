@@ -39,7 +39,8 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     invoice_timestamp = models.DateTimeField(
         help_text=_("Time of the Invoice"),
         db_index=True)
-    ledger = models.ForeignKey('Ledger')
+    ledger = models.ForeignKey(
+        'Ledger')
     amount = models.DecimalField(
         help_text=_(
             NEGATIVE_DEBITS_HELP_TEXT
@@ -92,14 +93,18 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
                            'related_object_id')
 
     transaction = models.ForeignKey(
-        'Transaction', related_name='related_objects')
+        'Transaction',
+        related_name='related_objects')
     primary = models.BooleanField(
         help_text=_("Is this the primary related object?"),
         default=False)
-    related_object_content_type = models.ForeignKey(ContentType)
-    related_object_id = models.PositiveIntegerField(db_index=True)
+    related_object_content_type = models.ForeignKey(
+        ContentType)
+    related_object_id = models.PositiveIntegerField(
+        db_index=True)
     related_object = GenericForeignKey(
-        'related_object_content_type', 'related_object_id')
+        'related_object_content_type',
+        'related_object_id')
 
     objects = TransactionRelatedObjectManager()
 
@@ -173,7 +178,9 @@ class Transaction(NonDeletableModel, models.Model):
     # By linking Transaction with Ledger with a M2M through LedgerEntry, we
     # have access to a Ledger's transactions *and* ledger entries through one
     # attribute per relation.
-    ledgers = models.ManyToManyField('Ledger', through='LedgerEntry')
+    ledgers = models.ManyToManyField(
+        'Ledger',
+        through='LedgerEntry')
 
     transaction_id = UUIDField(
         help_text=_("UUID for this transaction"),
@@ -439,8 +446,12 @@ class LedgerEntry(NonDeletableModel, models.Model):
     class Meta:
         verbose_name_plural = "ledger entries"
 
-    ledger = models.ForeignKey(Ledger, related_name='entries')
-    transaction = models.ForeignKey(Transaction, related_name='entries')
+    ledger = models.ForeignKey(
+        Ledger,
+        related_name='entries')
+    transaction = models.ForeignKey(
+        Transaction,
+        related_name='entries')
 
     entry_id = UUIDField(
         help_text=_("UUID for this ledger entry"),
