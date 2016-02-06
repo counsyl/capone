@@ -14,6 +14,10 @@ from django.utils.translation import ugettext_lazy as _
 from uuidfield.fields import UUIDField
 
 
+POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # nopep8
+NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
+
+
 class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     """
     A record of an invoice being generated at a particular time.
@@ -37,10 +41,13 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
         db_index=True)
     ledger = models.ForeignKey('Ledger')
     amount = models.DecimalField(
-        _("Amount of this Invoice."),
-        help_text=_("Money owed to us is positive. "
-                    "Payments out are negative."),
-        max_digits=24, decimal_places=4)
+        help_text=_(
+            NEGATIVE_DEBITS_HELP_TEXT
+            if getattr(settings, 'DEBITS_ARE_NEGATIVE', False)
+            else POSITIVE_DEBITS_HELP_TEXT
+        ),
+        max_digits=24,
+        decimal_places=4)
 
 
 class TransactionRelatedObjectManager(NoDeleteManager):
@@ -440,8 +447,13 @@ class LedgerEntry(NonDeletableModel, models.Model):
         version=4)
 
     amount = models.DecimalField(
-        _("Amount of this entry."),
-        max_digits=24, decimal_places=4)
+        help_text=_(
+            NEGATIVE_DEBITS_HELP_TEXT
+            if getattr(settings, 'DEBITS_ARE_NEGATIVE', False)
+            else POSITIVE_DEBITS_HELP_TEXT
+        ),
+        max_digits=24,
+        decimal_places=4)
     action_type = models.CharField(
         _("Type of action that created this LedgerEntry"),
         max_length=128, null=False, blank=True)
