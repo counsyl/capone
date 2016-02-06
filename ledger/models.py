@@ -205,10 +205,6 @@ class Transaction(NonDeletableModel, models.Model):
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         db_index=True)
 
-    finalized = models.BooleanField(
-        _("Finalized transactions cannot be modified."),
-        default=False)
-
     AUTOMATIC = 'Automatic'
     MANUAL = 'Manual'
     RECONCILIATION = 'Reconciliation'
