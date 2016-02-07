@@ -308,6 +308,7 @@ class LedgerManager(NoDeleteManager):
             ledger_type: The appropriate Ledger.LEDGER_CHOICES
         """
         return Ledger.objects.get_or_create(
+            name=ledger_type + unicode(entity),
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
