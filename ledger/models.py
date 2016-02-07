@@ -267,19 +267,22 @@ class Transaction(NonDeletableModel, models.Model):
     def __unicode__(self):
         return u"Transaction %s" % self.transaction_id
 
-    class TransactionBalanceException(Exception):
+    class TransactionException(Exception):
         pass
 
-    class UnvoidableTransactionException(Exception):
+    class TransactionBalanceException(TransactionException):
         pass
 
-    class UnmodifiableTransactionException(Exception):
+    class UnvoidableTransactionException(TransactionException):
         pass
 
-    class PrimaryRelatedObjectException(Exception):
+    class UnmodifiableTransactionException(TransactionException):
         pass
 
-    class NoLedgerEntriesException(Exception):
+    class PrimaryRelatedObjectException(TransactionException):
+        pass
+
+    class NoLedgerEntriesException(TransactionException):
         pass
 
 
