@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from django.conf import settings
