@@ -385,3 +385,25 @@ class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
             set(get_all_transactions_for_object(
                 order, ledgers=[self.revenue, self.cash_unrecon])),
             {txn_recognize, txn_take_payment})
+
+
+class TestCreateTransaction(TestCompanyWideLedgers):
+    def test_setting_posted_timestamp(self):
+        POSTED_DATETIME = datetime(2016, 2, 7, 11, 59)
+        order = OrderFactory(amount=self.AMOUNT)
+
+        txn_recognize = create_transaction(
+            self.user,
+            evidence=[order],
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.revenue,
+                    amount=credit(self.AMOUNT)),
+                LedgerEntry(
+                    ledger=self.accounts_receivable,
+                    amount=debit(self.AMOUNT)),
+            ],
+            posted_timestamp=POSTED_DATETIME,
+        )
+
+        self.assertEqual(txn_recognize.posted_timestamp, POSTED_DATETIME)
