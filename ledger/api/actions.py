@@ -203,16 +203,6 @@ class TransactionContext(object):
         self.transaction.entries.add(*action.get_ledger_entries())
 
 
-class ReconciliationTransactionContext(TransactionContext):
-    """
-    A TransactionContext that produces a Recon Transaction
-    """
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.transaction.type = Transaction.RECONCILIATION
-        super(ReconciliationTransactionContext, self).__exit__(
-            exc_type, exc_val, exc_tb)
-
-
 class VoidTransaction(object):
     """Void a given Transaction.
 
