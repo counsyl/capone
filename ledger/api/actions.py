@@ -162,6 +162,7 @@ class TransferAmount(LedgerEntryAction):
 
 class TransactionContext(object):
     """Transactions manage FinancialActions."""
+    @atomic
     def __init__(self, related_object, created_by, posted_timestamp=None,
                  secondary_related_objects=None):
         """Create a new transaction.
@@ -188,12 +189,15 @@ class TransactionContext(object):
                 TransactionRelatedObject.objects.create_for_object(
                     robj, transaction=self.transaction)
 
+    @atomic
     def __enter__(self):
         return self
 
+    @atomic
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.transaction.save()
 
+    @atomic
     def record_action(self, action):
         """Record an Action in this Transaction.
 
