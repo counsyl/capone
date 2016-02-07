@@ -201,17 +201,6 @@ class TransactionContext(object):
         """
         self.transaction.entries.add(*action.get_ledger_entries())
 
-    def record_entries(self, entries):
-        """Record raw LedgerEntries: useful for cases not covered in api.actions
-
-        Args:
-            entries - An iterable of already-constructed LedgerEntry ORM
-                objects to be added to this Transaction.  They are validated as
-                having equal debits and credits, so that a Transaction will
-                always balance.
-        """
-        self.transaction.entries.add(*entries)
-
 
 class ReconciliationTransactionContext(TransactionContext):
     """
