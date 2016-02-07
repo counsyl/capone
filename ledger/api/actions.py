@@ -7,6 +7,7 @@ from functools import partial
 from django.conf import settings
 from django.db.transaction import atomic
 
+from ledger.api.queries import validate_transaction
 from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LEDGER_CASH
@@ -311,3 +312,51 @@ def _credit_or_debit(amount, reverse):
 
 credit = partial(_credit_or_debit, reverse=True)
 debit = partial(_credit_or_debit, reverse=False)
+
+
+@atomic
+def create_transaction(
+    user,
+    evidence=(),
+    ledger_entries=(),
+    notes='',
+    type=None,
+    posted_timestamp=None,
+):
+    """
+    Create a Transaction with LedgerEntries and TransactionRelatedObjects.
+
+    This function is atomic and validates its input before writing to the DB.
+    """
+    if not posted_timestamp:
+        posted_timestamp = datetime.now()
+
+    if not type:
+        type = Transaction.MANUAL
+
+    validate_transaction(
+        user,
+        evidence,
+        ledger_entries,
+        notes,
+        type,
+        posted_timestamp,
+    )
+
+    transaction = Transaction.objects.create(
+        created_by=user,
+        notes=notes,
+        posted_timestamp=posted_timestamp,
+        type=type,
+    )
+
+    transaction.entries.add(*ledger_entries)
+
+    transaction.related_objects.add(*[
+        TransactionRelatedObject(
+            related_object=piece,
+        )
+        for piece in evidence
+    ])
+
+    return transaction
