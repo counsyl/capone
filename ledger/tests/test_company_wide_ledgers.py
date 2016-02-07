@@ -12,6 +12,7 @@ from ledger.api.actions import debit
 from ledger.api.queries import get_all_transactions_for_object
 from ledger.api.queries import get_balances_for_object
 from ledger.api.queries import get_ledger_balances_for_transactions
+from ledger.api.queries import validate_transaction
 from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import OrderFactory
 from ledger.tests.factories import UserFactory
@@ -407,3 +408,25 @@ class TestCreateTransaction(TestCompanyWideLedgers):
         )
 
         self.assertEqual(txn_recognize.posted_timestamp, POSTED_DATETIME)
+
+
+class TestValidateTransaction(TestCompanyWideLedgers):
+    def test_debits_not_equal_to_credits(self):
+        with self.assertRaises(Transaction.TransactionBalanceException):
+            validate_transaction(
+                self.user,
+                ledger_entries=[
+                    LedgerEntry(
+                        ledger=self.revenue,
+                        amount=credit(self.AMOUNT)),
+                    LedgerEntry(
+                        ledger=self.accounts_receivable,
+                        amount=debit(self.AMOUNT + 2)),
+                ],
+            )
+
+    def test_no_ledger_entries(self):
+        with self.assertRaises(Transaction.NoLedgerEntriesException):
+            validate_transaction(
+                self.user,
+            )
