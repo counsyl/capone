@@ -1,4 +1,3 @@
-"""Do NOT use Ledger models directly. Use ledger.actions instead."""
 from decimal import Decimal
 
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
@@ -14,8 +13,13 @@ from django.utils.translation import ugettext_lazy as _
 from uuidfield.fields import UUIDField
 
 
+POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # nopep8
+NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
+
+
 class InvoiceGenerationRecord(NonDeletableModel, models.Model):
-    """A record of an invoice being generated at a particular time.
+    """
+    A record of an invoice being generated at a particular time.
 
     An invoice is the amount owed at a given timestamp by a given entity.
 
@@ -28,24 +32,28 @@ class InvoiceGenerationRecord(NonDeletableModel, models.Model):
     a unique ID.
     """
     creation_timestamp = models.DateTimeField(
-        _("Time this invoice was generated"),
+        help_text=_("Time this invoice was generated"),
         auto_now_add=True,
         db_index=True)
     invoice_timestamp = models.DateTimeField(
-        _("Time of the Invoice"),
+        help_text=_("Time of the Invoice"),
         db_index=True)
-    ledger = models.ForeignKey('Ledger')
+    ledger = models.ForeignKey(
+        'Ledger')
     amount = models.DecimalField(
-        _("Amount of this Invoice."),
-        help_text=_("Money owed to us is positive. "
-                    "Payments out are negative."),
-        max_digits=24, decimal_places=4)
+        help_text=_(
+            NEGATIVE_DEBITS_HELP_TEXT
+            if getattr(settings, 'DEBITS_ARE_NEGATIVE', False)
+            else POSITIVE_DEBITS_HELP_TEXT
+        ),
+        max_digits=24,
+        decimal_places=4)
 
 
 class TransactionRelatedObjectManager(NoDeleteManager):
     def create_for_object(self, related_object, **kwargs):
-        kwargs['related_object_content_type'] = \
-            ContentType.objects.get_for_model(related_object)
+        kwargs['related_object_content_type'] = (
+            ContentType.objects.get_for_model(related_object))
         kwargs['related_object_id'] = related_object.pk
         return self.create(**kwargs)
 
@@ -72,21 +80,32 @@ class TransactionRelatedObjectManager(NoDeleteManager):
 
 
 class TransactionRelatedObject(NonDeletableModel, models.Model):
-    objects = TransactionRelatedObjectManager()
+    """
+    A piece of evidence for a particular Transaction.
 
-    transaction = models.ForeignKey(
-        'Transaction', related_name='related_objects')
-    primary = models.BooleanField(
-        _("Is this the primary related object?"),
-        default=False)
-    related_object_content_type = models.ForeignKey(ContentType)
-    related_object_id = models.PositiveIntegerField(db_index=True)
-    related_object = GenericForeignKey(
-        'related_object_content_type', 'related_object_id')
-
+    TransactionRelatedObject has a FK to a Transaction and a GFK that can point
+    to any object in the database.  We create as many TransactionRelatedObjects
+    as there are pieces of evidence.
+    """
     class Meta:
         unique_together = ('transaction', 'related_object_content_type',
                            'related_object_id')
+
+    transaction = models.ForeignKey(
+        'Transaction',
+        related_name='related_objects')
+    primary = models.BooleanField(
+        help_text=_("Is this the primary related object?"),
+        default=False)
+    related_object_content_type = models.ForeignKey(
+        ContentType)
+    related_object_id = models.PositiveIntegerField(
+        db_index=True)
+    related_object = GenericForeignKey(
+        'related_object_content_type',
+        'related_object_id')
+
+    objects = TransactionRelatedObjectManager()
 
 
 class TransactionQuerySet(QuerySet):
@@ -146,7 +165,8 @@ class TransactionManager(NoDeleteManager):
 
 
 class Transaction(NonDeletableModel, models.Model):
-    """Transactions link together many LedgerEntries.
+    """
+    Transactions link together many LedgerEntries.
 
     A LedgerEntry cannot exist on its own, it must have an equal and opposite
     LedgerEntry (or set of LedgerEntries) that completely balance out.
@@ -154,11 +174,15 @@ class Transaction(NonDeletableModel, models.Model):
     For accountability, all Transactions are required to have a user
     associated with them.
     """
-    objects = TransactionManager()
-    ledgers = models.ManyToManyField('Ledger', through='LedgerEntry')
+    # By linking Transaction with Ledger with a M2M through LedgerEntry, we
+    # have access to a Ledger's transactions *and* ledger entries through one
+    # attribute per relation.
+    ledgers = models.ManyToManyField(
+        'Ledger',
+        through='LedgerEntry')
 
     transaction_id = UUIDField(
-        verbose_name=_("UUID for this transaction"),
+        help_text=_("UUID for this transaction"),
         auto=True,
         version=4)
     voids = models.OneToOneField(
@@ -168,21 +192,17 @@ class Transaction(NonDeletableModel, models.Model):
         related_name='voided_by')
 
     notes = models.TextField(
-        _("Any notes to go along with this Transaction."),
-        blank=True, null=False)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL)
+        help_text=_("Any notes to go along with this Transaction."),
+        blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL)
     creation_timestamp = models.DateTimeField(
         help_text=_("Time this transaction was recorded locally.  This field should *always* equal when this object was created."),  # nopep8
         auto_now_add=True,
         db_index=True)
     posted_timestamp = models.DateTimeField(
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
-        null=False,
         db_index=True)
-
-    finalized = models.BooleanField(
-        _("Finalized transactions cannot be modified."),
-        default=False)
 
     AUTOMATIC = 'Automatic'
     MANUAL = 'Manual'
@@ -194,11 +214,13 @@ class Transaction(NonDeletableModel, models.Model):
     )
 
     type = models.CharField(
-        _("The type of transaction.  AUTOMATIC is for recurring tasks, and RECONCILIATION is for special Reconciliation transactions."),  # nopep8
+        help_text=_("The type of transaction.  AUTOMATIC is for recurring tasks, and RECONCILIATION is for special Reconciliation transactions."),  # nopep8
         choices=TRANSACTION_TYPE_CHOICES,
         max_length=128,
         default=MANUAL,
     )
+
+    objects = TransactionManager()
 
     @property
     def primary_related_object(self):
@@ -245,16 +267,22 @@ class Transaction(NonDeletableModel, models.Model):
     def __unicode__(self):
         return u"Transaction %s" % self.transaction_id
 
-    class TransactionBalanceException(Exception):
+    class TransactionException(Exception):
         pass
 
-    class UnvoidableTransactionException(Exception):
+    class TransactionBalanceException(TransactionException):
         pass
 
-    class UnmodifiableTransactionException(Exception):
+    class UnvoidableTransactionException(TransactionException):
         pass
 
-    class PrimaryRelatedObjectException(Exception):
+    class UnmodifiableTransactionException(TransactionException):
+        pass
+
+    class PrimaryRelatedObjectException(TransactionException):
+        pass
+
+    class NoLedgerEntriesException(TransactionException):
         pass
 
 
@@ -285,6 +313,7 @@ class LedgerManager(NoDeleteManager):
             ledger_type: The appropriate Ledger.LEDGER_CHOICES
         """
         return Ledger.objects.get_or_create(
+            name=ledger_type + unicode(entity),
             type=ledger_type,
             entity_content_type=ContentType.objects.get_for_model(entity),
             entity_id=entity.pk,
@@ -319,10 +348,15 @@ class LedgerManager(NoDeleteManager):
 
 
 class Ledger(NonDeletableModel, models.Model):
-    """Ledgers are the record of debits and credits for a given entity."""
+    """
+    Ledgers are the record of debits and credits for a given entity.
+    """
+    class Meta:
+        unique_together = ('type', 'entity_content_type', 'entity_id')
+
     # Fields for object-attached Ledgers
     type = models.CharField(
-        _("The ledger type, eg Accounts Receivable, Revenue, etc"),
+        help_text=_("The ledger type, eg Accounts Receivable, Revenue, etc"),
         choices=LEDGER_CHOICES,
         max_length=128,
         # A blank `type` here means that the type of account represented by
@@ -355,8 +389,12 @@ class Ledger(NonDeletableModel, models.Model):
     # TODO: Add field `ledger_number` here: Accounting likes to refer to
     # Ledgers via unique numbers that they can set when creating a Ledger.
     name = models.CharField(
-        _("Name of this ledger"),
+        help_text=_("Name of this ledger"),
+        unique=True,
         max_length=255)
+    description = models.TextField(
+        help_text=_("Any notes to go along with this Transaction."),
+        blank=True)
     increased_by_debits = models.BooleanField(
         help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
         default=None,
@@ -365,9 +403,6 @@ class Ledger(NonDeletableModel, models.Model):
     # Fields for both types of Ledgers
 
     objects = LedgerManager()
-
-    class Meta:
-        unique_together = ('type', 'entity_content_type', 'entity_id')
 
     def get_balance(self):
         """Get the current balance on this Ledger."""
@@ -409,22 +444,35 @@ class LedgerEntry(NonDeletableModel, models.Model):
     LedgerEntries must always be part of a transaction so that they balance
     according to double-entry bookkeeping.
     """
-    objects = LedgerEntryManager()
+    class Meta:
+        verbose_name_plural = "ledger entries"
 
-    ledger = models.ForeignKey(Ledger, related_name='entries')
-    transaction = models.ForeignKey(Transaction, related_name='entries')
+    ledger = models.ForeignKey(
+        Ledger,
+        related_name='entries')
+    transaction = models.ForeignKey(
+        Transaction,
+        related_name='entries')
 
     entry_id = UUIDField(
-        verbose_name=_("UUID for this ledger entry"),
+        help_text=_("UUID for this ledger entry"),
         auto=True,
         version=4)
 
     amount = models.DecimalField(
-        _("Amount of this entry."),
-        max_digits=24, decimal_places=4)
+        help_text=_(
+            NEGATIVE_DEBITS_HELP_TEXT
+            if getattr(settings, 'DEBITS_ARE_NEGATIVE', False)
+            else POSITIVE_DEBITS_HELP_TEXT
+        ),
+        max_digits=24,
+        decimal_places=4)
     action_type = models.CharField(
-        _("Type of action that created this LedgerEntry"),
-        max_length=128, null=False, blank=True)
+        help_text=_("Type of action that created this LedgerEntry"),
+        max_length=128,
+        blank=True)
+
+    objects = LedgerEntryManager()
 
     def __unicode__(self):
         return u"LedgerEntry ({id}) {action} for ${amount}".format(

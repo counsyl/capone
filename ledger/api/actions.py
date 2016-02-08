@@ -7,6 +7,7 @@ from functools import partial
 from django.conf import settings
 from django.db.transaction import atomic
 
+from ledger.api.queries import validate_transaction
 from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LEDGER_CASH
@@ -161,6 +162,7 @@ class TransferAmount(LedgerEntryAction):
 
 class TransactionContext(object):
     """Transactions manage FinancialActions."""
+    @atomic
     def __init__(self, related_object, created_by, posted_timestamp=None,
                  secondary_related_objects=None):
         """Create a new transaction.
@@ -187,15 +189,15 @@ class TransactionContext(object):
                 TransactionRelatedObject.objects.create_for_object(
                     robj, transaction=self.transaction)
 
+    @atomic
     def __enter__(self):
-        if self.transaction.finalized:
-            raise Transaction.UnmodifiableTransactionException
         return self
 
+    @atomic
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.transaction.finalized = True
         self.transaction.save()
 
+    @atomic
     def record_action(self, action):
         """Record an Action in this Transaction.
 
@@ -203,27 +205,6 @@ class TransactionContext(object):
             action - A FinancialAction to include in this Transaction
         """
         self.transaction.entries.add(*action.get_ledger_entries())
-
-    def record_entries(self, entries):
-        """Record raw LedgerEntries: useful for cases not covered in api.actions
-
-        Args:
-            entries - An iterable of already-constructed LedgerEntry ORM
-                objects to be added to this Transaction.  They are validated as
-                having equal debits and credits, so that a Transaction will
-                always balance.
-        """
-        self.transaction.entries.add(*entries)
-
-
-class ReconciliationTransactionContext(TransactionContext):
-    """
-    A TransactionContext that produces a Recon Transaction
-    """
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.transaction.type = Transaction.RECONCILIATION
-        super(ReconciliationTransactionContext, self).__exit__(
-            exc_type, exc_val, exc_tb)
 
 
 class VoidTransaction(object):
@@ -325,3 +306,51 @@ def _credit_or_debit(amount, reverse):
 
 credit = partial(_credit_or_debit, reverse=True)
 debit = partial(_credit_or_debit, reverse=False)
+
+
+@atomic
+def create_transaction(
+    user,
+    evidence=(),
+    ledger_entries=(),
+    notes='',
+    type=None,
+    posted_timestamp=None,
+):
+    """
+    Create a Transaction with LedgerEntries and TransactionRelatedObjects.
+
+    This function is atomic and validates its input before writing to the DB.
+    """
+    if not posted_timestamp:
+        posted_timestamp = datetime.now()
+
+    if not type:
+        type = Transaction.MANUAL
+
+    validate_transaction(
+        user,
+        evidence,
+        ledger_entries,
+        notes,
+        type,
+        posted_timestamp,
+    )
+
+    transaction = Transaction.objects.create(
+        created_by=user,
+        notes=notes,
+        posted_timestamp=posted_timestamp,
+        type=type,
+    )
+
+    transaction.entries.add(*ledger_entries)
+
+    transaction.related_objects.add(*[
+        TransactionRelatedObject(
+            related_object=piece,
+        )
+        for piece in evidence
+    ])
+
+    return transaction

@@ -6,13 +6,13 @@ from django.test import TestCase
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
+from ledger.api.actions import create_transaction
 from ledger.api.actions import credit
 from ledger.api.actions import debit
-from ledger.api.actions import ReconciliationTransactionContext
-from ledger.api.actions import TransactionContext
 from ledger.api.queries import get_all_transactions_for_object
 from ledger.api.queries import get_balances_for_object
 from ledger.api.queries import get_ledger_balances_for_transactions
+from ledger.api.queries import validate_transaction
 from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import OrderFactory
 from ledger.tests.factories import UserFactory
@@ -145,15 +145,18 @@ class TestCompanyWideLedgers(TestCase):
 
         # Add an entry debiting AR and crediting Revenue: this entry should
         # reference the Order.
-        with TransactionContext(order, self.user) as txn_recognize:
-            txn_recognize.record_entries([
+        create_transaction(
+            self.user,
+            evidence=[order],
+            ledger_entries=[
                 LedgerEntry(
                     ledger=self.revenue,
                     amount=credit(self.AMOUNT)),
                 LedgerEntry(
                     ledger=self.accounts_receivable,
                     amount=debit(self.AMOUNT)),
-            ])
+            ],
+        )
 
         # Assert that the correct entries were created.
         self.assertEqual(LedgerEntry.objects.count(), 2)
@@ -170,16 +173,18 @@ class TestCompanyWideLedgers(TestCase):
 
         # Add an entry crediting "A/R" and debiting "Cash (unreconciled)": this
         # entry should reference the CreditCardTransaction.
-        with TransactionContext(
-                credit_card_transaction, self.user) as txn_take_payment:
-            txn_take_payment.record_entries([
+        create_transaction(
+            self.user,
+            evidence=[credit_card_transaction],
+            ledger_entries=[
                 LedgerEntry(
                     ledger=self.accounts_receivable,
                     amount=credit(self.AMOUNT)),
                 LedgerEntry(
                     ledger=self.cash_unrecon,
                     amount=debit(self.AMOUNT))
-            ])
+            ],
+        )
 
         # Assert that the correct entries were created
         self.assertEqual(LedgerEntry.objects.count(), 4)
@@ -197,19 +202,19 @@ class TestCompanyWideLedgers(TestCase):
         # Add an entry crediting "Cash (Unreconciled)" and debiting "Cash
         # (Reconciled)": this entry should reference both an Order and
         # a CreditCardTransaction.
-        with ReconciliationTransactionContext(
-                order,
-                self.user,
-                secondary_related_objects=[credit_card_transaction]
-        ) as txn_reconcile:
-            txn_reconcile.record_entries([
+        create_transaction(
+            self.user,
+            evidence=[order, credit_card_transaction],
+            ledger_entries=[
                 LedgerEntry(
                     ledger=self.cash_unrecon,
                     amount=credit(self.AMOUNT)),
                 LedgerEntry(
                     ledger=self.cash_recon,
                     amount=debit(self.AMOUNT))
-            ])
+            ],
+            type=Transaction.RECONCILIATION,
+        )
 
         # Assert that the correct entries were created.
         self.assertEqual(LedgerEntry.objects.count(), 6)
@@ -256,40 +261,45 @@ class TestCompanyWideLedgers(TestCase):
         ]
 
         for order, credit_card_transaction in CASES:
-            with TransactionContext(order, self.user) as txn_recognize:
-                txn_recognize.record_entries([
+            create_transaction(
+                self.user,
+                evidence=[order],
+                ledger_entries=[
                     LedgerEntry(
                         ledger=self.revenue,
                         amount=credit(self.AMOUNT)),
                     LedgerEntry(
                         ledger=self.accounts_receivable,
                         amount=debit(self.AMOUNT)),
-                ])
+                ],
+            )
 
-            with TransactionContext(
-                    credit_card_transaction, self.user) as txn_take_payment:
-                txn_take_payment.record_entries([
+            create_transaction(
+                self.user,
+                evidence=[credit_card_transaction],
+                ledger_entries=[
                     LedgerEntry(
                         ledger=self.accounts_receivable,
                         amount=credit(self.AMOUNT)),
                     LedgerEntry(
                         ledger=self.cash_unrecon,
                         amount=debit(self.AMOUNT))
-                ])
+                ],
+            )
 
-            with ReconciliationTransactionContext(
-                    order,
-                    self.user,
-                    secondary_related_objects=[credit_card_transaction]
-            ) as txn_reconcile:
-                txn_reconcile.record_entries([
+            create_transaction(
+                self.user,
+                evidence=[order, credit_card_transaction],
+                ledger_entries=[
                     LedgerEntry(
                         ledger=self.cash_unrecon,
                         amount=credit(self.AMOUNT)),
                     LedgerEntry(
                         ledger=self.cash_recon,
                         amount=debit(self.AMOUNT))
-                ])
+                ],
+                type=Transaction.RECONCILIATION,
+            )
 
             self.assertEqual(
                 get_ledger_balances_for_transactions(
@@ -332,41 +342,91 @@ class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
     def test_restricting_get_all_transactions_by_ledger(self):
         order = OrderFactory(amount=self.AMOUNT)
 
-        with TransactionContext(order, self.user) as txn_recognize:
-            txn_recognize.record_entries([
+        txn_recognize = create_transaction(
+            self.user,
+            evidence=[order],
+            ledger_entries=[
                 LedgerEntry(
                     ledger=self.revenue,
                     amount=credit(self.AMOUNT)),
                 LedgerEntry(
                     ledger=self.accounts_receivable,
                     amount=debit(self.AMOUNT)),
-            ])
+            ],
+        )
 
-        # NOTE: I'm fudging this TransactionContext a bit for the sake of this
-        # test: I'm attaching the txn_take_payment LedgerEntries to `order` and
-        # not to a CreditCardTransaction.
-        with TransactionContext(order, self.user) as txn_take_payment:
-            txn_take_payment.record_entries([
+        # NOTE: I'm fudging this Transaction a bit for the sake of this test:
+        # I'm attaching the txn_take_payment LedgerEntries to `order` and not
+        # to a CreditCardTransaction.
+        txn_take_payment = create_transaction(
+            self.user,
+            evidence=[order],
+            ledger_entries=[
                 LedgerEntry(
                     ledger=self.accounts_receivable,
                     amount=credit(self.AMOUNT)),
                 LedgerEntry(
                     ledger=self.cash_unrecon,
                     amount=debit(self.AMOUNT))
-            ])
+            ],
+        )
 
         self.assertEqual(
             set(get_all_transactions_for_object(order)),
-            {txn_recognize.transaction, txn_take_payment.transaction})
+            {txn_recognize, txn_take_payment})
         self.assertEqual(
             set(get_all_transactions_for_object(
                 order, ledgers=[self.revenue])),
-            {txn_recognize.transaction})
+            {txn_recognize})
         self.assertEqual(
             set(get_all_transactions_for_object(
                 order, ledgers=[self.cash_unrecon])),
-            {txn_take_payment.transaction})
+            {txn_take_payment})
         self.assertEqual(
             set(get_all_transactions_for_object(
                 order, ledgers=[self.revenue, self.cash_unrecon])),
-            {txn_recognize.transaction, txn_take_payment.transaction})
+            {txn_recognize, txn_take_payment})
+
+
+class TestCreateTransaction(TestCompanyWideLedgers):
+    def test_setting_posted_timestamp(self):
+        POSTED_DATETIME = datetime(2016, 2, 7, 11, 59)
+        order = OrderFactory(amount=self.AMOUNT)
+
+        txn_recognize = create_transaction(
+            self.user,
+            evidence=[order],
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.revenue,
+                    amount=credit(self.AMOUNT)),
+                LedgerEntry(
+                    ledger=self.accounts_receivable,
+                    amount=debit(self.AMOUNT)),
+            ],
+            posted_timestamp=POSTED_DATETIME,
+        )
+
+        self.assertEqual(txn_recognize.posted_timestamp, POSTED_DATETIME)
+
+
+class TestValidateTransaction(TestCompanyWideLedgers):
+    def test_debits_not_equal_to_credits(self):
+        with self.assertRaises(Transaction.TransactionBalanceException):
+            validate_transaction(
+                self.user,
+                ledger_entries=[
+                    LedgerEntry(
+                        ledger=self.revenue,
+                        amount=credit(self.AMOUNT)),
+                    LedgerEntry(
+                        ledger=self.accounts_receivable,
+                        amount=debit(self.AMOUNT + 2)),
+                ],
+            )
+
+    def test_no_ledger_entries(self):
+        with self.assertRaises(Transaction.NoLedgerEntriesException):
+            validate_transaction(
+                self.user,
+            )
