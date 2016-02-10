@@ -61,6 +61,8 @@ def validate_transaction(
 
     Two, it checks that the Transaction has entries in it.  We do not allow
     empty Transactions.
+
+    Three, it checks that the ledger entries are new, unsaved models.
     """
     total = sum([entry.amount for entry in ledger_entries])
     if total != Decimal(0):
@@ -70,3 +72,8 @@ def validate_transaction(
     if not ledger_entries:
         raise Transaction.NoLedgerEntriesException(
             "Transaction has no entries.")
+
+    for ledger_entry in ledger_entries:
+        if ledger_entry.pk is not None:
+            raise Transaction.ExistingLedgerEntriesException(
+                "LedgerEntry already exists.")
