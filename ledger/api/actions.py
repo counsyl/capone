@@ -204,7 +204,10 @@ class TransactionContext(object):
         Args:
             action - A FinancialAction to include in this Transaction
         """
-        self.transaction.entries.add(*action.get_ledger_entries())
+        ledger_entries = action.get_ledger_entries()
+        for ledger_entry in ledger_entries:
+            ledger_entry.transaction = self.transaction
+        LedgerEntry.objects.bulk_create(ledger_entries)
 
 
 class VoidTransaction(object):
@@ -344,13 +347,17 @@ def create_transaction(
         type=type,
     )
 
-    transaction.entries.add(*ledger_entries)
+    for ledger_entry in ledger_entries:
+        ledger_entry.transaction = transaction
+    LedgerEntry.objects.bulk_create(ledger_entries)
 
-    transaction.related_objects.add(*[
+    transaction_related_objects = [
         TransactionRelatedObject(
             related_object=piece,
+            transaction=transaction,
         )
         for piece in evidence
-    ])
+    ]
+    TransactionRelatedObject.objects.bulk_create(transaction_related_objects)
 
     return transaction

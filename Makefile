@@ -55,10 +55,6 @@ makemigrations: develop
 shell: migrate
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=ledger.tests.settings
 
-.PHONY: runserver
-runserver: migrate
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py runserver --settings=ledger.tests.settings 0.0.0.0:8000
-
 .PHONY: clean
 clean:
 	python setup.py clean

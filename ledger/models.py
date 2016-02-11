@@ -285,6 +285,9 @@ class Transaction(NonDeletableModel, models.Model):
     class NoLedgerEntriesException(TransactionException):
         pass
 
+    class ExistingLedgerEntriesException(TransactionException):
+        pass
+
 
 LEDGER_ACCOUNTS_RECEIVABLE = "ar"
 LEDGER_REVENUE = "revenue"
