@@ -8,7 +8,7 @@ from ledger.api.actions import Payment
 from ledger.api.actions import Refund
 from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
-from ledger.api.actions import VoidTransaction
+from ledger.api.actions import void_transaction
 from ledger.api.actions import WriteDown
 from ledger.api.invoice import Invoice
 from ledger.models import Ledger
@@ -93,13 +93,13 @@ class TestInvoiceReversals(TestInvoicingBase):
 
     def test_void_amounts(self):
         """Make sure that voiding a transaction adds the value back."""
-        VoidTransaction(self.comp_txn, self.user).record_action()
+        void_transaction(self.comp_txn, self.user)
 
         self._assert_invoices(
             self.charge_amount - self.transfer_amount,
             self.transfer_amount - self.comp_amount_1)
 
-        VoidTransaction(self.transfer_txn, self.user).record_action()
+        void_transaction(self.transfer_txn, self.user)
         self._assert_invoices(self.charge_amount, 0)
 
     def test_voids_can_appear_or_be_hidden_on_invoice_transaction_list(self):
@@ -116,7 +116,7 @@ class TestInvoiceReversals(TestInvoicingBase):
                 len(invoice_2.get_ledger_entries(exclude_voids)), 3)
 
         # Void the WriteDown
-        VoidTransaction(self.comp_txn, self.user).record_action()
+        void_transaction(self.comp_txn, self.user)
 
         # Invoice_1 should be unchanged
         invoice_1 = Invoice(self.entity_1)
@@ -150,7 +150,7 @@ class TestInvoiceReversals(TestInvoicingBase):
                 len(invoice_2.get_ledger_entries(exclude_voids)), 3)
 
         # Void the Transfer/WriteDown combo
-        VoidTransaction(self.transfer_txn, self.user).record_action()
+        void_transaction(self.transfer_txn, self.user)
 
         # Invoice_1 should be altered
         invoice_1 = Invoice(self.entity_1)
@@ -176,21 +176,19 @@ class TestInvoiceReversals(TestInvoicingBase):
         invoice = Invoice(self.entity_2)
         self.assertEqual(len(invoice.get_ledger_entries()), 3)
 
-        void_comp_txn = (
-            VoidTransaction(self.comp_txn, self.user).record_action())
+        void_comp_txn = void_transaction(self.comp_txn, self.user)
         invoice = Invoice(self.entity_2)
         self.assertEqual(len(invoice.get_ledger_entries(True)), 2)
         self.assertEqual(len(invoice.get_ledger_entries(False)), 4)
 
         # Now void the voided comp, effectively restoring the comp
-        void_void_comp_txn = (
-            VoidTransaction(void_comp_txn, self.user).record_action())
+        void_void_comp_txn = void_transaction(void_comp_txn, self.user)
         invoice = Invoice(self.entity_2)
         self.assertEqual(len(invoice.get_ledger_entries(True)), 3)
         self.assertEqual(len(invoice.get_ledger_entries(False)), 5)
 
         # And if we void the void void, it should re-void the comp
-        VoidTransaction(void_void_comp_txn, self.user).record_action()
+        void_transaction(void_void_comp_txn, self.user)
         invoice = Invoice(self.entity_2)
         self.assertEqual(len(invoice.get_ledger_entries(True)), 2)
         self.assertEqual(len(invoice.get_ledger_entries(False)), 6)
@@ -207,17 +205,16 @@ class TestInvoiceReversals(TestInvoicingBase):
 
         # Voiding the comp and transfer transactions should mean we now
         # *owe* entity_2
-        void_comp = VoidTransaction(self.comp_txn, self.user).record_action()
-        void_transfer = (
-            VoidTransaction(self.transfer_txn, self.user).record_action())
+        void_comp = void_transaction(self.comp_txn, self.user)
+        void_transfer = void_transaction(self.transfer_txn, self.user)
 
         self._assert_invoices(self.charge_amount, -payment_amount)
 
         # And let's void those voids
-        VoidTransaction(void_transfer, self.user).record_action()
+        void_transaction(void_transfer, self.user)
         self._assert_invoices(self.charge_amount - self.transfer_amount,
                               self.comp_amount_2)
-        VoidTransaction(void_comp, self.user).record_action()
+        void_transaction(void_comp, self.user)
         # And entity_2's responsibility is back to 0!
         self._assert_invoices(self.charge_amount - self.transfer_amount, 0)
 
@@ -259,7 +256,7 @@ class TestInvoiceRefunds(TestInvoicingBase):
         self.assertEqual(invoice_1.amount,
                          self.charge_amount - self.payment_amount)
         # Voiding the charge results in a bigger refund being owed
-        VoidTransaction(self.charge, self.user).record_action()
+        void_transaction(self.charge, self.user)
         invoice_2 = Invoice(self.entity_1)
         self.assertEqual(invoice_2.amount, -self.payment_amount)
         # If we process the refund, everything should be back to 0
@@ -339,12 +336,9 @@ class TestInvoiceBackdatedTransactions(TestInvoicingBase):
         self.payment_txn = txn.transaction
 
         # Void the write_down and the transfer
-        (
-            VoidTransaction(
-                self.transfer_txn, self.user,
-                posted_timestamp=self.transfer_txn.posted_timestamp)
-            .record_action()
-        )
+        void_transaction(
+            self.transfer_txn, self.user,
+            posted_timestamp=self.transfer_txn.posted_timestamp)
 
         self.user_invoice_2 = Invoice(self.user, timestamp=self.invoice_2_date)
         self.entity_invoice_2 = Invoice(
