@@ -247,11 +247,6 @@ class VoidTransaction(object):
         self.posted_timestamp = posted_timestamp
 
     def get_ledger_entries(self):
-        if not hasattr(self, 'context'):
-            raise Transaction.UnvoidableTransactionException(
-                "You can only use VoidTransaciton.record_action() to void "
-                "transactions")
-
         entries = []
         for ledger_entry in self.other_transaction.entries.all():
             entries.append(LedgerEntry(
@@ -260,6 +255,7 @@ class VoidTransaction(object):
                 action_type=type(self).__name__))
         return entries
 
+    @atomic
     def record_action(self):
         try:
             self.other_transaction.voided_by
@@ -272,20 +268,22 @@ class VoidTransaction(object):
                 "Cannot void the same Transaction #({id}) more than once. "
                 .format(id=self.other_transaction.transaction_id))
 
-        # TODO: Should we be copying the secondary related objects here?
-        with TransactionContext(
-                self.other_transaction.primary_related_object,
-                self.created_by,
-                posted_timestamp=self.posted_timestamp,
-                secondary_related_objects=self.other_transaction.
-                secondary_related_objects) as txn:
-            txn.transaction.voids = self.other_transaction
-            txn.transaction.notes = ("Voiding transaction %s" %
-                                     self.other_transaction)
-            self.context = txn
-            txn.record_action(self)  # Will call self.get_ledger_entries()
-            delattr(self, 'context')
-        return txn.transaction
+        evidence = [
+            tro.related_object for tro
+            in self.other_transaction.related_objects.all()
+        ]
+
+        transaction = create_transaction(
+            user=self.created_by,
+            evidence=evidence,
+            ledger_entries=self.get_ledger_entries(),
+            notes='Voiding transaction {}'.format(self.other_transaction),
+            posted_timestamp=self.posted_timestamp,
+        )
+        transaction.voids = self.other_transaction
+        transaction.save()
+
+        return transaction
 
 
 def _credit_or_debit(amount, reverse):

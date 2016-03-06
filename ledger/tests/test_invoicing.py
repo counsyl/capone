@@ -15,7 +15,6 @@ from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LEDGER_CASH
 from ledger.models import LEDGER_REVENUE
-from ledger.models import Transaction
 from ledger.tests.factories import UserFactory
 
 
@@ -221,12 +220,6 @@ class TestInvoiceReversals(TestInvoicingBase):
         VoidTransaction(void_comp, self.user).record_action()
         # And entity_2's responsibility is back to 0!
         self._assert_invoices(self.charge_amount - self.transfer_amount, 0)
-
-    def test_wrong_void_syntax(self):
-        with TransactionContext(self.user, self.user) as txn:
-            self.assertRaises(Transaction.UnvoidableTransactionException,
-                              txn.record_action,
-                              VoidTransaction(self.transfer_txn, self.user))
 
 
 class TestInvoiceRefunds(TestInvoicingBase):

@@ -158,6 +158,38 @@ class TestVoidTransaction(TestVoidBase):
         self.assertEqual(self.creation_user_ar_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_ar_ledger.get_balance(), charge_amount)
 
+    def test_void_from_create_transaction(self):
+        amount = D(100)
+        evidence = UserFactory.create_batch(3)
+        transaction = create_transaction(
+            user=UserFactory(),
+            evidence=evidence,
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.entity_ar_ledger,
+                    amount=credit(amount),
+                ),
+                LedgerEntry(
+                    ledger=self.entity_cash_ledger,
+                    amount=debit(amount),
+                ),
+            ],
+        )
+        self.assertEqual(self.entity_ar_ledger.get_balance(), credit(amount))
+        self.assertEqual(self.entity_cash_ledger.get_balance(), debit(amount))
+        void_transaction = (
+            VoidTransaction(transaction, self.creation_user)
+            .record_action()
+        )
+        self.assertEqual(
+            set(tro.related_object for tro
+                in void_transaction.related_objects.all()),
+            set(evidence),
+        )
+        self.assertEqual(self.entity_ar_ledger.get_balance(), D(0))
+        self.assertEqual(self.entity_cash_ledger.get_balance(), D(0))
+        self.assertEqual(void_transaction.voids, transaction)
+
 
 class TestVoidTimestamps(TestVoidBase):
     def test_auto_timestamp(self):
