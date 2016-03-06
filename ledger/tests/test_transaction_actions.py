@@ -11,6 +11,7 @@ from ledger.api.actions import debit
 from ledger.api.actions import Payment
 from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
+from ledger.api.actions import void_transaction
 from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
 from ledger.models import Ledger
@@ -177,18 +178,18 @@ class TestVoidTransaction(TestVoidBase):
         )
         self.assertEqual(self.entity_ar_ledger.get_balance(), credit(amount))
         self.assertEqual(self.entity_cash_ledger.get_balance(), debit(amount))
-        void_transaction = (
-            VoidTransaction(transaction, self.creation_user)
-            .record_action()
-        )
+        voiding_transaction = void_transaction(transaction, self.creation_user)
         self.assertEqual(
             set(tro.related_object for tro
-                in void_transaction.related_objects.all()),
+                in voiding_transaction.related_objects.all()),
             set(evidence),
         )
         self.assertEqual(self.entity_ar_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_cash_ledger.get_balance(), D(0))
-        self.assertEqual(void_transaction.voids, transaction)
+        self.assertEqual(voiding_transaction.voids, transaction)
+        self.assertEqual(
+            voiding_transaction.notes,
+            'Voiding transaction {}'.format(transaction))
 
 
 class TestVoidTimestamps(TestVoidBase):

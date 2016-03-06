@@ -286,6 +286,37 @@ class VoidTransaction(object):
         return transaction
 
 
+@atomic
+def void_transaction(
+    transaction,
+    user,
+    notes=None,
+    type=None,
+    posted_timestamp=None,
+):
+    """
+    Create a new transaction that voids the given Transaction.
+
+    The evidence will be the same as the voided Transaction. The ledger
+    entries will be the same except have the opposite sense.
+
+    If the posted_timestamp is not given, it will be the same as the
+    voided Transaction.
+
+    If notes is not given, a default note will be set.
+    """
+    void_transaction = (
+        VoidTransaction(transaction, user, posted_timestamp)
+        .record_action()
+    )
+    if notes is not None:
+        void_transaction.notes = notes
+    if type is not None:
+        void_transaction.type = type
+    void_transaction.save()
+    return void_transaction
+
+
 def _credit_or_debit(amount, reverse):
     """
     Return the correctly signed `amount`, abiding by `DEBITS_ARE_NEGATIVE`
