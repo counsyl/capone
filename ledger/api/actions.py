@@ -257,17 +257,6 @@ class VoidTransaction(object):
 
     @atomic
     def record_action(self):
-        try:
-            self.other_transaction.voided_by
-        except Transaction.DoesNotExist:
-            # Because OneToOne fields throw an exception instead of returning
-            # None!
-            pass
-        else:
-            raise Transaction.UnvoidableTransactionException(
-                "Cannot void the same Transaction #({id}) more than once. "
-                .format(id=self.other_transaction.transaction_id))
-
         evidence = [
             tro.related_object for tro
             in self.other_transaction.related_objects.all()
@@ -305,6 +294,17 @@ def void_transaction(
 
     If notes is not given, a default note will be set.
     """
+    try:
+        transaction.voided_by
+    except Transaction.DoesNotExist:
+        # Because OneToOne fields throw an exception instead of returning
+        # None!
+        pass
+    else:
+        raise Transaction.UnvoidableTransactionException(
+            "Cannot void the same Transaction #({id}) more than once."
+            .format(id=transaction.transaction_id))
+
     void_transaction = (
         VoidTransaction(transaction, user, posted_timestamp)
         .record_action()
