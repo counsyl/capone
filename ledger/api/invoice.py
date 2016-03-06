@@ -93,7 +93,7 @@ class Invoice(object):
         Now the list of LedgerEntries for entity_2 contains a Transfer and
         a WriteDown. Say we then voided example_txn.
 
-            VoidTransaction(transfer_txn.transaction).record_action()
+            void_transaction(transfer_txn.transaction, user)
 
         Then entity_2's ledger entries are a Transfer, WriteDown, -Transfer,
         -WriteDown. Note the first two and the last two share transactions.

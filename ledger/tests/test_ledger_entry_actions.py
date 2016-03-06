@@ -13,7 +13,7 @@ from ledger.api.actions import Payment
 from ledger.api.actions import Refund
 from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
-from ledger.api.actions import VoidTransaction
+from ledger.api.actions import void_transaction
 from ledger.api.actions import WriteDown
 from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
@@ -211,8 +211,8 @@ class TestTransferAction(LedgerEntryActionSetUp):
                 TransferAmount(self.entity_1, self.entity_2, amount))
 
         # Void the charge
-        void_txn = VoidTransaction(
-            transfer_txn.transaction, self.creation_user).record_action()
+        void_txn = void_transaction(
+            transfer_txn.transaction, self.creation_user)
 
         self.assertEqual(void_txn.voids, transfer_txn.transaction)
 
