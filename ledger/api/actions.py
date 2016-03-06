@@ -289,10 +289,10 @@ def void_transaction(
     The evidence will be the same as the voided Transaction. The ledger
     entries will be the same except have the opposite sense.
 
-    If the posted_timestamp is not given, it will be the same as the
-    voided Transaction.
-
     If notes is not given, a default note will be set.
+
+    If the posted_timestamp or type is not given, they will be the same
+    as the voided Transaction.
     """
     try:
         transaction.voided_by
@@ -305,16 +305,40 @@ def void_transaction(
             "Cannot void the same Transaction #({id}) more than once."
             .format(id=transaction.transaction_id))
 
-    void_transaction = (
-        VoidTransaction(transaction, user, posted_timestamp)
-        .record_action()
+    evidence = [
+        tro.related_object for tro in transaction.related_objects.all()
+    ]
+
+    ledger_entries = [
+        LedgerEntry(
+            ledger=ledger_entry.ledger,
+            amount=-ledger_entry.amount,
+            action_type='VoidTransaction')
+        for ledger_entry in transaction.entries.all()
+    ]
+
+    if notes is None:
+        notes = 'Voiding transaction {}'.format(transaction)
+
+    if posted_timestamp is None:
+        posted_timestamp = transaction.posted_timestamp
+
+    if type is None:
+        type = transaction.type
+
+    voiding_transaction = create_transaction(
+        user=user,
+        evidence=evidence,
+        ledger_entries=ledger_entries,
+        notes=notes,
+        posted_timestamp=posted_timestamp,
+        type=type,
     )
-    if notes is not None:
-        void_transaction.notes = notes
-    if type is not None:
-        void_transaction.type = type
-    void_transaction.save()
-    return void_transaction
+
+    voiding_transaction.voids = transaction
+    voiding_transaction.save()
+
+    return voiding_transaction
 
 
 def _credit_or_debit(amount, reverse):
