@@ -12,7 +12,6 @@ from ledger.api.actions import Payment
 from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
 from ledger.api.actions import void_transaction
-from ledger.api.actions import VoidTransaction
 from ledger.api.actions import WriteDown
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
@@ -45,8 +44,7 @@ class TestVoidTransaction(TestVoidBase):
             txn.record_action(Charge(self.entity, amount))
 
         # Then void it
-        void_txn = VoidTransaction(
-            txn.transaction, self.creation_user).record_action()
+        void_txn = void_transaction(txn.transaction, self.creation_user)
 
         self.assertEqual(void_txn.voids, txn.transaction)
 
@@ -60,12 +58,12 @@ class TestVoidTransaction(TestVoidBase):
             txn.record_action(Charge(self.entity, amount))
 
         # Then void it
-        VoidTransaction(txn.transaction, self.creation_user).record_action()
+        void_transaction(txn.transaction, self.creation_user)
 
         # Trying to void the same transaction again will not succeed
         self.assertRaises(
             Transaction.UnvoidableTransactionException,
-            VoidTransaction(txn.transaction, self.creation_user).record_action)
+            void_transaction, txn.transaction, self.creation_user)
 
     def test_can_void_void(self):
         # A void transaction can be voided, thus re-instating the original txn
@@ -75,14 +73,12 @@ class TestVoidTransaction(TestVoidBase):
             txn.record_action(Charge(self.entity, amount))
 
         # Then void it
-        void_txn = VoidTransaction(
-            txn.transaction, self.creation_user).record_action()
+        void_txn = void_transaction(txn.transaction, self.creation_user)
 
         self.assertEqual(void_txn.voids, txn.transaction)
 
         # And void the void
-        void_void_txn = (
-            VoidTransaction(void_txn, self.creation_user).record_action())
+        void_void_txn = (void_transaction(void_txn, self.creation_user))
         self.assertEqual(void_void_txn.voids, void_txn)
 
         self.assertEqual(self.entity_ar_ledger.get_balance(), amount)
@@ -101,7 +97,7 @@ class TestVoidTransaction(TestVoidBase):
         self.assertNotEqual(txn_1, txn_2)
         self.assertNotEqual(txn_1.transaction, txn_2.transaction)
 
-        VoidTransaction(txn_1.transaction, self.creation_user).record_action()
+        void_transaction(txn_1.transaction, self.creation_user)
 
         self.assertEqual(self.entity_ar_ledger.get_balance(), amount_2)
         self.assertEqual(self.entity_rev_ledger.get_balance(), -amount_2)
@@ -118,15 +114,9 @@ class TestVoidTransaction(TestVoidBase):
             pay_txn.record_action(Payment(self.entity, amount))
 
         # Void the charge
-        (
-            VoidTransaction(charge_txn.transaction, self.creation_user)
-            .record_action()
-        )
+        void_transaction(charge_txn.transaction, self.creation_user)
         # And void the payment
-        (
-            VoidTransaction(pay_txn.transaction, self.creation_user)
-            .record_action()
-        )
+        void_transaction(pay_txn.transaction, self.creation_user)
         self.assertEqual(self.entity_ar_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_rev_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_cash_ledger.get_balance(), D(0))
@@ -155,7 +145,7 @@ class TestVoidTransaction(TestVoidBase):
         self.assertEqual(self.creation_user_ar_ledger.get_balance(), D(99))
         self.assertEqual(self.entity_ar_ledger.get_balance(), D(200))
 
-        VoidTransaction(txn2.transaction, self.creation_user).record_action()
+        void_transaction(txn2.transaction, self.creation_user)
         self.assertEqual(self.creation_user_ar_ledger.get_balance(), D(0))
         self.assertEqual(self.entity_ar_ledger.get_balance(), charge_amount)
 
@@ -203,8 +193,7 @@ class TestVoidTimestamps(TestVoidBase):
             charge_txn.record_action(Charge(self.entity, amount))
 
         # Then void it
-        void_txn = VoidTransaction(
-            charge_txn.transaction, self.creation_user).record_action()
+        void_txn = void_transaction(charge_txn.transaction, self.creation_user)
         self.assertEqual(charge_txn.transaction.posted_timestamp,
                          void_txn.posted_timestamp)
 
@@ -218,9 +207,9 @@ class TestVoidTimestamps(TestVoidBase):
 
         # Then void it
         now = datetime.now()
-        void_txn = VoidTransaction(
+        void_txn = void_transaction(
             charge_txn.transaction, self.creation_user,
-            posted_timestamp=now).record_action()
+            posted_timestamp=now)
         self.assertEqual(now, void_txn.posted_timestamp)
 
 
