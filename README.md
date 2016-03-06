@@ -118,8 +118,8 @@ print(invoice.get_ledger_entries())
 # [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>, <LedgerEntry: LedgerEntry (6e6a903640be44b9b79fda2e4cdc313d) Charge for $100.0000>]
 
 # Let's undo that charge
-from ledger.api.actions import VoidTransaction
-VoidTransaction(txn.transaction, wilee).record()
+from ledger.api.actions import void_transaction
+void_transaction(txn.transaction, wilee)
 invoice = Invoice(wilee)
 print(invoice.get_ledger_entries())
 # [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>]
@@ -333,7 +333,7 @@ from ledger.api.actions import Refund
 from ledger.api.actions import TransactionContext
 from ledger.api.actions import TransferAmount
 from ledger.api.actions import WriteDown
-from ledger.api.actions import VoidTransaction
+from ledger.api.actions import void_transaction
 
 entity = User.objects.earliest('?')
 user = User.objects.latest('id')
@@ -393,7 +393,7 @@ is useful when you need to, say, void a transaction:
 with TransactionContext(product, user) as charge_txn:
     charge_txn.record(Charge(entity, 1000))
 
-VoidTransaction(charge_txn.transaction, user).record()
+void_transaction(charge_txn.transaction, user)
 ```
 
 ## LedgerEntryActions
