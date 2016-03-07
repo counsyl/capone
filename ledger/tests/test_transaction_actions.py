@@ -178,8 +178,40 @@ class TestVoidTransaction(TestVoidBase):
         self.assertEqual(self.entity_cash_ledger.get_balance(), D(0))
         self.assertEqual(voiding_transaction.voids, transaction)
         self.assertEqual(
+            voiding_transaction.posted_timestamp,
+            transaction.posted_timestamp)
+        self.assertEqual(
+            voiding_transaction.type,
+            transaction.type)
+        self.assertEqual(
             voiding_transaction.notes,
             'Voiding transaction {}'.format(transaction))
+
+    def test_void_with_overridden_notes_and_type(self):
+        amount = D(100)
+        evidence = UserFactory.create_batch(3)
+        transaction = create_transaction(
+            user=UserFactory(),
+            evidence=evidence,
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.entity_ar_ledger,
+                    amount=credit(amount),
+                ),
+                LedgerEntry(
+                    ledger=self.entity_cash_ledger,
+                    amount=debit(amount),
+                ),
+            ],
+            type=Transaction.AUTOMATIC,
+        )
+        voiding_transaction = void_transaction(
+            transaction,
+            self.creation_user,
+            notes='test notes',
+            type=Transaction.MANUAL)
+        self.assertEqual(voiding_transaction.notes, 'test notes')
+        self.assertEqual(voiding_transaction.type, Transaction.MANUAL)
 
 
 class TestVoidTimestamps(TestVoidBase):
