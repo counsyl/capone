@@ -262,12 +262,12 @@ def void_transaction(
         type = transaction.type
 
     voiding_transaction = create_transaction(
-        user=user,
         evidence=evidence,
         ledger_entries=ledger_entries,
         notes=notes,
         posted_timestamp=posted_timestamp,
         type=type,
+        user=user,
     )
 
     voiding_transaction.voids = transaction
