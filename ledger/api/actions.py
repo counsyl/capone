@@ -210,82 +210,70 @@ class TransactionContext(object):
         LedgerEntry.objects.bulk_create(ledger_entries)
 
 
-class VoidTransaction(object):
-    """Void a given Transaction.
-
-    VoidTransactions are not enclosed in a TransactionContext, since they are
-    really their own Transactions. It wouldn't make sense to allow other,
-    non-voiding actions in a VoidTransaction because that transaction is
-    marked as 'voiding' another, so it would break an assumption about
-    the ledger entries contained.
-
-    The do have a similar syntax to TransactionContext, though:
-
-    with TransactionContext(related_object, created_by) as txn:
-        txn.record_action(Charge(entity, 100))
-
-    VoidTransaction(
-        txn.transaction, created_by[, posted_timestamp]).record_action()
-
-    It is assumed that the related_object must be the same as the transaction
-    you're voiding.
+@atomic
+def void_transaction(
+    transaction,
+    user,
+    notes=None,
+    type=None,
+    posted_timestamp=None,
+):
     """
-    def __init__(self, other_transaction, created_by, posted_timestamp=None):
-        """Create a VoidTransaction.
+    Create a new transaction that voids the given Transaction.
 
-        Args:
-            other_transaction: The Transaction you want to void
-            created_by: The user responsible for this void
-            posted_timestamp: Optional timestamp for when this was posted.
-                If none provided, then default to the posted_timestamp of
-                the transaction we're voiding.
-        """
-        self.other_transaction = other_transaction
-        self.created_by = created_by
-        if not posted_timestamp:
-            posted_timestamp = other_transaction.posted_timestamp
-        self.posted_timestamp = posted_timestamp
+    The evidence will be the same as the voided Transaction. The ledger
+    entries will be the same except have the opposite sense.
 
-    def get_ledger_entries(self):
-        if not hasattr(self, 'context'):
-            raise Transaction.UnvoidableTransactionException(
-                "You can only use VoidTransaciton.record_action() to void "
-                "transactions")
+    If notes is not given, a default note will be set.
 
-        entries = []
-        for ledger_entry in self.other_transaction.entries.all():
-            entries.append(LedgerEntry(
-                ledger=ledger_entry.ledger,
-                amount=-ledger_entry.amount,
-                action_type=type(self).__name__))
-        return entries
+    If the posted_timestamp or type is not given, they will be the same
+    as the voided Transaction.
+    """
+    try:
+        transaction.voided_by
+    except Transaction.DoesNotExist:
+        # Because OneToOne fields throw an exception instead of returning
+        # None!
+        pass
+    else:
+        raise Transaction.UnvoidableTransactionException(
+            "Cannot void the same Transaction #({id}) more than once."
+            .format(id=transaction.transaction_id))
 
-    def record_action(self):
-        try:
-            self.other_transaction.voided_by
-        except Transaction.DoesNotExist:
-            # Because OneToOne fields throw an exception instead of returning
-            # None!
-            pass
-        else:
-            raise Transaction.UnvoidableTransactionException(
-                "Cannot void the same Transaction #({id}) more than once. "
-                .format(id=self.other_transaction.transaction_id))
+    evidence = [
+        tro.related_object for tro in transaction.related_objects.all()
+    ]
 
-        # TODO: Should we be copying the secondary related objects here?
-        with TransactionContext(
-                self.other_transaction.primary_related_object,
-                self.created_by,
-                posted_timestamp=self.posted_timestamp,
-                secondary_related_objects=self.other_transaction.
-                secondary_related_objects) as txn:
-            txn.transaction.voids = self.other_transaction
-            txn.transaction.notes = ("Voiding transaction %s" %
-                                     self.other_transaction)
-            self.context = txn
-            txn.record_action(self)  # Will call self.get_ledger_entries()
-            delattr(self, 'context')
-        return txn.transaction
+    ledger_entries = [
+        LedgerEntry(
+            ledger=ledger_entry.ledger,
+            amount=-ledger_entry.amount,
+            action_type='VoidTransaction')
+        for ledger_entry in transaction.entries.all()
+    ]
+
+    if notes is None:
+        notes = 'Voiding transaction {}'.format(transaction)
+
+    if posted_timestamp is None:
+        posted_timestamp = transaction.posted_timestamp
+
+    if type is None:
+        type = transaction.type
+
+    voiding_transaction = create_transaction(
+        evidence=evidence,
+        ledger_entries=ledger_entries,
+        notes=notes,
+        posted_timestamp=posted_timestamp,
+        type=type,
+        user=user,
+    )
+
+    voiding_transaction.voids = transaction
+    voiding_transaction.save()
+
+    return voiding_transaction
 
 
 def _credit_or_debit(amount, reverse):
