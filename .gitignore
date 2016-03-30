@@ -9,6 +9,7 @@
 *.egg-info/*
 docs/_build/*
 dist/*
+pbr-*.egg/
 
 *.log
 nosetests*.xml
