@@ -27,8 +27,6 @@ DATABASES = {
     },
 }
 
-ROOT_URLCONF = "tests.urls"
-
 ALLOWED_HOSTS = []
 
 STATIC_FILE_FINDERS = (
