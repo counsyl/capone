@@ -480,3 +480,29 @@ class LedgerEntry(NonDeletableModel, models.Model):
     def __unicode__(self):
         return u"LedgerEntry ({id}) {action} for ${amount}".format(
             id=self.entry_id, amount=self.amount, action=self.action_type)
+
+
+class LedgerBalance(models.Model):
+    """
+    Denormalized ledger balances for related objects.
+    """
+    class Meta:
+        unique_together = (
+            ('ledger', 'related_object_content_type', 'related_object_id'),
+        )
+
+    ledger = models.ForeignKey(
+        'Ledger')
+
+    related_object_content_type = models.ForeignKey(
+        ContentType)
+    related_object_id = models.PositiveIntegerField(
+        db_index=True)
+    related_object = GenericForeignKey(
+        'related_object_content_type',
+        'related_object_id')
+
+    balance = models.DecimalField(
+        default=Decimal(0),
+        max_digits=24,
+        decimal_places=4)
