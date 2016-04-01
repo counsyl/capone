@@ -14,7 +14,7 @@ pbr-*.egg/
 *.log
 nosetests*.xml
 
-.coverage
+.coverage*
 coverage.xml
 coverage
 
