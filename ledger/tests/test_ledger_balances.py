@@ -2,6 +2,7 @@ from collections import defaultdict
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import F
 from django.test import TransactionTestCase
 
 from ledger.api.actions import create_transaction
@@ -15,10 +16,13 @@ from ledger.models import Transaction
 from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import OrderFactory
 from ledger.tests.factories import UserFactory
+from ledger.tests.models import Order
 from ledger.utils import rebuild_ledger_balances
 
 
 class TestLedgerBalances(TransactionTestCase):
+
+    amount = Decimal('50.00')
 
     def setUp(self):
         self.order_1, self.order_2 = OrderFactory.create_batch(2)
@@ -63,17 +67,17 @@ class TestLedgerBalances(TransactionTestCase):
                 set(obj.ledger_balances.values_list('ledger', 'balance')),
                 ledger_balances)
 
-    def add_transaction(self, orders, amount):
+    def add_transaction(self, orders):
         return create_transaction(
             self.user,
             evidence=orders,
             ledger_entries=[
                 LedgerEntry(
                     ledger=self.ar_ledger,
-                    amount=credit(amount)),
+                    amount=credit(self.amount)),
                 LedgerEntry(
                     ledger=self.cash_ledger,
-                    amount=debit(amount)),
+                    amount=debit(self.amount)),
             ],
         )
 
@@ -86,52 +90,47 @@ class TestLedgerBalances(TransactionTestCase):
         )
 
     def test_ledger_balance_update(self):
-        amount = Decimal('50.00')
-
-        self.add_transaction([self.order_1], amount)
+        self.add_transaction([self.order_1])
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount)),
-            (self.order_1, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount)),
+            (self.order_1, self.cash_ledger, debit(self.amount)),
             (self.order_2, self.ar_ledger, None),
             (self.order_2, self.cash_ledger, None),
         )
 
-        self.add_transaction([self.order_2], amount)
+        self.add_transaction([self.order_2])
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount)),
-            (self.order_1, self.cash_ledger, debit(amount)),
-            (self.order_2, self.ar_ledger, credit(amount)),
-            (self.order_2, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount)),
+            (self.order_1, self.cash_ledger, debit(self.amount)),
+            (self.order_2, self.ar_ledger, credit(self.amount)),
+            (self.order_2, self.cash_ledger, debit(self.amount)),
         )
 
-        self.add_transaction([self.order_1], amount)
+        self.add_transaction([self.order_1])
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount) * 2),
-            (self.order_1, self.cash_ledger, debit(amount) * 2),
-            (self.order_2, self.ar_ledger, credit(amount)),
-            (self.order_2, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount) * 2),
+            (self.order_1, self.cash_ledger, debit(self.amount) * 2),
+            (self.order_2, self.ar_ledger, credit(self.amount)),
+            (self.order_2, self.cash_ledger, debit(self.amount)),
         )
 
-        transaction = self.add_transaction(
-            [self.order_1, self.order_2], amount)
+        transaction = self.add_transaction([self.order_1, self.order_2])
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount) * 3),
-            (self.order_1, self.cash_ledger, debit(amount) * 3),
-            (self.order_2, self.ar_ledger, credit(amount) * 2),
-            (self.order_2, self.cash_ledger, debit(amount) * 2),
+            (self.order_1, self.ar_ledger, credit(self.amount) * 3),
+            (self.order_1, self.cash_ledger, debit(self.amount) * 3),
+            (self.order_2, self.ar_ledger, credit(self.amount) * 2),
+            (self.order_2, self.cash_ledger, debit(self.amount) * 2),
         )
 
         void_transaction(transaction, self.user)
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount) * 2),
-            (self.order_1, self.cash_ledger, debit(amount) * 2),
-            (self.order_2, self.ar_ledger, credit(amount)),
-            (self.order_2, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount) * 2),
+            (self.order_1, self.cash_ledger, debit(self.amount) * 2),
+            (self.order_2, self.ar_ledger, credit(self.amount)),
+            (self.order_2, self.cash_ledger, debit(self.amount)),
         )
 
     def test_rebuild_ledger_balance(self):
-        amount = Decimal('50.00')
-
         rebuild_ledger_balances()
         self.assert_objects_have_ledger_balances(
             (self.order_1, self.ar_ledger, None),
@@ -140,57 +139,83 @@ class TestLedgerBalances(TransactionTestCase):
             (self.order_2, self.cash_ledger, None),
         )
 
-        self.add_transaction([self.order_1], amount)
+        self.add_transaction([self.order_1])
         rebuild_ledger_balances()
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount)),
-            (self.order_1, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount)),
+            (self.order_1, self.cash_ledger, debit(self.amount)),
             (self.order_2, self.ar_ledger, None),
             (self.order_2, self.cash_ledger, None),
         )
 
-        self.add_transaction([self.order_2], amount)
+        self.add_transaction([self.order_2])
         rebuild_ledger_balances()
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount)),
-            (self.order_1, self.cash_ledger, debit(amount)),
-            (self.order_2, self.ar_ledger, credit(amount)),
-            (self.order_2, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount)),
+            (self.order_1, self.cash_ledger, debit(self.amount)),
+            (self.order_2, self.ar_ledger, credit(self.amount)),
+            (self.order_2, self.cash_ledger, debit(self.amount)),
         )
 
-        self.add_transaction([self.order_1], amount)
+        self.add_transaction([self.order_1])
         rebuild_ledger_balances()
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount) * 2),
-            (self.order_1, self.cash_ledger, debit(amount) * 2),
-            (self.order_2, self.ar_ledger, credit(amount)),
-            (self.order_2, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount) * 2),
+            (self.order_1, self.cash_ledger, debit(self.amount) * 2),
+            (self.order_2, self.ar_ledger, credit(self.amount)),
+            (self.order_2, self.cash_ledger, debit(self.amount)),
         )
 
-        transaction = self.add_transaction(
-            [self.order_1, self.order_2], amount)
+        transaction = self.add_transaction([self.order_1, self.order_2])
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount) * 3),
-            (self.order_1, self.cash_ledger, debit(amount) * 3),
-            (self.order_2, self.ar_ledger, credit(amount) * 2),
-            (self.order_2, self.cash_ledger, debit(amount) * 2),
+            (self.order_1, self.ar_ledger, credit(self.amount) * 3),
+            (self.order_1, self.cash_ledger, debit(self.amount) * 3),
+            (self.order_2, self.ar_ledger, credit(self.amount) * 2),
+            (self.order_2, self.cash_ledger, debit(self.amount) * 2),
         )
 
         void_transaction(transaction, self.user)
         rebuild_ledger_balances()
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount) * 2),
-            (self.order_1, self.cash_ledger, debit(amount) * 2),
-            (self.order_2, self.ar_ledger, credit(amount)),
-            (self.order_2, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount) * 2),
+            (self.order_1, self.cash_ledger, debit(self.amount) * 2),
+            (self.order_2, self.ar_ledger, credit(self.amount)),
+            (self.order_2, self.cash_ledger, debit(self.amount)),
         )
 
         LedgerBalance.objects.update(balance=Decimal('1.00'))
         LedgerBalance.objects.first().delete()
         rebuild_ledger_balances()
         self.assert_objects_have_ledger_balances(
-            (self.order_1, self.ar_ledger, credit(amount) * 2),
-            (self.order_1, self.cash_ledger, debit(amount) * 2),
-            (self.order_2, self.ar_ledger, credit(amount)),
-            (self.order_2, self.cash_ledger, debit(amount)),
+            (self.order_1, self.ar_ledger, credit(self.amount) * 2),
+            (self.order_1, self.cash_ledger, debit(self.amount) * 2),
+            (self.order_2, self.ar_ledger, credit(self.amount)),
+            (self.order_2, self.cash_ledger, debit(self.amount)),
         )
+
+    def test_ledger_balances_filtering(self):
+        Order.objects.update(amount=self.amount * 2)
+
+        all_cash_orders = (
+            Order.objects
+            .filter(
+                id__in=(self.order_1.id, self.order_2.id),
+                ledger_balances__ledger=self.cash_ledger,
+                ledger_balances__balance=F('amount'),
+            )
+        )
+
+        self.assertEqual(set(all_cash_orders.all()), set())
+
+        self.add_transaction([self.order_1])
+        self.assertEqual(set(all_cash_orders.all()), set())
+
+        self.add_transaction([self.order_1])
+        self.assertEqual(set(all_cash_orders.all()), {self.order_1})
+
+        self.add_transaction([self.order_2])
+        self.assertEqual(set(all_cash_orders.all()), {self.order_1})
+
+        self.add_transaction([self.order_2])
+        self.assertEqual(set(all_cash_orders.all()),
+                         {self.order_1, self.order_2})
