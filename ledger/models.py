@@ -148,6 +148,15 @@ class TransactionQuerySet(NonDeletableQuerySet):
             return self.filter(
                 related_objects__in=related_objects_qs).distinct('id')
 
+    def non_void(self):
+        """
+        Filter out voided and voiding transactions.
+        """
+        return self.filter(
+            voided_by__isnull=True,
+            voids__isnull=True,
+        )
+
 
 class TransactionManager(NoDeleteManager):
     def create_for_related_object(self, related_object, **kwargs):
