@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 from django.db import models, migrations
 from decimal import Decimal
 
+from ledger.utils import REBUILD_LEDGER_BALANCES_SQL
+
 
 class Migration(migrations.Migration):
 
@@ -30,4 +32,5 @@ class Migration(migrations.Migration):
             name='ledgerbalance',
             unique_together=set([('ledger', 'related_object_content_type', 'related_object_id')]),
         ),
+        migrations.RunSQL(REBUILD_LEDGER_BALANCES_SQL),
     ]
