@@ -2,13 +2,13 @@ from decimal import Decimal
 
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
+from counsyl_django_utils.models.non_deletable import NonDeletableQuerySet
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
 from django.db.models import Sum
-from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
 from uuidfield.fields import UUIDField
 
@@ -108,7 +108,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     objects = TransactionRelatedObjectManager()
 
 
-class TransactionQuerySet(QuerySet):
+class TransactionQuerySet(NonDeletableQuerySet):
     def filter_by_related_objects(self, related_objects=(), require_all=True):
         """Filter Transactions by arbitrary related objects.
 
@@ -415,7 +415,7 @@ class Ledger(NonDeletableModel, models.Model):
         return self.name or repr(self.entity)
 
 
-class LedgerEntryQuerySet(QuerySet):
+class LedgerEntryQuerySet(NonDeletableQuerySet):
     def filter_by_related_objects(self, related_objects=None, **kwargs):
         """Filter LedgerEntries by arbitrary related objects.
 
