@@ -5,6 +5,7 @@ from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from counsyl_django_utils.models.non_deletable import NonDeletableQuerySet
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
@@ -515,3 +516,14 @@ class LedgerBalance(models.Model):
         default=Decimal(0),
         max_digits=24,
         decimal_places=4)
+
+
+def LedgerBalances():
+    """
+    Make a relation from an evidence model to its LedgerBalance entries.
+    """
+    return GenericRelation(
+        'ledger.LedgerBalance',
+        content_type_field='related_object_content_type',
+        object_id_field='related_object_id',
+    )

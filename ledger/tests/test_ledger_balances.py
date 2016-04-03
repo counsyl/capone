@@ -1,3 +1,4 @@
+from collections import defaultdict
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
@@ -37,7 +38,11 @@ class TestLedgerBalances(TransactionTestCase):
         self.user.delete()
 
     def assert_objects_have_ledger_balances(self, *object_ledger_balances):
+        obj_to_ledger_balances = defaultdict(set)
+
         for obj, ledger, balance in object_ledger_balances:
+            if balance is not None:
+                obj_to_ledger_balances[obj].add((ledger.id, balance))
             content_type = ContentType.objects.get_for_model(obj)
             matching_queryset = (
                 LedgerBalance
@@ -52,6 +57,11 @@ class TestLedgerBalances(TransactionTestCase):
                 self.assertFalse(matching_queryset.exists())
             else:
                 self.assertEqual(matching_queryset.get().balance, balance)
+
+        for obj, ledger_balances in obj_to_ledger_balances.viewitems():
+            self.assertEqual(
+                set(obj.ledger_balances.values_list('ledger', 'balance')),
+                ledger_balances)
 
     def add_transaction(self, orders, amount):
         return create_transaction(
