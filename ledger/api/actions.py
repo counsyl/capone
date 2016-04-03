@@ -5,6 +5,8 @@ from datetime import datetime
 from functools import partial
 
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import F
 from django.db.transaction import atomic
 
 from ledger.api.queries import validate_transaction
@@ -12,6 +14,7 @@ from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LEDGER_CASH
 from ledger.models import LEDGER_REVENUE
+from ledger.models import LedgerBalance
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.models import TransactionRelatedObject
@@ -313,6 +316,16 @@ def create_transaction(
 
     This function is atomic and validates its input before writing to the DB.
     """
+    # Lock the ledgers to which we are posting to serialized the update
+    # of LedgerBalances.
+    list(
+        Ledger.objects
+        .filter(id__in=(
+            ledger_entry.ledger.id for ledger_entry in ledger_entries))
+        .order_by('id')  # Avoid deadlocks.
+        .select_for_update()
+    )
+
     if not posted_timestamp:
         posted_timestamp = datetime.now()
 
@@ -337,6 +350,24 @@ def create_transaction(
 
     for ledger_entry in ledger_entries:
         ledger_entry.transaction = transaction
+        for related_object in evidence:
+            content_type = ContentType.objects.get_for_model(related_object)
+            num_updated = (
+                LedgerBalance.objects
+                .filter(
+                    ledger=ledger_entry.ledger,
+                    related_object_content_type=content_type,
+                    related_object_id=related_object.id)
+                .update(balance=F('balance') + ledger_entry.amount)
+            )
+            assert num_updated <= 1
+            if num_updated == 0:
+                LedgerBalance.objects.create(
+                    ledger=ledger_entry.ledger,
+                    related_object_content_type=content_type,
+                    related_object_id=related_object.id,
+                    balance=ledger_entry.amount)
+
     LedgerEntry.objects.bulk_create(ledger_entries)
 
     transaction_related_objects = [
