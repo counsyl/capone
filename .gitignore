@@ -7,6 +7,7 @@
 *.DS_Store
 .tox
 *.egg-info/*
+*.eggs
 docs/_build/*
 dist/*
 pbr-*.egg/
