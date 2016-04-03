@@ -196,26 +196,26 @@ class TestLedgerBalances(TransactionTestCase):
     def test_ledger_balances_filtering(self):
         Order.objects.update(amount=self.amount * 2)
 
-        all_cash_orders = (
-            Order.objects
-            .filter(
-                id__in=(self.order_1.id, self.order_2.id),
-                ledger_balances__ledger=self.cash_ledger,
-                ledger_balances__balance=F('amount'),
+        def all_cash_orders():
+            return set(
+                Order.objects
+                .filter(
+                    id__in=(self.order_1.id, self.order_2.id),
+                    ledger_balances__ledger=self.cash_ledger,
+                    ledger_balances__balance=F('amount'),
+                )
             )
-        )
 
-        self.assertEqual(set(all_cash_orders.all()), set())
-
-        self.add_transaction([self.order_1])
-        self.assertEqual(set(all_cash_orders.all()), set())
+        self.assertEqual(all_cash_orders(), set())
 
         self.add_transaction([self.order_1])
-        self.assertEqual(set(all_cash_orders.all()), {self.order_1})
+        self.assertEqual(all_cash_orders(), set())
+
+        self.add_transaction([self.order_1])
+        self.assertEqual(all_cash_orders(), {self.order_1})
 
         self.add_transaction([self.order_2])
-        self.assertEqual(set(all_cash_orders.all()), {self.order_1})
+        self.assertEqual(all_cash_orders(), {self.order_1})
 
         self.add_transaction([self.order_2])
-        self.assertEqual(set(all_cash_orders.all()),
-                         {self.order_1, self.order_2})
+        self.assertEqual(all_cash_orders(), {self.order_1, self.order_2})
