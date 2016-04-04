@@ -316,7 +316,7 @@ def create_transaction(
 
     This function is atomic and validates its input before writing to the DB.
     """
-    # Lock the ledgers to which we are posting to serialized the update
+    # Lock the ledgers to which we are posting to serialize the update
     # of LedgerBalances.
     list(
         Ledger.objects
