@@ -1,7 +1,6 @@
 from collections import defaultdict
 from decimal import Decimal
 
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import F
 from django.test import TransactionTestCase
 
@@ -9,6 +8,7 @@ from ledger.api.actions import create_transaction
 from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
+from ledger.api.queries import get_balances_for_object
 from ledger.models import Ledger
 from ledger.models import LedgerBalance
 from ledger.models import LedgerEntry
@@ -28,6 +28,7 @@ class TestLedgerBalances(TransactionTestCase):
         self.order_1, self.order_2 = OrderFactory.create_batch(2)
         self.ar_ledger = LedgerFactory(name='A/R')
         self.cash_ledger = LedgerFactory(name='Cash')
+        self.other_ledger = LedgerFactory(name='Other')
         self.user = UserFactory()
 
     def tearDown(self):
@@ -42,30 +43,17 @@ class TestLedgerBalances(TransactionTestCase):
         self.user.delete()
 
     def assert_objects_have_ledger_balances(self, *object_ledger_balances):
-        obj_to_ledger_balances = defaultdict(set)
+        obj_to_ledger_balances = defaultdict(dict)
 
         for obj, ledger, balance in object_ledger_balances:
             if balance is not None:
-                obj_to_ledger_balances[obj].add((ledger.id, balance))
-            content_type = ContentType.objects.get_for_model(obj)
-            matching_queryset = (
-                LedgerBalance
-                .objects
-                .filter(
-                    ledger=ledger,
-                    related_object_content_type=content_type,
-                    related_object_id=obj.id)
-            )
+                obj_to_ledger_balances[obj][ledger] = balance
 
-            if balance is None:
-                self.assertFalse(matching_queryset.exists())
-            else:
-                self.assertEqual(matching_queryset.get().balance, balance)
-
-        for obj, ledger_balances in obj_to_ledger_balances.viewitems():
-            self.assertEqual(
-                set(obj.ledger_balances.values_list('ledger', 'balance')),
-                ledger_balances)
+        for obj, expected_balances in obj_to_ledger_balances.viewitems():
+            actual_balances = get_balances_for_object(obj)
+            self.assertEqual(actual_balances, expected_balances)
+            self.assertNotIn(self.other_ledger, actual_balances)
+            self.assertEqual(actual_balances[self.other_ledger], Decimal(0))
 
     def add_transaction(self, orders):
         return create_transaction(

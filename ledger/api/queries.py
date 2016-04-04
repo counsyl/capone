@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
 
+from ledger.models import LedgerBalance
 from ledger.models import Transaction
 
 
@@ -38,8 +39,29 @@ def get_ledger_balances_for_transactions(transactions):
 
 
 def get_balances_for_object(obj):
-    return get_ledger_balances_for_transactions(
-        get_all_transactions_for_object(obj))
+    """
+    Return a dict from Ledger to Decimal for an evidence model.
+
+    The dict maps the ledgers for which the model has matching
+    ledger entries to the ledger balance amount for the model
+    in that ledger.
+
+    The dict is a `defaultdict` which will return Decimal(0)
+    when looking up the balance of a ledger for which the model
+    has no associated transactions.
+    """
+    balances = defaultdict(lambda: Decimal(0))
+    content_type = ContentType.objects.get_for_model(obj)
+    ledger_balances = (
+        LedgerBalance
+        .objects
+        .filter(
+            related_object_content_type=content_type,
+            related_object_id=obj.id)
+    )
+    for ledger_balance in ledger_balances:
+        balances[ledger_balance.ledger] = ledger_balance.balance
+    return balances
 
 
 def validate_transaction(
