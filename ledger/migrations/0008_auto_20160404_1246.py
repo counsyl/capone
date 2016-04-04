@@ -19,6 +19,8 @@ class Migration(migrations.Migration):
             name='LedgerBalance',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('modified_at', models.DateTimeField(auto_now=True)),
                 ('related_object_id', models.PositiveIntegerField(db_index=True)),
                 ('balance', models.DecimalField(default=Decimal('0'), max_digits=24, decimal_places=4)),
                 ('ledger', models.ForeignKey(to='ledger.Ledger')),

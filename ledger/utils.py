@@ -10,12 +10,16 @@ INSERT INTO
     ledger_id,
     related_object_content_type_id,
     related_object_id,
-    balance)
+    balance,
+    created_at,
+    modified_at)
 SELECT
   ledger_ledgerentry.ledger_id,
   ledger_transactionrelatedobject.related_object_content_type_id,
   ledger_transactionrelatedobject.related_object_id,
-  SUM(ledger_ledgerentry.amount)
+  SUM(ledger_ledgerentry.amount),
+  current_timestamp,
+  current_timestamp
 FROM
   ledger_ledgerentry
 INNER JOIN

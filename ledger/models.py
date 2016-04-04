@@ -3,6 +3,7 @@ from decimal import Decimal
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from counsyl_django_utils.models.non_deletable import NonDeletableQuerySet
+from counsyl_django_utils.models.timestamped import TimeStampedModel
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.fields import GenericRelation
@@ -492,7 +493,7 @@ class LedgerEntry(NonDeletableModel, models.Model):
             id=self.entry_id, amount=self.amount, action=self.action_type)
 
 
-class LedgerBalance(models.Model):
+class LedgerBalance(TimeStampedModel):
     """
     Denormalized ledger balances for related objects.
     """
