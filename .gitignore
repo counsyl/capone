@@ -7,13 +7,15 @@
 *.DS_Store
 .tox
 *.egg-info/*
+*.eggs
 docs/_build/*
 dist/*
+pbr-*.egg/
 
 *.log
 nosetests*.xml
 
-.coverage
+.coverage*
 coverage.xml
 coverage
 

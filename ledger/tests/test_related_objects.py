@@ -101,7 +101,6 @@ class TestRelatedObjectFilter(_TestRelatedObjectBase):
 class TestRelatedObjectAllRequired(TestCase):
     def setUp(self):
         super(TestRelatedObjectAllRequired, self).setUp()
-        Transaction.objects.all().delete()
         self.entity = UserFactory()
         self.user = UserFactory()
         self.ledger, _ = Ledger.objects.get_or_create_ledger(

@@ -6,6 +6,8 @@ from decimal import Decimal
 
 from django.db import models
 
+from ledger.models import LedgerBalances
+
 
 class Order(models.Model):
     patient_name = models.CharField(
@@ -23,6 +25,8 @@ class Order(models.Model):
         max_length=255,
         unique=True,
     )
+
+    ledger_balances = LedgerBalances()
 
 
 class CreditCardTransaction(models.Model):

@@ -2,13 +2,15 @@ from decimal import Decimal
 
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
+from counsyl_django_utils.models.non_deletable import NonDeletableQuerySet
+from counsyl_django_utils.models.timestamped import TimeStampedModel
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
 from django.db.models import Sum
-from django.db.models.query import QuerySet
 from django.utils.translation import ugettext_lazy as _
 from uuidfield.fields import UUIDField
 
@@ -108,7 +110,7 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     objects = TransactionRelatedObjectManager()
 
 
-class TransactionQuerySet(QuerySet):
+class TransactionQuerySet(NonDeletableQuerySet):
     def filter_by_related_objects(self, related_objects=(), require_all=True):
         """Filter Transactions by arbitrary related objects.
 
@@ -147,6 +149,15 @@ class TransactionQuerySet(QuerySet):
                     related_objects))
             return self.filter(
                 related_objects__in=related_objects_qs).distinct('id')
+
+    def non_void(self):
+        """
+        Filter out voided and voiding transactions.
+        """
+        return self.filter(
+            voided_by__isnull=True,
+            voids__isnull=True,
+        )
 
 
 class TransactionManager(NoDeleteManager):
@@ -415,7 +426,7 @@ class Ledger(NonDeletableModel, models.Model):
         return self.name or repr(self.entity)
 
 
-class LedgerEntryQuerySet(QuerySet):
+class LedgerEntryQuerySet(NonDeletableQuerySet):
     def filter_by_related_objects(self, related_objects=None, **kwargs):
         """Filter LedgerEntries by arbitrary related objects.
 
@@ -480,3 +491,40 @@ class LedgerEntry(NonDeletableModel, models.Model):
     def __unicode__(self):
         return u"LedgerEntry ({id}) {action} for ${amount}".format(
             id=self.entry_id, amount=self.amount, action=self.action_type)
+
+
+class LedgerBalance(TimeStampedModel):
+    """
+    Denormalized ledger balances for related objects.
+    """
+    class Meta:
+        unique_together = (
+            ('ledger', 'related_object_content_type', 'related_object_id'),
+        )
+
+    ledger = models.ForeignKey(
+        'Ledger')
+
+    related_object_content_type = models.ForeignKey(
+        ContentType)
+    related_object_id = models.PositiveIntegerField(
+        db_index=True)
+    related_object = GenericForeignKey(
+        'related_object_content_type',
+        'related_object_id')
+
+    balance = models.DecimalField(
+        default=Decimal(0),
+        max_digits=24,
+        decimal_places=4)
+
+
+def LedgerBalances():
+    """
+    Make a relation from an evidence model to its LedgerBalance entries.
+    """
+    return GenericRelation(
+        'ledger.LedgerBalance',
+        content_type_field='related_object_content_type',
+        object_id_field='related_object_id',
+    )
