@@ -362,6 +362,7 @@ def create_transaction(
             )
             assert num_updated <= 1
             if num_updated == 0:
+                # The first use of this evidence model in a ledger transaction.
                 LedgerBalance.objects.create(
                     ledger=ledger_entry.ledger,
                     related_object_content_type=content_type,
