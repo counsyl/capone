@@ -283,6 +283,17 @@ class Transaction(NonDeletableModel, models.Model):
     def __unicode__(self):
         return u"Transaction %s" % self.transaction_id
 
+    def summary(self):
+        """
+        Return summary of Transaction, suitable for the CLI or a changelist.
+        """
+        return {
+            'entries':
+            [unicode(entry) for entry in self.entries.all()],
+            'related_objects':
+            [unicode(obj) for obj in self.related_objects.all()],
+        }
+
     class TransactionException(Exception):
         pass
 
