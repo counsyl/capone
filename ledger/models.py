@@ -109,6 +109,11 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
 
     objects = TransactionRelatedObjectManager()
 
+    def __unicode__(self):
+        return "TransactionRelatedObject: %s(id=%d)" % (
+            self.related_object_content_type.model_class().__name__,
+            self.related_object_id)
+
 
 class TransactionQuerySet(NonDeletableQuerySet):
     def filter_by_related_objects(self, related_objects=(), require_all=True):
