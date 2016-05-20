@@ -505,8 +505,8 @@ class LedgerEntry(NonDeletableModel, models.Model):
     objects = LedgerEntryManager()
 
     def __unicode__(self):
-        return u"LedgerEntry ({id}) {action} for ${amount}".format(
-            id=self.entry_id, amount=self.amount, action=self.action_type)
+        return u"LedgerEntry: ${amount} in {ledger}".format(
+            amount=self.amount, ledger=self.ledger)
 
 
 class LedgerBalance(TimeStampedModel):
