@@ -1,7 +1,14 @@
+from decimal import Decimal
+
 import factory  # FactoryBoy
 from django.contrib.auth import get_user_model
 
+from ledger.api.actions import create_transaction
+from ledger.api.actions import credit
+from ledger.api.actions import debit
 from ledger.models import Ledger
+from ledger.models import LedgerEntry
+from ledger.models import TransactionRelatedObject
 from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
 
@@ -34,3 +41,63 @@ class CreditCardTransactionFactory(factory.DjangoModelFactory):
         model = CreditCardTransaction
 
     cardholder_name = factory.Sequence(lambda n: "Cardholder %s" % n)
+
+
+# New
+
+
+class LedgerEntryFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = LedgerEntry
+
+    ledger = factory.SubFactory(LedgerFactory)
+    amount = Decimal('100')
+    transaction = factory.SubFactory(
+        'ledger.tests.factories.TransactionFactory')
+
+
+class TransactionRelatedObjectFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = TransactionRelatedObject
+
+    related_object = factory.SubFactory(CreditCardTransactionFactory)
+    transaction = factory.SubFactory(
+        'ledger.tests.factories.TransactionFactory')
+
+
+def TransactionFactory(
+    user=None,
+    evidence=None,
+    ledger_entries=None,
+    notes='',
+    type=None,
+    posted_timestamp=None,
+):
+    if user is None:
+        user = UserFactory()
+
+    if evidence is None:
+        evidence = [CreditCardTransactionFactory()]
+
+    if ledger_entries is None:
+        ledger = LedgerFactory()
+        amount = Decimal('100')
+        ledger_entries = [
+            LedgerEntry(
+                ledger=ledger,
+                amount=debit(amount),
+            ),
+            LedgerEntry(
+                ledger=ledger,
+                amount=credit(amount),
+            ),
+        ]
+
+    return create_transaction(
+        user,
+        evidence=evidence,
+        ledger_entries=ledger_entries,
+        notes=notes,
+        type=type,
+        posted_timestamp=posted_timestamp,
+    )
