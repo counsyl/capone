@@ -8,7 +8,6 @@ from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
-from ledger.models import TransactionRelatedObject
 from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
 
@@ -44,25 +43,6 @@ class CreditCardTransactionFactory(factory.DjangoModelFactory):
 
 
 # New
-
-
-class LedgerEntryFactory(factory.DjangoModelFactory):
-    class Meta:
-        model = LedgerEntry
-
-    ledger = factory.SubFactory(LedgerFactory)
-    amount = Decimal('100')
-    transaction = factory.SubFactory(
-        'ledger.tests.factories.TransactionFactory')
-
-
-class TransactionRelatedObjectFactory(factory.DjangoModelFactory):
-    class Meta:
-        model = TransactionRelatedObject
-
-    related_object = factory.SubFactory(CreditCardTransactionFactory)
-    transaction = factory.SubFactory(
-        'ledger.tests.factories.TransactionFactory')
 
 
 def TransactionFactory(

@@ -12,8 +12,10 @@ from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
+from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import OrderFactory
+from ledger.tests.factories import TransactionFactory
 from ledger.tests.factories import UserFactory
 
 
@@ -35,16 +37,47 @@ class TransactionBase(TestCase):
             posted_timestamp=self.posted_timestamp)
 
 
-class TestLedgerEntry(TransactionBase):
-    def test_repr(self):
-        transaction = self.new_transaction(self.user2, self.user1)
-        entry = LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=Decimal('-500'))
+class TestUnicodeMethods(TransactionBase):
+    def test_unicode_methods(self):
+        txn = TransactionFactory()
+
+        tro = txn.related_objects.last()
+        self.assertEqual(
+            unicode(tro),
+            u'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # nopep8
+        )
+
+        entry = txn.entries.last()
         self.assertEqual(
             repr(entry),
-            "<LedgerEntry: LedgerEntry (%s)  for $-500>" % entry.entry_id,
+            "<LedgerEntry: LedgerEntry: $%s in %s>" % (
+                entry.amount,
+                entry.ledger.name,
+            )
+        )
+
+
+class TestTransactionSummary(TransactionBase):
+    def test_transaction_summary(self):
+        ledger = LedgerFactory()
+        amount = Decimal('500')
+        ccx = CreditCardTransactionFactory()
+        le1 = LedgerEntry(ledger=ledger, amount=credit(amount))
+        le2 = LedgerEntry(ledger=ledger, amount=debit(amount))
+        txn = TransactionFactory(
+            evidence=[ccx],
+            ledger_entries=[le1, le2]
+        )
+
+        self.assertEqual(
+            txn.summary(),
+            {
+                'entries': [unicode(entry) for entry in txn.entries.all()],
+                'related_objects': [
+                    u'TransactionRelatedObject: CreditCardTransaction(id=%s)' %
+                    ccx.id,
+                ],
+            },
         )
 
 
