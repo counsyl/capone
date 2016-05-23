@@ -42,9 +42,6 @@ class CreditCardTransactionFactory(factory.DjangoModelFactory):
     cardholder_name = factory.Sequence(lambda n: "Cardholder %s" % n)
 
 
-# New
-
-
 def TransactionFactory(
     user=None,
     evidence=None,
