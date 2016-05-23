@@ -109,6 +109,11 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
 
     objects = TransactionRelatedObjectManager()
 
+    def __unicode__(self):
+        return "TransactionRelatedObject: %s(id=%d)" % (
+            self.related_object_content_type.model_class().__name__,
+            self.related_object_id)
+
 
 class TransactionQuerySet(NonDeletableQuerySet):
     def filter_by_related_objects(self, related_objects=(), require_all=True):
@@ -277,6 +282,17 @@ class Transaction(NonDeletableModel, models.Model):
 
     def __unicode__(self):
         return u"Transaction %s" % self.transaction_id
+
+    def summary(self):
+        """
+        Return summary of Transaction, suitable for the CLI or a changelist.
+        """
+        return {
+            'entries':
+            [unicode(entry) for entry in self.entries.all()],
+            'related_objects':
+            [unicode(obj) for obj in self.related_objects.all()],
+        }
 
     class TransactionException(Exception):
         pass
@@ -489,8 +505,8 @@ class LedgerEntry(NonDeletableModel, models.Model):
     objects = LedgerEntryManager()
 
     def __unicode__(self):
-        return u"LedgerEntry ({id}) {action} for ${amount}".format(
-            id=self.entry_id, amount=self.amount, action=self.action_type)
+        return u"LedgerEntry: ${amount} in {ledger}".format(
+            amount=self.amount, ledger=self.ledger)
 
 
 class LedgerBalance(TimeStampedModel):

@@ -1,7 +1,13 @@
+from decimal import Decimal
+
 import factory  # FactoryBoy
 from django.contrib.auth import get_user_model
 
+from ledger.api.actions import create_transaction
+from ledger.api.actions import credit
+from ledger.api.actions import debit
 from ledger.models import Ledger
+from ledger.models import LedgerEntry
 from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
 
@@ -18,7 +24,7 @@ class LedgerFactory(factory.DjangoModelFactory):
         model = Ledger
 
     increased_by_debits = True
-    name = factory.Sequence(lambda n: 'Test ledger {}'.format(n))
+    name = factory.Sequence(lambda n: 'Test Ledger {}'.format(n))
 
 
 class OrderFactory(factory.DjangoModelFactory):
@@ -34,3 +40,41 @@ class CreditCardTransactionFactory(factory.DjangoModelFactory):
         model = CreditCardTransaction
 
     cardholder_name = factory.Sequence(lambda n: "Cardholder %s" % n)
+
+
+def TransactionFactory(
+    user=None,
+    evidence=None,
+    ledger_entries=None,
+    notes='',
+    type=None,
+    posted_timestamp=None,
+):
+    if user is None:
+        user = UserFactory()
+
+    if evidence is None:
+        evidence = [CreditCardTransactionFactory()]
+
+    if ledger_entries is None:
+        ledger = LedgerFactory()
+        amount = Decimal('100')
+        ledger_entries = [
+            LedgerEntry(
+                ledger=ledger,
+                amount=debit(amount),
+            ),
+            LedgerEntry(
+                ledger=ledger,
+                amount=credit(amount),
+            ),
+        ]
+
+    return create_transaction(
+        user,
+        evidence=evidence,
+        ledger_entries=ledger_entries,
+        notes=notes,
+        type=type,
+        posted_timestamp=posted_timestamp,
+    )
