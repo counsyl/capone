@@ -415,13 +415,12 @@ class Ledger(NonDeletableModel, models.Model):
     )
 
     # Fields for company-wide ledgers
-
-    # TODO: Add field `ledger_number` here: Accounting likes to refer to
-    # Ledgers via unique numbers that they can set when creating a Ledger.
     name = models.CharField(
         help_text=_("Name of this ledger"),
         unique=True,
         max_length=255)
+    number = models.PositiveIntegerField(
+        default=1)
     description = models.TextField(
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
