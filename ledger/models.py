@@ -420,7 +420,8 @@ class Ledger(NonDeletableModel, models.Model):
         unique=True,
         max_length=255)
     number = models.PositiveIntegerField(
-        default=1)
+        help_text=_("Unique numeric identifier for this ledger"),
+        unique=True)
     description = models.TextField(
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
