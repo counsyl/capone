@@ -19,39 +19,6 @@ POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and cr
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
 
 
-class InvoiceGenerationRecord(NonDeletableModel, models.Model):
-    """
-    A record of an invoice being generated at a particular time.
-
-    An invoice is the amount owed at a given timestamp by a given entity.
-
-    Invoices are recorded for historical reference. They should not be
-    created directly. Instead you should go through ledger.invoice.Invoice.
-
-    This is just a record of an Invoice being generated. It only serves to
-    identify what ledger entries were included in an invoice sent out to
-    a customer. It also allows a customer to look up their invoice by
-    a unique ID.
-    """
-    creation_timestamp = models.DateTimeField(
-        help_text=_("Time this invoice was generated"),
-        auto_now_add=True,
-        db_index=True)
-    invoice_timestamp = models.DateTimeField(
-        help_text=_("Time of the Invoice"),
-        db_index=True)
-    ledger = models.ForeignKey(
-        'Ledger')
-    amount = models.DecimalField(
-        help_text=_(
-            NEGATIVE_DEBITS_HELP_TEXT
-            if getattr(settings, 'DEBITS_ARE_NEGATIVE', False)
-            else POSITIVE_DEBITS_HELP_TEXT
-        ),
-        max_digits=24,
-        decimal_places=4)
-
-
 class TransactionRelatedObjectManager(NoDeleteManager):
     def create_for_object(self, related_object, **kwargs):
         kwargs['related_object_content_type'] = (
