@@ -78,7 +78,8 @@ class TransactionQuerySet(NonDeletableQuerySet):
                     related_objects__related_object_id=related_object.id,
                 )
                 for related_object in related_objects
-            ]
+            ],
+            Q(),
         )
         return (
             self.filter(combined_query).distinct()
