@@ -32,6 +32,8 @@ def assert_transaction_in_ledgers_for_amounts_with_evidence(
         .filter_by_related_objects(evidence)
         .filter(id__in=transactions_in_all_ledgers)
     )
+    # Remove reliance on `get` here by using the new `EXACT` feature of
+    # `filter_by_related_objects`.
     matching_transaction = matching_transactions.get()
     assert_equal(
         sorted(
