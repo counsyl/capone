@@ -177,68 +177,31 @@ class TestVoidTimestamps(TestVoidBase):
         # is the same as the transaction we're voiding.
         amount = D(100)
         # First record a charge
-        with TransactionContext(
-                self.creation_user, self.creation_user) as charge_txn:
-            charge_txn.record_action(Charge(self.entity, amount))
+        charge_txn = TransactionFactory(self.creation_user, ledger_entries=[
+            LedgerEntry(amount=debit(amount), ledger=self.entity_ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.entity_rev_ledger),
+        ])
 
         # Then void it
-        void_txn = void_transaction(charge_txn.transaction, self.creation_user)
-        self.assertEqual(charge_txn.transaction.posted_timestamp,
+        void_txn = void_transaction(charge_txn, self.creation_user)
+        self.assertEqual(charge_txn.posted_timestamp,
                          void_txn.posted_timestamp)
 
     def test_given_timestamp(self):
         # If a posted_timestamp is given for the void, then use it
         amount = D(100)
         # First record a charge
-        with TransactionContext(
-                self.creation_user, self.creation_user) as charge_txn:
-            charge_txn.record_action(Charge(self.entity, amount))
+        charge_txn = TransactionFactory(self.creation_user, ledger_entries=[
+            LedgerEntry(amount=debit(amount), ledger=self.entity_ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.entity_rev_ledger),
+        ])
 
         # Then void it
         now = datetime.now()
         void_txn = void_transaction(
-            charge_txn.transaction, self.creation_user,
+            charge_txn, self.creation_user,
             posted_timestamp=now)
         self.assertEqual(now, void_txn.posted_timestamp)
-
-
-class TestSecondaryRelatedObject(TestCase):
-    def setUp(self):
-        self.entity = UserFactory()
-        self.user = UserFactory()
-        self.user2 = UserFactory()
-        self.ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity,
-            LEDGER_ACCOUNTS_RECEIVABLE)
-
-    def test_can_set_related_object(self):
-        with TransactionContext(
-                self.user, self.user,
-                secondary_related_objects=[self.user2]) as charge_txn:
-            charge_txn.record_action(Charge(self.entity, D(100)))
-        self.assertEqual(
-            charge_txn.transaction.primary_related_object, self.user)
-        self.assertEqual(
-            charge_txn.transaction.secondary_related_objects, [self.user2])
-
-    def test_no_dupes_related_object(self):
-        self.assertRaises(
-            IntegrityError,
-            TransactionContext,
-            self.user, self.user,
-            secondary_related_objects=[self.user2, self.user2])
-
-    def test_multiple_secondary_objects(self):
-        user3 = UserFactory()
-        with TransactionContext(
-                self.user, self.user,
-                secondary_related_objects=[self.user2, user3]) as charge_txn:
-            charge_txn.record_action(Charge(self.entity, D(100)))
-        self.assertEqual(
-            charge_txn.transaction.primary_related_object, self.user)
-        self.assertEqual(
-            set(charge_txn.transaction.secondary_related_objects),
-            {self.user2, user3})
 
 
 class TestExistingLedgerEntriesException(TestCase):
