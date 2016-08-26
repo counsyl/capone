@@ -1,4 +1,6 @@
+import operator
 from decimal import Decimal
+from enum import Enum
 
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
@@ -17,29 +19,6 @@ from uuidfield.fields import UUIDField
 
 POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # nopep8
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
-
-
-class TransactionRelatedObjectManager(NoDeleteManager):
-    def get_for_objects(self, related_objects=()):
-        """
-        Get the TransactionRelatedObjects for an iterable of related_objects.
-
-        Args:
-            related_objects: A queryset of objects of the same type, or a list
-                of objects of different types. If not supplied, all objects
-                will be returned. If the given queryset is empty then no
-                TransactionRelatedObjects will be returned.
-        """
-        # content_types is a dict(model_instance -> ContentType)
-        content_types = ContentType.objects.get_for_models(*related_objects)
-
-        # Find all the TransactionRelatedObjects for the given related_objects
-        qs = self.none()
-        for related_object in related_objects:
-            qs |= self.filter(
-                Q(related_object_content_type=content_types[related_object],
-                  related_object_id=related_object.id))
-        return qs
 
 
 class TransactionRelatedObject(NonDeletableModel, models.Model):
@@ -65,71 +44,65 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
         'related_object_content_type',
         'related_object_id')
 
-    objects = TransactionRelatedObjectManager()
-
     def __unicode__(self):
         return "TransactionRelatedObject: %s(id=%d)" % (
             self.related_object_content_type.model_class().__name__,
             self.related_object_id)
 
 
+class MatchType(Enum):
+    ANY = 'any'
+    ALL = 'all'
+    NONE = 'none'
+    EXACT = 'exact'
+
+
 class TransactionQuerySet(NonDeletableQuerySet):
-    def filter_by_related_objects(self, related_objects=(), require_all=True):
-        """Filter Transactions by arbitrary related objects.
-
-        Args:
-            related_objects: A queryset of objects of the same type, or a list
-                of objects of different types. If not supplied, all objects
-                will be returned. If the given queryset is empty then no
-                Transactions will be returned.
-            require_all: If True, then all related objects must be present
-                in the Transaction's related objects list. Defaults to True.
-        """
-        if related_objects is None:
-            return self
-        elif not related_objects:
-            return self.none()
-
-        if require_all:
-            qs = self
-            ctypes = {
-                related_object: ContentType.objects.get_for_model(related_object)  # nopep8
-                for related_object in related_objects
-            }
-            for related_object in related_objects:
-                ctype = ctypes[related_object]
-                qs = qs.filter(
-                    related_objects__related_object_content_type=ctype,
-                    related_objects__related_object_id=related_object.id)
-            return qs.distinct()
-        else:
-            # If we aren't requiring all related_objects to be in the set
-            # of related objects for the returned object, then just find
-            # all objects that have these related objects and filter out
-            # the duplicates.
-            related_objects_qs = (
-                TransactionRelatedObject.objects.get_for_objects(
-                    related_objects))
-            return self.filter(
-                related_objects__in=related_objects_qs).distinct('id')
-
     def non_void(self):
-        """
-        Filter out voided and voiding transactions.
-        """
         return self.filter(
             voided_by__isnull=True,
             voids__isnull=True,
         )
 
+    def _apply_operator_to_queryset_for_related_objects(
+            self, related_objects, _operator, distinct):
+        content_types = ContentType.objects.get_for_models(
+            *related_objects)
 
-class TransactionManager(NoDeleteManager):
-    def get_queryset(self):
-        return TransactionQuerySet(self.model)
+        combined_query = reduce(
+            _operator,
+            [
+                Q(
+                    related_objects__related_object_content_type=(
+                        content_types[related_object]),
+                    related_objects__related_object_id=related_object.id,
+                )
+                for related_object in related_objects
+            ]
+        )
+        return (
+            self.filter(combined_query).distinct()
+            if distinct else self.filter(combined_query)
+        )
 
-    def filter_by_related_objects(self, related_objects=None, **kwargs):
-        return self.get_queryset().filter_by_related_objects(
-            related_objects, **kwargs)
+    def filter_by_related_objects(
+            self, related_objects=(), match_type=MatchType.ALL, distinct=True):
+        if match_type == MatchType.ANY:
+            return self._apply_operator_to_queryset_for_related_objects(
+                related_objects,
+                operator.or_,
+                distinct)
+        elif match_type == MatchType.ALL:
+            return self._apply_operator_to_queryset_for_related_objects(
+                related_objects,
+                operator.and_,
+                distinct)
+        elif match_type == MatchType.NONE:
+            raise NotImplementedError
+        elif match_type == MatchType.EXACT:
+            raise NotImplementedError
+        else:
+            raise ValueError("Invalid match_type.")
 
 
 class Transaction(NonDeletableModel, models.Model):
@@ -188,7 +161,7 @@ class Transaction(NonDeletableModel, models.Model):
         default=MANUAL,
     )
 
-    objects = TransactionManager()
+    objects = TransactionQuerySet.as_manager()
 
     def clean(self):
         self.validate()
