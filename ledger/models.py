@@ -318,22 +318,6 @@ class LedgerManager(NoDeleteManager):
                 ledger_type]
         )
 
-    def get_ledger(self, entity, ledger_type):
-        """Convenience method to get the correct ledger.
-
-        Args:
-            entity: The Entity to get a ledger for (InsurancePayer or
-                    CustomerProfile)
-            ledger_type: The appropriate Ledger.LEDGER_CHOICES
-        """
-        return Ledger.objects.get(
-            type=ledger_type,
-            entity_content_type=ContentType.objects.get_for_model(entity),
-            entity_id=entity.pk,
-            increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
-                ledger_type]
-        )
-
     def get_or_create_ledger_by_name(self, name, increased_by_debits):
         return Ledger.objects.get_or_create(
             type='',
