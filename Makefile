@@ -61,6 +61,7 @@ clean:
 	rm -rf build/
 	rm -rf dist/
 	rm -rf *.egg*/
+	rm -rf .eggs
 	rm -rf __pycache__/
 	rm -f MANIFEST
 	rm -f test.db
