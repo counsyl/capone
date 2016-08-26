@@ -31,11 +31,6 @@ class TransactionBase(TestCase):
             LEDGER_ACCOUNTS_RECEIVABLE)
         self.posted_timestamp = datetime.now()
 
-    def new_transaction(self, related_object, created_by):
-        return Transaction.objects.create_for_related_object(
-            related_object, created_by=created_by,
-            posted_timestamp=self.posted_timestamp)
-
 
 class TestUnicodeMethods(TransactionBase):
     def test_unicode_methods(self):
@@ -83,7 +78,7 @@ class TestTransactionSummary(TransactionBase):
 
 class TestSettingExplicitTimestampField(TransactionBase):
     def test_repr(self):
-        transaction = self.new_transaction(self.user2, self.user1)
+        transaction = TransactionFactory()
         old_posted_timestamp = transaction.posted_timestamp
         transaction.posted_timestamp = datetime.now()
         transaction.save()
@@ -96,113 +91,111 @@ class TestSettingExplicitTimestampField(TransactionBase):
 class TestUnBalance(TransactionBase):
     def test_only_credits(self):
         # User 1 trying to pay User 2, but only debits from own ledger
-        transaction = self.new_transaction(self.user2, self.user1)
-        LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=Decimal('-500'))
-        self.assertRaises(
-            Transaction.TransactionBalanceException, transaction.validate)
+        with self.assertRaises(Transaction.TransactionBalanceException):
+            create_transaction(
+                self.user1,
+                evidence=[self.user2],
+                ledger_entries=[
+                    LedgerEntry(
+                        ledger=self.user1_ledger,
+                        amount=Decimal('-500'))
+                ],
+            )
 
     def test_only_debits(self):
         # User 1 trying to pay User 2, but only credits User 2's ledger
-        transaction = self.new_transaction(self.user2, self.user1)
-        LedgerEntry.objects.create(
-            ledger=self.user2_ledger,
-            transaction=transaction,
-            amount=Decimal('500'))
-        self.assertRaises(
-            Transaction.TransactionBalanceException, transaction.validate)
+        with self.assertRaises(Transaction.TransactionBalanceException):
+            create_transaction(
+                self.user1,
+                evidence=[self.user2],
+                ledger_entries=[
+                    LedgerEntry(
+                        ledger=self.user2_ledger,
+                        amount=Decimal('500'))
+                ],
+            )
 
     def test_mismatch(self):
         # User 1 pays User 2, but credits too much
-        transaction = self.new_transaction(self.user2, self.user1)
-        LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=Decimal('-499'))
-        LedgerEntry.objects.create(
-            ledger=self.user2_ledger,
-            transaction=transaction,
-            amount=Decimal('500'))
-        self.assertRaises(
-            Transaction.TransactionBalanceException, transaction.validate)
+        with self.assertRaises(Transaction.TransactionBalanceException):
+            create_transaction(
+                self.user1,
+                evidence=[self.user2],
+                ledger_entries=[
+                    LedgerEntry(
+                        ledger=self.user1_ledger,
+                        amount=Decimal('-499')),
+                    LedgerEntry(
+                        ledger=self.user2_ledger,
+                        amount=Decimal('500'))
+                ],
+            )
 
     def test_rounding_mismatch(self):
         # User 1 pays 499.99995 to User 2, but their client rounded wrong
-        transaction = self.new_transaction(self.user2, self.user1)
-        LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=Decimal('-499.99995'))  # We round this to -500
-        # Assume their client rounds -499.99995 to -499.9999 and then abs() it
-        LedgerEntry.objects.create(
-            ledger=self.user2_ledger,
-            transaction=transaction,
-            amount=Decimal('499.9999'))
-        self.assertRaises(
-            Transaction.TransactionBalanceException, transaction.validate)
+        with self.assertRaises(Transaction.TransactionBalanceException):
+            create_transaction(
+                self.user1,
+                evidence=[self.user2],
+                ledger_entries=[
+                    LedgerEntry(
+                        ledger=self.user1_ledger,
+                        amount=Decimal('-499.99995')),  # We round this to -500
+                    # Assume their client rounds -499.99995 to -499.9999 and
+                    # then abs() it
+                    LedgerEntry(
+                        ledger=self.user2_ledger,
+                        amount=Decimal('499.9999'))
+                ],
+            )
 
 
 class TestRounding(TransactionBase):
+    def _create_transaction_and_compare_to_amount(
+            self, amount, comparison_amount=None):
+        transaction = create_transaction(
+            self.user2,
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.user1_ledger,
+                    amount=amount),
+                LedgerEntry(
+                    ledger=self.user2_ledger,
+                    amount=-amount),
+            ]
+        )
+
+        entry = transaction.entries.get(ledger=self.user1_ledger)
+        if comparison_amount:
+            self.assertNotEqual(entry.amount, amount)
+            self.assertEqual(entry.amount, comparison_amount)
+        else:
+            self.assertEqual(entry.amount, amount)
+
     def test_precision(self):
-        amount = Decimal('-499.9999')
-        transaction = self.new_transaction(self.user2, self.user2)
-        entry = LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=amount)
-        entry = LedgerEntry.objects.get(id=entry.id)
-        self.assertEqual(entry.amount, amount)
+        self._create_transaction_and_compare_to_amount(
+            Decimal('-499.9999'))
 
     def test_round_up(self):
-        amount = Decimal('499.99995')
-        transaction = self.new_transaction(self.user2, self.user2)
-        entry = LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=amount)
-        entry = LedgerEntry.objects.get(id=entry.id)
-        self.assertNotEqual(entry.amount, amount)
-        self.assertEqual(entry.amount, Decimal('500'))
+        self._create_transaction_and_compare_to_amount(
+            Decimal('499.99995'), Decimal('500'))
 
     def test_round_down(self):
-        amount = Decimal('499.99994')
-        transaction = self.new_transaction(self.user2, self.user2)
-        entry = LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=amount)
-        entry = LedgerEntry.objects.get(id=entry.id)
-        self.assertNotEqual(entry.amount, amount)
-        self.assertEqual(entry.amount, Decimal('499.9999'))
+        self._create_transaction_and_compare_to_amount(
+            Decimal('499.99994'), Decimal('499.9999'))
 
     def test_round_up_negative(self):
-        amount = Decimal('-499.99994')
-        transaction = self.new_transaction(self.user2, self.user2)
-        entry = LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=amount)
-        entry = LedgerEntry.objects.get(id=entry.id)
-        self.assertNotEqual(entry.amount, amount)
-        self.assertEqual(entry.amount, Decimal('-499.9999'))
+        self._create_transaction_and_compare_to_amount(
+            Decimal('-499.99994'), Decimal('-499.9999'))
 
     def test_round_down_negative(self):
-        amount = Decimal('-499.99995')
-        transaction = self.new_transaction(self.user2, self.user2)
-        entry = LedgerEntry.objects.create(
-            ledger=self.user1_ledger,
-            transaction=transaction,
-            amount=amount)
-        entry = LedgerEntry.objects.get(id=entry.id)
-        self.assertNotEqual(entry.amount, amount)
-        self.assertEqual(entry.amount, Decimal('-500'))
+        self._create_transaction_and_compare_to_amount(
+            Decimal('-499.99995'), Decimal('-500'))
 
 
 class TestDelete(TransactionBase):
     def test_cant_delete(self):
-        transaction = self.new_transaction(self.user2, self.user2)
+        transaction = TransactionFactory()
         self.assertRaises(PermissionDenied, transaction.delete)
 
 
