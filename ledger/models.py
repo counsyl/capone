@@ -63,9 +63,6 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     transaction = models.ForeignKey(
         'Transaction',
         related_name='related_objects')
-    primary = models.BooleanField(
-        help_text=_("Is this the primary related object?"),
-        default=False)
     related_object_content_type = models.ForeignKey(
         ContentType)
     related_object_id = models.PositiveIntegerField(
@@ -133,12 +130,6 @@ class TransactionQuerySet(NonDeletableQuerySet):
 
 
 class TransactionManager(NoDeleteManager):
-    def create_for_related_object(self, related_object, **kwargs):
-        transaction = self.create(**kwargs)
-        TransactionRelatedObject.objects.create_for_object(
-            related_object, primary=True, transaction=transaction)
-        return transaction
-
     def get_queryset(self):
         return TransactionQuerySet(self.model)
 
@@ -205,28 +196,8 @@ class Transaction(NonDeletableModel, models.Model):
 
     objects = TransactionManager()
 
-    @property
-    def primary_related_object(self):
-        """Get the primary related object for this Transaction."""
-        return self.related_objects.get(primary=True).related_object
-
-    @property
-    def secondary_related_objects(self):
-        """Get a list of the secondary related objects for this Transaction."""
-        return [tro.related_object for tro in
-                self.related_objects.exclude(primary=True)]
-
     def clean(self):
         self.validate()
-        """
-        TODO: I'd like to have this validation, but the Transaction must exist
-            before it can have a related object. Ideas?
-        if self.related_objects.filter(primary=True).count() == 0:
-            raise Transaction.PrimaryRelatedObjectException(
-                "You must supply a primary related object.")
-        elif self.related_objects.filter(primary=True).count() > 1:
-            raise Transaction.PrimaryRelatedObjectException(
-                "There may only be one primary related object.")"""
 
     def validate(self):
         """Validates that this Transaction properly balances.
