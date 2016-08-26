@@ -382,32 +382,6 @@ class Ledger(NonDeletableModel, models.Model):
         return self.name or repr(self.entity)
 
 
-class LedgerEntryQuerySet(NonDeletableQuerySet):
-    def filter_by_related_objects(self, related_objects=None, **kwargs):
-        """Filter LedgerEntries by arbitrary related objects.
-
-        Args:
-            related_objects: A queryset of objects of the same type, or a list
-                of objects of different types. If not supplied, all objects
-                will be returned.
-        """
-        # Because related_objects are stored on transactions, we'll have to
-        # find all Transactions that reference the related objects, and then
-        # filter down to only the LedgerEntries we want
-        transactions = Transaction.objects.filter_by_related_objects(
-            related_objects, **kwargs)
-        return self.filter(transaction__in=transactions)
-
-
-class LedgerEntryManager(NoDeleteManager):
-    def get_queryset(self):
-        return LedgerEntryQuerySet(self.model)
-
-    def filter_by_related_objects(self, related_objects=None, **kwargs):
-        return self.get_queryset().filter_by_related_objects(
-            related_objects, **kwargs)
-
-
 class LedgerEntry(NonDeletableModel, models.Model):
     """A single entry in a single column in a ledger.
 
@@ -441,8 +415,6 @@ class LedgerEntry(NonDeletableModel, models.Model):
         help_text=_("Type of action that created this LedgerEntry"),
         max_length=128,
         blank=True)
-
-    objects = LedgerEntryManager()
 
     def __unicode__(self):
         return u"LedgerEntry: ${amount} in {ledger}".format(
