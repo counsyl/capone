@@ -25,6 +25,7 @@ class LedgerFactory(factory.DjangoModelFactory):
 
     increased_by_debits = True
     name = factory.Sequence(lambda n: 'Test Ledger {}'.format(n))
+    number = factory.Sequence(lambda n: n)
 
 
 class OrderFactory(factory.DjangoModelFactory):
