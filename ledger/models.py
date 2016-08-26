@@ -20,12 +20,6 @@ NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and cr
 
 
 class TransactionRelatedObjectManager(NoDeleteManager):
-    def create_for_object(self, related_object, **kwargs):
-        kwargs['related_object_content_type'] = (
-            ContentType.objects.get_for_model(related_object))
-        kwargs['related_object_id'] = related_object.pk
-        return self.create(**kwargs)
-
     def get_for_objects(self, related_objects=()):
         """
         Get the TransactionRelatedObjects for an iterable of related_objects.
