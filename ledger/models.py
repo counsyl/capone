@@ -342,14 +342,26 @@ class LedgerManager(NoDeleteManager):
                     CustomerProfile)
             ledger_type: The appropriate Ledger.LEDGER_CHOICES
         """
-        return Ledger.objects.get_or_create(
-            name=ledger_type + unicode(entity),
-            type=ledger_type,
-            entity_content_type=ContentType.objects.get_for_model(entity),
-            entity_id=entity.pk,
-            increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
-                ledger_type]
-        )
+        try:
+            return Ledger.objects.get(
+                type=ledger_type,
+                entity_content_type=ContentType.objects.get_for_model(entity),
+                entity_id=entity.pk,
+                increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
+                    ledger_type],
+            ), False
+        except Ledger.DoesNotExist:
+            last_ledger = Ledger.objects.order_by('number').last()
+            last_ledger_number = last_ledger.number if last_ledger else 0
+            return Ledger.objects.create(
+                name=ledger_type + unicode(entity),
+                type=ledger_type,
+                entity_content_type=ContentType.objects.get_for_model(entity),
+                entity_id=entity.pk,
+                increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
+                    ledger_type],
+                number=last_ledger_number + 1
+            ), True
 
     def get_ledger(self, entity, ledger_type):
         """Convenience method to get the correct ledger.
@@ -368,13 +380,25 @@ class LedgerManager(NoDeleteManager):
         )
 
     def get_or_create_ledger_by_name(self, name, increased_by_debits):
-        return Ledger.objects.get_or_create(
-            type='',
-            entity_content_type=None,
-            entity_id=None,
-            name=name,
-            increased_by_debits=increased_by_debits,
-        )[0]
+        try:
+            return Ledger.objects.get(
+                type='',
+                entity_content_type=None,
+                entity_id=None,
+                name=name,
+                increased_by_debits=increased_by_debits,
+            )
+        except Ledger.DoesNotExist:
+            last_ledger = Ledger.objects.order_by('number').last()
+            last_ledger_number = last_ledger.number if last_ledger else 0
+            return Ledger.objects.create(
+                name=name,
+                type='',
+                entity_content_type=None,
+                entity_id=None,
+                increased_by_debits=increased_by_debits,
+                number=last_ledger_number + 1
+            )
 
 
 class Ledger(NonDeletableModel, models.Model):
@@ -415,13 +439,13 @@ class Ledger(NonDeletableModel, models.Model):
     )
 
     # Fields for company-wide ledgers
-
-    # TODO: Add field `ledger_number` here: Accounting likes to refer to
-    # Ledgers via unique numbers that they can set when creating a Ledger.
     name = models.CharField(
         help_text=_("Name of this ledger"),
         unique=True,
         max_length=255)
+    number = models.PositiveIntegerField(
+        help_text=_("Unique numeric identifier for this ledger"),
+        unique=True)
     description = models.TextField(
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
