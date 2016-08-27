@@ -150,6 +150,28 @@ class TestUnBalance(TransactionBase):
             )
 
 
+class TestEditingTransactions(TestCase):
+    """
+    Test that validation is still done when editing a Transaction.
+
+    Limited editing is allowed on a Transaction, e.g. for changing notes.
+    However, we want to make sure that our balance invariants are still kept
+    when editing a Transaction.
+    """
+    def test_editing_transactions(self):
+        transaction = TransactionFactory()
+
+        transaction.notes = 'foo'
+        transaction.save()
+
+        entry = transaction.entries.last()
+        entry.amount += Decimal('1')
+        entry.save()
+
+        with self.assertRaises(Transaction.TransactionBalanceException):
+            transaction.save()
+
+
 class TestRounding(TransactionBase):
     def _create_transaction_and_compare_to_amount(
             self, amount, comparison_amount=None):
