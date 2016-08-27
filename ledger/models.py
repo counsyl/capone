@@ -64,40 +64,33 @@ class TransactionQuerySet(NonDeletableQuerySet):
             voids__isnull=True,
         )
 
-    def _apply_operator_to_queryset_for_related_objects(
-            self, related_objects, _operator, distinct):
+    def filter_by_related_objects(
+            self, related_objects=(), match_type=MatchType.ALL):
         content_types = ContentType.objects.get_for_models(
             *related_objects)
 
-        combined_query = reduce(
-            _operator,
-            [
-                Q(
+        if match_type == MatchType.ANY:
+            combined_query = reduce(
+                operator.or_,
+                [
+                    Q(
+                        related_objects__related_object_content_type=(
+                            content_types[related_object]),
+                        related_objects__related_object_id=related_object.id,
+                    )
+                    for related_object in related_objects
+                ],
+                Q(),
+            )
+            return self.filter(combined_query).distinct()
+        elif match_type == MatchType.ALL:
+            for related_object in related_objects:
+                self = self.filter(
                     related_objects__related_object_content_type=(
                         content_types[related_object]),
                     related_objects__related_object_id=related_object.id,
                 )
-                for related_object in related_objects
-            ],
-            Q(),
-        )
-        return (
-            self.filter(combined_query).distinct()
-            if distinct else self.filter(combined_query)
-        )
-
-    def filter_by_related_objects(
-            self, related_objects=(), match_type=MatchType.ALL, distinct=True):
-        if match_type == MatchType.ANY:
-            return self._apply_operator_to_queryset_for_related_objects(
-                related_objects,
-                operator.or_,
-                distinct)
-        elif match_type == MatchType.ALL:
-            return self._apply_operator_to_queryset_for_related_objects(
-                related_objects,
-                operator.and_,
-                distinct)
+            return self
         elif match_type == MatchType.NONE:
             raise NotImplementedError
         elif match_type == MatchType.EXACT:
