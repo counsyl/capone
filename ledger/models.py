@@ -161,13 +161,14 @@ class Transaction(NonDeletableModel, models.Model):
         self.validate()
 
     def validate(self):
-        """Validates that this Transaction properly balances.
+        """
+        Validates that this Transaction properly balances.
 
-        A Transaction balances if its credit amounts match its debit amounts.
-        If the Transaction does not balance, then a TransactionBalanceException
-        is raised.
-
-        Returns True if the Transaction validates.
+        This method is not as thorough as
+        `ledger.api.queries.validate_transaction` because not all of the
+        validations in that file apply to an already-created object.  Instead,
+        the only check that makes sense is that the entries for the transaction
+        still balance.
         """
         total = sum(self.entries.values_list('amount', flat=True))
         if total != Decimal(0):
