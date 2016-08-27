@@ -3,6 +3,8 @@ from decimal import Decimal as D
 
 from django.test import TestCase
 
+from ledger.exceptions import NoLedgerEntriesException
+from ledger.exceptions import TransactionBalanceException
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
@@ -412,7 +414,7 @@ class TestCreateTransaction(TestCompanyWideLedgers):
 
 class TestValidateTransaction(TestCompanyWideLedgers):
     def test_debits_not_equal_to_credits(self):
-        with self.assertRaises(Transaction.TransactionBalanceException):
+        with self.assertRaises(TransactionBalanceException):
             validate_transaction(
                 self.user,
                 ledger_entries=[
@@ -426,7 +428,7 @@ class TestValidateTransaction(TestCompanyWideLedgers):
             )
 
     def test_no_ledger_entries(self):
-        with self.assertRaises(Transaction.NoLedgerEntriesException):
+        with self.assertRaises(NoLedgerEntriesException):
             validate_transaction(
                 self.user,
             )

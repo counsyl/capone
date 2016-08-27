@@ -7,6 +7,7 @@ from django.db.models import F
 from django.db.transaction import atomic
 
 from ledger.api.queries import validate_transaction
+from ledger.exceptions import UnvoidableTransactionException
 from ledger.models import Ledger
 from ledger.models import LedgerBalance
 from ledger.models import LedgerEntry
@@ -40,7 +41,7 @@ def void_transaction(
         # None!
         pass
     else:
-        raise Transaction.UnvoidableTransactionException(
+        raise UnvoidableTransactionException(
             "Cannot void the same Transaction #({id}) more than once."
             .format(id=transaction.transaction_id))
 

@@ -16,6 +16,8 @@ from django.db.models import Sum
 from django.utils.translation import ugettext_lazy as _
 from uuidfield.fields import UUIDField
 
+from ledger.exceptions import TransactionBalanceException
+
 
 POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # nopep8
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
@@ -172,7 +174,7 @@ class Transaction(NonDeletableModel, models.Model):
         """
         total = sum(self.entries.values_list('amount', flat=True))
         if total != Decimal(0):
-            raise Transaction.TransactionBalanceException(
+            raise TransactionBalanceException(
                 "Credits do not equal debits. Mis-match of %s." % total)
         return True
 
@@ -193,27 +195,6 @@ class Transaction(NonDeletableModel, models.Model):
             'related_objects':
             [unicode(obj) for obj in self.related_objects.all()],
         }
-
-    class TransactionException(Exception):
-        pass
-
-    class TransactionBalanceException(TransactionException):
-        pass
-
-    class UnvoidableTransactionException(TransactionException):
-        pass
-
-    class UnmodifiableTransactionException(TransactionException):
-        pass
-
-    class PrimaryRelatedObjectException(TransactionException):
-        pass
-
-    class NoLedgerEntriesException(TransactionException):
-        pass
-
-    class ExistingLedgerEntriesException(TransactionException):
-        pass
 
 
 LEDGER_ACCOUNTS_RECEIVABLE = "ar"

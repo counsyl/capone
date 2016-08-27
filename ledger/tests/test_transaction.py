@@ -8,6 +8,7 @@ from ledger.api.actions import create_transaction
 from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
+from ledger.exceptions import TransactionBalanceException
 from ledger.models import Ledger
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LedgerEntry
@@ -91,7 +92,7 @@ class TestSettingExplicitTimestampField(TransactionBase):
 class TestUnBalance(TransactionBase):
     def test_only_credits(self):
         # User 1 trying to pay User 2, but only debits from own ledger
-        with self.assertRaises(Transaction.TransactionBalanceException):
+        with self.assertRaises(TransactionBalanceException):
             create_transaction(
                 self.user1,
                 evidence=[self.user2],
@@ -104,7 +105,7 @@ class TestUnBalance(TransactionBase):
 
     def test_only_debits(self):
         # User 1 trying to pay User 2, but only credits User 2's ledger
-        with self.assertRaises(Transaction.TransactionBalanceException):
+        with self.assertRaises(TransactionBalanceException):
             create_transaction(
                 self.user1,
                 evidence=[self.user2],
@@ -117,7 +118,7 @@ class TestUnBalance(TransactionBase):
 
     def test_mismatch(self):
         # User 1 pays User 2, but credits too much
-        with self.assertRaises(Transaction.TransactionBalanceException):
+        with self.assertRaises(TransactionBalanceException):
             create_transaction(
                 self.user1,
                 evidence=[self.user2],
@@ -133,7 +134,7 @@ class TestUnBalance(TransactionBase):
 
     def test_rounding_mismatch(self):
         # User 1 pays 499.99995 to User 2, but their client rounded wrong
-        with self.assertRaises(Transaction.TransactionBalanceException):
+        with self.assertRaises(TransactionBalanceException):
             create_transaction(
                 self.user1,
                 evidence=[self.user2],
@@ -168,7 +169,7 @@ class TestEditingTransactions(TestCase):
         entry.amount += Decimal('1')
         entry.save()
 
-        with self.assertRaises(Transaction.TransactionBalanceException):
+        with self.assertRaises(TransactionBalanceException):
             transaction.save()
 
 

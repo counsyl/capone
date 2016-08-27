@@ -7,6 +7,8 @@ from ledger.api.actions import create_transaction
 from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
+from ledger.exceptions import ExistingLedgerEntriesException
+from ledger.exceptions import UnvoidableTransactionException
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
@@ -61,7 +63,7 @@ class TestVoidTransaction(TestVoidBase):
 
         # Trying to void the same transaction again will not succeed
         self.assertRaises(
-            Transaction.UnvoidableTransactionException,
+            UnvoidableTransactionException,
             void_transaction, txn, self.creation_user)
 
     def test_can_void_void(self):
@@ -232,7 +234,7 @@ class TestExistingLedgerEntriesException(TestCase):
             ],
         )
 
-        with self.assertRaises(Transaction.ExistingLedgerEntriesException):
+        with self.assertRaises(ExistingLedgerEntriesException):
             create_transaction(
                 self.user,
                 ledger_entries=list(existing_transaction.entries.all()),
