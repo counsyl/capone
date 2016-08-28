@@ -3,6 +3,7 @@ from decimal import Decimal as D
 
 from django.test import TestCase
 
+from ledger.exceptions import ExistingLedgerEntriesException
 from ledger.exceptions import NoLedgerEntriesException
 from ledger.exceptions import TransactionBalanceException
 from ledger.models import Ledger
@@ -339,4 +340,39 @@ class TestValidateTransaction(TestCompanyWideLedgers):
         with self.assertRaises(NoLedgerEntriesException):
             validate_transaction(
                 self.user,
+            )
+
+
+class TestExistingLedgerEntriesException(TestCase):
+    def setUp(self):
+        self.amount = D(100)
+        self.user = UserFactory()
+
+        self.accounts_receivable = Ledger.objects.get_or_create_ledger_by_name(
+            'Accounts Receivable',
+            increased_by_debits=True,
+        )
+
+        self.cash = Ledger.objects.get_or_create_ledger_by_name(
+            'Cash',
+            increased_by_debits=True,
+        )
+
+    def test_with_existing_ledger_entry(self):
+        existing_transaction = create_transaction(
+            self.user,
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.accounts_receivable,
+                    amount=credit(self.amount)),
+                LedgerEntry(
+                    ledger=self.accounts_receivable,
+                    amount=debit(self.amount)),
+            ],
+        )
+
+        with self.assertRaises(ExistingLedgerEntriesException):
+            create_transaction(
+                self.user,
+                ledger_entries=list(existing_transaction.entries.all()),
             )

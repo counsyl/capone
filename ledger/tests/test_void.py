@@ -7,7 +7,6 @@ from ledger.api.actions import create_transaction
 from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
-from ledger.exceptions import ExistingLedgerEntriesException
 from ledger.exceptions import UnvoidableTransactionException
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
@@ -204,38 +203,3 @@ class TestVoidTimestamps(TestVoidBase):
             charge_txn, self.creation_user,
             posted_timestamp=now)
         self.assertEqual(now, void_txn.posted_timestamp)
-
-
-class TestExistingLedgerEntriesException(TestCase):
-    def setUp(self):
-        self.amount = D(100)
-        self.user = UserFactory()
-
-        self.accounts_receivable = Ledger.objects.get_or_create_ledger_by_name(
-            'Accounts Receivable',
-            increased_by_debits=True,
-        )
-
-        self.cash = Ledger.objects.get_or_create_ledger_by_name(
-            'Cash',
-            increased_by_debits=True,
-        )
-
-    def test_with_existing_ledger_entry(self):
-        existing_transaction = create_transaction(
-            self.user,
-            ledger_entries=[
-                LedgerEntry(
-                    ledger=self.accounts_receivable,
-                    amount=credit(self.amount)),
-                LedgerEntry(
-                    ledger=self.accounts_receivable,
-                    amount=debit(self.amount)),
-            ],
-        )
-
-        with self.assertRaises(ExistingLedgerEntriesException):
-            create_transaction(
-                self.user,
-                ledger_entries=list(existing_transaction.entries.all()),
-            )
