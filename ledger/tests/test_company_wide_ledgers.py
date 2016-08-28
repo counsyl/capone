@@ -20,43 +20,6 @@ from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
 
 
-def get_full_ledger_for_object_using_reconciliation(obj):
-    """
-    Get all Transactions for all objects related to `obj`.
-
-    "Related to" above is defined as any object that is in
-    `Transaction.related_objects` along with `obj` where that Transaction is of
-    type `RECONCILIATION`.
-
-    For instance, if a CreditCardTransaction has been reconciled with
-    a particular Order, this function should first find that Reconciliation
-    Transaction, and then get all Transactions that are either attached to
-    `obj` or any other object that was attached to the Reconciliation
-    Transaction, in this case the Revenue Recognition for the original Order,
-    the original ledger entry for the CreditCardTransaction, and then finally,
-    the Reconciliation entry.
-    """
-    recon_transactions = (
-        Transaction.objects.filter_by_related_objects([obj])
-        .filter(type=Transaction.RECONCILIATION)
-    )
-
-    linked_objects = []
-    for transaction in recon_transactions:
-        for related_object in transaction.related_objects.all():
-            linked_objects.append(related_object.related_object)
-
-    transactions = []
-
-    for linked_object in linked_objects:
-        transactions.extend(
-            Transaction.objects.filter_by_related_objects([linked_object]))
-
-    # Cast to set() to de-dupe entries, since `obj` should appear twice for
-    # a reconciled entry.
-    return set(transactions)
-
-
 def create_recon_report():
     """
     Return a report for all existing Orders showing their Recon status
