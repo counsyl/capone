@@ -5,31 +5,6 @@ from django.test import TestCase
 
 from ledger.api.actions import credit
 from ledger.api.actions import debit
-from ledger.models import Ledger
-from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
-from ledger.models import LEDGER_CASH
-from ledger.models import LEDGER_REVENUE
-from ledger.tests.factories import UserFactory
-
-
-class LedgerEntryActionSetUp(TestCase):
-    def setUp(self):
-        super(LedgerEntryActionSetUp, self).setUp()
-        self.entity_1 = UserFactory()
-        self.entity_2 = UserFactory()
-        self.creation_user = UserFactory()
-        self.entity_1_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, LEDGER_ACCOUNTS_RECEIVABLE)
-        self.entity_1_rev_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, LEDGER_REVENUE)
-        self.entity_1_cash_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_1, LEDGER_CASH)
-        self.entity_2_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, LEDGER_ACCOUNTS_RECEIVABLE)
-        self.entity_2_rev_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, LEDGER_REVENUE)
-        self.entity_2_cash_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity_2, LEDGER_CASH)
 
 
 class TestCreditAndDebit(TestCase):
