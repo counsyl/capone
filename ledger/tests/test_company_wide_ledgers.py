@@ -13,7 +13,6 @@ from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.queries import get_all_transactions_for_object
 from ledger.api.queries import get_balances_for_object
-from ledger.api.queries import get_ledger_balances_for_transactions
 from ledger.api.queries import validate_transaction
 from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import OrderFactory
@@ -224,12 +223,10 @@ class TestCompanyWideLedgers(TestCase):
 
         # Assert that revenue is recognized and reconciled.
         self.assertEqual(
-            get_ledger_balances_for_transactions(
-                get_full_ledger_for_object_using_reconciliation(
-                    order)),
+            get_balances_for_object(order),
             {
-                self.accounts_receivable: 0,
-                self.cash_unrecon: 0,
+                self.accounts_receivable: self.AMOUNT,
+                self.cash_unrecon: -self.AMOUNT,
                 self.cash_recon: self.AMOUNT,
                 self.revenue: -self.AMOUNT,
             },
@@ -304,12 +301,10 @@ class TestCompanyWideLedgers(TestCase):
             )
 
             self.assertEqual(
-                get_ledger_balances_for_transactions(
-                    get_full_ledger_for_object_using_reconciliation(
-                        order)),
+                get_balances_for_object(order),
                 {
-                    self.accounts_receivable: 0,
-                    self.cash_unrecon: 0,
+                    self.accounts_receivable: self.AMOUNT,
+                    self.cash_unrecon: -self.AMOUNT,
                     self.cash_recon: self.AMOUNT,
                     self.revenue: -self.AMOUNT,
                 },

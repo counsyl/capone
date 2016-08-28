@@ -31,16 +31,6 @@ def get_all_transactions_for_object(obj, ledgers=()):
     return transactions
 
 
-def get_ledger_balances_for_transactions(transactions):
-    balances = defaultdict(lambda: Decimal(0))
-
-    for transaction in transactions:
-        for entry in transaction.entries.all():
-            balances[entry.ledger] += entry.amount
-
-    return balances
-
-
 def get_balances_for_object(obj):
     """
     Return a dict from Ledger to Decimal for an evidence model.
