@@ -295,12 +295,6 @@ class TestCompanyWideLedgers(TestCase):
         )
 
 
-class TestLedger(TestCompanyWideLedgers):
-    def test_unicode(self):
-        self.assertEqual(
-            unicode(self.accounts_receivable), "Accounts Receivable")
-
-
 class TestCreateTransaction(TestCompanyWideLedgers):
     def test_setting_posted_timestamp(self):
         POSTED_DATETIME = datetime(2016, 2, 7, 11, 59)

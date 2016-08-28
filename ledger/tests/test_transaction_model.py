@@ -45,12 +45,15 @@ class TestUnicodeMethods(TransactionBase):
 
         entry = txn.entries.last()
         self.assertEqual(
-            repr(entry),
-            "<LedgerEntry: LedgerEntry: $%s in %s>" % (
+            unicode(entry),
+            "LedgerEntry: $%s in %s" % (
                 entry.amount,
                 entry.ledger.name,
             )
         )
+
+        self.assertEqual(
+            unicode(self.user1_ledger), "arTransactionUser #0")
 
 
 class TestTransactionSummary(TransactionBase):
