@@ -18,7 +18,7 @@ from ledger.api.queries import validate_transaction
 from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import OrderFactory
 from ledger.tests.factories import UserFactory
-from ledger.tests.test_models import TransactionBase
+from ledger.tests.test_transaction_model import TransactionBase
 from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
 
