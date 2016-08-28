@@ -200,14 +200,54 @@ class TestFilterByRelatedObjects(TestCase):
         )
 
     def test_exact_filter(self):
-        with self.assertRaises(NotImplementedError):
-            Transaction.objects.filter_by_related_objects(
-                match_type=MatchType.EXACT)
+        self.assertIn(
+            self.transaction_with_both_orders,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.EXACT)
+        )
+
+        self.assertNotIn(
+            self.transaction_with_only_order_1,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.EXACT)
+        )
+
+        self.assertNotIn(
+            self.transaction_with_only_order_2,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.EXACT)
+        )
+
+        self.assertNotIn(
+            self.transaction_with_neither_order,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.EXACT)
+        )
+
+        transaction_with_three_orders = (
+            self._create_transaction_with_evidence([
+                self.order_1,
+                self.order_2,
+                OrderFactory(),
+            ])
+        )
+        self.assertNotIn(
+            transaction_with_three_orders,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.EXACT)
+        )
 
     def test_exact_filter_no_evidence(self):
-        with self.assertRaises(NotImplementedError):
-            Transaction.objects.filter_by_related_objects(
-                match_type=MatchType.EXACT)
+        self.assertEqual(
+            set(Transaction.objects.all().values_list('id')),
+            set(Transaction.objects.filter_by_related_objects(
+                [], match_type=MatchType.EXACT).values_list('id'))
+        )
 
     def test_invalid_match_type(self):
         with self.assertRaises(ValueError):
