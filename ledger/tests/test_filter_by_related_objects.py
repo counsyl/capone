@@ -172,3 +172,6 @@ class TestFilterByRelatedObjects(TestCase):
     def test_invalid_match_type(self):
         with self.assertRaises(ValueError):
             Transaction.objects.filter_by_related_objects(match_type='foo')
+
+    def test_chaining_filter_to_existing_queryset(self):
+        pass

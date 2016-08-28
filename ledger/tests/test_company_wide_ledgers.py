@@ -11,7 +11,6 @@ from ledger.models import Transaction
 from ledger.api.actions import create_transaction
 from ledger.api.actions import credit
 from ledger.api.actions import debit
-from ledger.api.queries import get_all_transactions_for_object
 from ledger.api.queries import get_balances_for_object
 from ledger.api.queries import validate_transaction
 from ledger.tests.factories import CreditCardTransactionFactory
@@ -38,7 +37,7 @@ def get_full_ledger_for_object_using_reconciliation(obj):
     the Reconciliation entry.
     """
     recon_transactions = (
-        get_all_transactions_for_object(obj)
+        Transaction.objects.filter_by_related_objects([obj])
         .filter(type=Transaction.RECONCILIATION)
     )
 
@@ -50,7 +49,8 @@ def get_full_ledger_for_object_using_reconciliation(obj):
     transactions = []
 
     for linked_object in linked_objects:
-        transactions.extend(get_all_transactions_for_object(linked_object))
+        transactions.extend(
+            Transaction.objects.filter_by_related_objects([linked_object]))
 
     # Cast to set() to de-dupe entries, since `obj` should appear twice for
     # a reconciled entry.
@@ -333,56 +333,6 @@ class TestLedger(TestCompanyWideLedgers):
     def test_unicode(self):
         self.assertEqual(
             unicode(self.accounts_receivable), "Accounts Receivable")
-
-
-class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
-    def test_restricting_get_all_transactions_by_ledger(self):
-        order = OrderFactory(amount=self.AMOUNT)
-
-        txn_recognize = create_transaction(
-            self.user,
-            evidence=[order],
-            ledger_entries=[
-                LedgerEntry(
-                    ledger=self.revenue,
-                    amount=credit(self.AMOUNT)),
-                LedgerEntry(
-                    ledger=self.accounts_receivable,
-                    amount=debit(self.AMOUNT)),
-            ],
-        )
-
-        # NOTE: I'm fudging this Transaction a bit for the sake of this test:
-        # I'm attaching the txn_take_payment LedgerEntries to `order` and not
-        # to a CreditCardTransaction.
-        txn_take_payment = create_transaction(
-            self.user,
-            evidence=[order],
-            ledger_entries=[
-                LedgerEntry(
-                    ledger=self.accounts_receivable,
-                    amount=credit(self.AMOUNT)),
-                LedgerEntry(
-                    ledger=self.cash_unrecon,
-                    amount=debit(self.AMOUNT))
-            ],
-        )
-
-        self.assertEqual(
-            set(get_all_transactions_for_object(order)),
-            {txn_recognize, txn_take_payment})
-        self.assertEqual(
-            set(get_all_transactions_for_object(
-                order, ledgers=[self.revenue])),
-            {txn_recognize})
-        self.assertEqual(
-            set(get_all_transactions_for_object(
-                order, ledgers=[self.cash_unrecon])),
-            {txn_take_payment})
-        self.assertEqual(
-            set(get_all_transactions_for_object(
-                order, ledgers=[self.revenue, self.cash_unrecon])),
-            {txn_recognize, txn_take_payment})
 
 
 class TestCreateTransaction(TestCompanyWideLedgers):

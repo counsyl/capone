@@ -7,28 +7,6 @@ from ledger.exceptions import ExistingLedgerEntriesException
 from ledger.exceptions import NoLedgerEntriesException
 from ledger.exceptions import TransactionBalanceException
 from ledger.models import LedgerBalance
-from ledger.models import Transaction
-
-
-def get_all_transactions_for_object(obj, ledgers=()):
-    """
-    Get all transactions for an object, optionally restricted by ledgers
-    """
-    transactions = (
-        Transaction
-        .objects
-        .filter(
-            related_objects__related_object_content_type=(
-                ContentType.objects.get_for_model(obj)),
-            related_objects__related_object_id=obj.id,
-        )
-        .distinct()
-    )
-
-    if ledgers:
-        transactions = transactions.filter(ledgers__in=ledgers)
-
-    return transactions
 
 
 def get_balances_for_object(obj):
