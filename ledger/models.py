@@ -94,7 +94,13 @@ class TransactionQuerySet(NonDeletableQuerySet):
                 )
             return self
         elif match_type == MatchType.NONE:
-            raise NotImplementedError
+            for related_object in related_objects:
+                self = self.exclude(
+                    related_objects__related_object_content_type=(
+                        content_types[related_object]),
+                    related_objects__related_object_id=related_object.id,
+                )
+            return self
         elif match_type == MatchType.EXACT:
             raise NotImplementedError
         else:

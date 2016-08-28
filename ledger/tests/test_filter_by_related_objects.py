@@ -150,14 +150,54 @@ class TestFilterByRelatedObjects(TestCase):
         )
 
     def test_none_filter(self):
-        with self.assertRaises(NotImplementedError):
-            Transaction.objects.filter_by_related_objects(
-                match_type=MatchType.NONE)
+        self.assertNotIn(
+            self.transaction_with_both_orders,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.NONE)
+        )
+
+        self.assertNotIn(
+            self.transaction_with_only_order_1,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.NONE)
+        )
+
+        self.assertNotIn(
+            self.transaction_with_only_order_2,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.NONE)
+        )
+
+        self.assertIn(
+            self.transaction_with_neither_order,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.NONE)
+        )
+
+        transaction_with_three_orders = (
+            self._create_transaction_with_evidence([
+                self.order_1,
+                self.order_2,
+                OrderFactory(),
+            ])
+        )
+        self.assertNotIn(
+            transaction_with_three_orders,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.NONE)
+        )
 
     def test_none_filter_no_evidence(self):
-        with self.assertRaises(NotImplementedError):
-            Transaction.objects.filter_by_related_objects(
-                match_type=MatchType.NONE)
+        self.assertEqual(
+            set(Transaction.objects.all().values_list('id')),
+            set(Transaction.objects.filter_by_related_objects(
+                [], match_type=MatchType.NONE).values_list('id'))
+        )
 
     def test_exact_filter(self):
         with self.assertRaises(NotImplementedError):
