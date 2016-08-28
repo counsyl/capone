@@ -174,4 +174,16 @@ class TestFilterByRelatedObjects(TestCase):
             Transaction.objects.filter_by_related_objects(match_type='foo')
 
     def test_chaining_filter_to_existing_queryset(self):
-        pass
+        self.assertEquals(Transaction.objects.count(), 4)
+
+        self.assertEquals(
+            Transaction.objects.filter_by_related_objects(
+                [self.order_1]).count(), 3)
+
+        transactions_restricted_by_ledger = (
+            Transaction.objects.filter(ledgers__in=[self.ledger])
+        )
+
+        self.assertEquals(
+            transactions_restricted_by_ledger.filter_by_related_objects(
+                [self.order_1]).distinct().count(), 3)
