@@ -111,49 +111,6 @@ class TestEditingTransactions(TestCase):
             transaction.save()
 
 
-class TestRounding(TransactionBase):
-    def _create_transaction_and_compare_to_amount(
-            self, amount, comparison_amount=None):
-        transaction = create_transaction(
-            self.user2,
-            ledger_entries=[
-                LedgerEntry(
-                    ledger=self.user1_ledger,
-                    amount=amount),
-                LedgerEntry(
-                    ledger=self.user2_ledger,
-                    amount=-amount),
-            ]
-        )
-
-        entry = transaction.entries.get(ledger=self.user1_ledger)
-        if comparison_amount:
-            self.assertNotEqual(entry.amount, amount)
-            self.assertEqual(entry.amount, comparison_amount)
-        else:
-            self.assertEqual(entry.amount, amount)
-
-    def test_precision(self):
-        self._create_transaction_and_compare_to_amount(
-            Decimal('-499.9999'))
-
-    def test_round_up(self):
-        self._create_transaction_and_compare_to_amount(
-            Decimal('499.99995'), Decimal('500'))
-
-    def test_round_down(self):
-        self._create_transaction_and_compare_to_amount(
-            Decimal('499.99994'), Decimal('499.9999'))
-
-    def test_round_up_negative(self):
-        self._create_transaction_and_compare_to_amount(
-            Decimal('-499.99994'), Decimal('-499.9999'))
-
-    def test_round_down_negative(self):
-        self._create_transaction_and_compare_to_amount(
-            Decimal('-499.99995'), Decimal('-500'))
-
-
 class TestDelete(TransactionBase):
     def test_cant_delete(self):
         transaction = TransactionFactory()
