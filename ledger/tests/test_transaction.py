@@ -89,68 +89,6 @@ class TestSettingExplicitTimestampField(TransactionBase):
         )
 
 
-class TestUnBalance(TransactionBase):
-    def test_only_credits(self):
-        # User 1 trying to pay User 2, but only debits from own ledger
-        with self.assertRaises(TransactionBalanceException):
-            create_transaction(
-                self.user1,
-                evidence=[self.user2],
-                ledger_entries=[
-                    LedgerEntry(
-                        ledger=self.user1_ledger,
-                        amount=Decimal('-500'))
-                ],
-            )
-
-    def test_only_debits(self):
-        # User 1 trying to pay User 2, but only credits User 2's ledger
-        with self.assertRaises(TransactionBalanceException):
-            create_transaction(
-                self.user1,
-                evidence=[self.user2],
-                ledger_entries=[
-                    LedgerEntry(
-                        ledger=self.user2_ledger,
-                        amount=Decimal('500'))
-                ],
-            )
-
-    def test_mismatch(self):
-        # User 1 pays User 2, but credits too much
-        with self.assertRaises(TransactionBalanceException):
-            create_transaction(
-                self.user1,
-                evidence=[self.user2],
-                ledger_entries=[
-                    LedgerEntry(
-                        ledger=self.user1_ledger,
-                        amount=Decimal('-499')),
-                    LedgerEntry(
-                        ledger=self.user2_ledger,
-                        amount=Decimal('500'))
-                ],
-            )
-
-    def test_rounding_mismatch(self):
-        # User 1 pays 499.99995 to User 2, but their client rounded wrong
-        with self.assertRaises(TransactionBalanceException):
-            create_transaction(
-                self.user1,
-                evidence=[self.user2],
-                ledger_entries=[
-                    LedgerEntry(
-                        ledger=self.user1_ledger,
-                        amount=Decimal('-499.99995')),  # We round this to -500
-                    # Assume their client rounds -499.99995 to -499.9999 and
-                    # then abs() it
-                    LedgerEntry(
-                        ledger=self.user2_ledger,
-                        amount=Decimal('499.9999'))
-                ],
-            )
-
-
 class TestEditingTransactions(TestCase):
     """
     Test that validation is still done when editing a Transaction.
