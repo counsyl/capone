@@ -3,7 +3,6 @@ import uuid
 from decimal import Decimal
 from enum import Enum
 
-from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from counsyl_django_utils.models.non_deletable import NonDeletableQuerySet
 from counsyl_django_utils.models.timestamped import TimeStampedModel
@@ -250,75 +249,6 @@ class Transaction(NonDeletableModel, models.Model):
         }
 
 
-LEDGER_ACCOUNTS_RECEIVABLE = "ar"
-LEDGER_REVENUE = "revenue"
-LEDGER_CASH = "cash"
-LEDGER_CHOICES = (
-    (LEDGER_ACCOUNTS_RECEIVABLE, "Accounts Receivable"),
-    (LEDGER_REVENUE, "Revenue"),
-    (LEDGER_CASH, "Cash")
-)
-
-
-class LedgerManager(NoDeleteManager):
-    # The value of `increased_by_debits` for this type of account.
-    ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS = {
-        LEDGER_ACCOUNTS_RECEIVABLE: True,
-        LEDGER_REVENUE: False,
-        LEDGER_CASH: True,
-    }
-
-    def get_or_create_ledger(self, entity, ledger_type):
-        """Convenience method to get the correct ledger.
-
-        Args:
-            entity: The Entity to get a ledger for (InsurancePayer or
-                    CustomerProfile)
-            ledger_type: The appropriate Ledger.LEDGER_CHOICES
-        """
-        try:
-            return Ledger.objects.get(
-                type=ledger_type,
-                entity_content_type=ContentType.objects.get_for_model(entity),
-                entity_id=entity.pk,
-                increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
-                    ledger_type],
-            ), False
-        except Ledger.DoesNotExist:
-            last_ledger = Ledger.objects.order_by('number').last()
-            last_ledger_number = last_ledger.number if last_ledger else 0
-            return Ledger.objects.create(
-                name=ledger_type + unicode(entity),
-                type=ledger_type,
-                entity_content_type=ContentType.objects.get_for_model(entity),
-                entity_id=entity.pk,
-                increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
-                    ledger_type],
-                number=last_ledger_number + 1
-            ), True
-
-    def get_or_create_ledger_by_name(self, name, increased_by_debits):
-        try:
-            return Ledger.objects.get(
-                type='',
-                entity_content_type=None,
-                entity_id=None,
-                name=name,
-                increased_by_debits=increased_by_debits,
-            )
-        except Ledger.DoesNotExist:
-            last_ledger = Ledger.objects.order_by('number').last()
-            last_ledger_number = last_ledger.number if last_ledger else 0
-            return Ledger.objects.create(
-                name=name,
-                type='',
-                entity_content_type=None,
-                entity_id=None,
-                increased_by_debits=increased_by_debits,
-                number=last_ledger_number + 1
-            )
-
-
 class Ledger(NonDeletableModel, models.Model):
     name = models.CharField(
         help_text=_("Name of this ledger"),
@@ -334,8 +264,6 @@ class Ledger(NonDeletableModel, models.Model):
         help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
         default=None,
     )
-
-    objects = LedgerManager()
 
     def get_balance(self):
         """Get the current balance on this Ledger."""
