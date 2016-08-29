@@ -68,6 +68,27 @@ class TransactionQuerySet(NonDeletableQuerySet):
 
     def filter_by_related_objects(
             self, related_objects=(), match_type=MatchType.ALL):
+        """
+        Filter Transactions to only those with related_objects as evidence.
+
+        This filter takes an option, `match_type` that controls how the
+        matching to `related_objects` is construed:
+
+        -   ANY: Return Transactions that have *any* of the objects in
+            `related_objects` as evidence.
+        -   ALL: Return Transactions that have *all* of the objects in
+            `related_objects` as evidence: they can have other evidence
+            objects, but they must have all of `related_objects` (c.f. EXACT).
+        -   NONE: Return only those Transactions that have *none* of
+            `related_objects` as evidence.  They may have other evidence.
+        -   EXACT: Return only those Transactions whose evidence matches
+            `related_objects` *exactly*: they may not have other evidence (c.f.
+            ALL).
+
+        The current implementation of EXACT is not as performant as the other
+        options, so be careful using it with large numbers of
+        `related_objects`.
+        """
         content_types = ContentType.objects.get_for_models(
             *related_objects)
 
