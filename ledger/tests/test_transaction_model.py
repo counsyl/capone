@@ -52,8 +52,8 @@ class TestUnicodeMethods(TestCase):
             )
         )
 
-        self.assertEqual(
-            unicode(self.user1_ledger), "arTransactionUser #0")
+        ledger = LedgerFactory(name='foo')
+        self.assertEqual(unicode(ledger), "foo")
 
 
 class TestTransactionSummary(TransactionBase):
