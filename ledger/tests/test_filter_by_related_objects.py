@@ -64,6 +64,14 @@ class TestFilterByRelatedObjects(TestCase):
             ])
         )
 
+        cls.transaction_with_three_orders = (
+            cls._create_transaction_with_evidence([
+                cls.order_1,
+                cls.order_2,
+                OrderFactory(),
+            ])
+        )
+
     @parameterized.expand([
         (MatchType.ANY, Transaction.objects.all().values_list('id')),
         (MatchType.ALL, Transaction.objects.all().values_list('id')),
@@ -106,6 +114,11 @@ class TestFilterByRelatedObjects(TestCase):
             ], match_type=MatchType.ANY)
         )
 
+        self.assertIn(
+            self.transaction_with_three_orders,
+            Transaction.objects.filter_by_related_objects([
+                self.order_1, self.order_2,
+            ], match_type=MatchType.ALL)
         )
 
     def test_all_filter(self):
@@ -137,15 +150,8 @@ class TestFilterByRelatedObjects(TestCase):
             ], match_type=MatchType.ALL)
         )
 
-        transaction_with_three_orders = (
-            self._create_transaction_with_evidence([
-                self.order_1,
-                self.order_2,
-                OrderFactory(),
-            ])
-        )
         self.assertIn(
-            transaction_with_three_orders,
+            self.transaction_with_three_orders,
             Transaction.objects.filter_by_related_objects([
                 self.order_1, self.order_2,
             ], match_type=MatchType.ALL)
@@ -180,15 +186,8 @@ class TestFilterByRelatedObjects(TestCase):
             ], match_type=MatchType.NONE)
         )
 
-        transaction_with_three_orders = (
-            self._create_transaction_with_evidence([
-                self.order_1,
-                self.order_2,
-                OrderFactory(),
-            ])
-        )
         self.assertNotIn(
-            transaction_with_three_orders,
+            self.transaction_with_three_orders,
             Transaction.objects.filter_by_related_objects([
                 self.order_1, self.order_2,
             ], match_type=MatchType.NONE)
@@ -223,15 +222,8 @@ class TestFilterByRelatedObjects(TestCase):
             ], match_type=MatchType.EXACT)
         )
 
-        transaction_with_three_orders = (
-            self._create_transaction_with_evidence([
-                self.order_1,
-                self.order_2,
-                OrderFactory(),
-            ])
-        )
         self.assertNotIn(
-            transaction_with_three_orders,
+            self.transaction_with_three_orders,
             Transaction.objects.filter_by_related_objects([
                 self.order_1, self.order_2,
             ], match_type=MatchType.EXACT)
@@ -242,11 +234,11 @@ class TestFilterByRelatedObjects(TestCase):
             Transaction.objects.filter_by_related_objects(match_type='foo')
 
     def test_chaining_filter_to_existing_queryset(self):
-        self.assertEquals(Transaction.objects.count(), 4)
+        self.assertEquals(Transaction.objects.count(), 5)
 
         self.assertEquals(
             Transaction.objects.filter_by_related_objects(
-                [self.order_1]).count(), 3)
+                [self.order_1]).count(), 4)
 
         transactions_restricted_by_ledger = (
             Transaction.objects.filter(ledgers__in=[self.ledger])
@@ -254,4 +246,4 @@ class TestFilterByRelatedObjects(TestCase):
 
         self.assertEquals(
             transactions_restricted_by_ledger.filter_by_related_objects(
-                [self.order_1]).distinct().count(), 3)
+                [self.order_1]).distinct().count(), 4)
