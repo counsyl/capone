@@ -244,7 +244,7 @@ class TestFilterByRelatedObjects(TestCase):
 
     def test_exact_filter_no_evidence(self):
         self.assertEqual(
-            set(Transaction.objects.all().values_list('id')),
+            set(),
             set(Transaction.objects.filter_by_related_objects(
                 [], match_type=MatchType.EXACT).values_list('id'))
         )

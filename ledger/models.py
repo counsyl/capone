@@ -137,8 +137,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
                     m.related_object for m in matched.related_objects.all()}
                 if matched_objects == set(related_objects):
                     exact_matches.append(matched.id)
-            return (
-                self.filter(id__in=exact_matches) if related_objects else self)
+            return self.filter(id__in=exact_matches)
         else:
             raise ValueError("Invalid match_type.")
 
