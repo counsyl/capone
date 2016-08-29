@@ -132,7 +132,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
                         related_objects__related_object_id=related_object.id,
                     )
                     .prefetch_related(
-                        'related_objects__related_object',
+                        'related_objects',
                     )
                 )
 
