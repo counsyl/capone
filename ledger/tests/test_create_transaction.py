@@ -7,7 +7,6 @@ from django.test import TestCase
 from ledger.exceptions import ExistingLedgerEntriesException
 from ledger.exceptions import NoLedgerEntriesException
 from ledger.exceptions import TransactionBalanceException
-from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.api.actions import create_transaction
@@ -16,9 +15,9 @@ from ledger.api.actions import debit
 from ledger.api.queries import get_balances_for_object
 from ledger.api.queries import validate_transaction
 from ledger.tests.factories import CreditCardTransactionFactory
+from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import OrderFactory
 from ledger.tests.factories import UserFactory
-from ledger.tests.test_transaction_model import TransactionBase
 from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
 
@@ -63,24 +62,10 @@ class TestCompanyWideLedgers(TestCase):
         self.AMOUNT = D(100)
         self.user = UserFactory()
 
-        # Create four company-wide ledgers: "Cash (unreconciled)",
-        # "Cash (reconciled)", "A/R", and "Revenue".
-        self.accounts_receivable = Ledger.objects.get_or_create_ledger_by_name(
-            'Accounts Receivable',
-            increased_by_debits=True,
-        )
-        self.cash_unrecon = Ledger.objects.get_or_create_ledger_by_name(
-            'Cash (unreconciled)',
-            increased_by_debits=True,
-        )
-        self.cash_recon = Ledger.objects.get_or_create_ledger_by_name(
-            'Cash (reconciled)',
-            increased_by_debits=True,
-        )
-        self.revenue = Ledger.objects.get_or_create_ledger_by_name(
-            'Revenue',
-            increased_by_debits=False,
-        )
+        self.accounts_receivable = LedgerFactory(name='Accounts Receivable')
+        self.cash_unrecon = LedgerFactory(name='Cash (unreconciled)')
+        self.cash_recon = LedgerFactory(name='Cash (reconciled)')
+        self.revenue = LedgerFactory(name='Revenue', increased_by_debits=False)
 
     def test_using_company_wide_ledgers_for_reconciliation(self):
         """
@@ -344,15 +329,8 @@ class TestExistingLedgerEntriesException(TestCase):
         self.amount = D(100)
         self.user = UserFactory()
 
-        self.accounts_receivable = Ledger.objects.get_or_create_ledger_by_name(
-            'Accounts Receivable',
-            increased_by_debits=True,
-        )
-
-        self.cash = Ledger.objects.get_or_create_ledger_by_name(
-            'Cash',
-            increased_by_debits=True,
-        )
+        self.accounts_receivable = LedgerFactory(name='Accounts Receivable')
+        self.cash = LedgerFactory(name='Cash')
 
     def test_with_existing_ledger_entry(self):
         existing_transaction = create_transaction(
@@ -401,27 +379,33 @@ class TestCreditAndDebit(TestCase):
         self.assertRaises(ValueError, debit, -self.AMOUNT)
 
 
-class TestRounding(TransactionBase):
+class TestRounding(TestCase):
     def _create_transaction_and_compare_to_amount(
             self, amount, comparison_amount=None):
+        ledger1 = LedgerFactory()
+        ledger2 = LedgerFactory()
         transaction = create_transaction(
-            self.user2,
+            UserFactory(),
             ledger_entries=[
                 LedgerEntry(
-                    ledger=self.user1_ledger,
+                    ledger=ledger1,
                     amount=amount),
                 LedgerEntry(
-                    ledger=self.user2_ledger,
+                    ledger=ledger2,
                     amount=-amount),
             ]
         )
 
-        entry = transaction.entries.get(ledger=self.user1_ledger)
+        entry1 = transaction.entries.get(ledger=ledger1)
+        entry2 = transaction.entries.get(ledger=ledger2)
         if comparison_amount:
-            self.assertNotEqual(entry.amount, amount)
-            self.assertEqual(entry.amount, comparison_amount)
+            self.assertNotEqual(entry1.amount, amount)
+            self.assertEqual(entry1.amount, comparison_amount)
+            self.assertNotEqual(entry2.amount, -amount)
+            self.assertEqual(-entry2.amount, comparison_amount)
         else:
-            self.assertEqual(entry.amount, amount)
+            self.assertEqual(entry1.amount, amount)
+            self.assertEqual(entry2.amount, -amount)
 
     def test_precision(self):
         self._create_transaction_and_compare_to_amount(

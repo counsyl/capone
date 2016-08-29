@@ -3,7 +3,6 @@ import uuid
 from decimal import Decimal
 from enum import Enum
 
-from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from counsyl_django_utils.models.non_deletable import NonDeletableQuerySet
 from counsyl_django_utils.models.timestamped import TimeStampedModel
@@ -32,8 +31,8 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     as there are pieces of evidence.
     """
     class Meta:
-        unique_together = ('transaction', 'related_object_content_type',
-                           'related_object_id')
+        unique_together = (
+            'transaction', 'related_object_content_type', 'related_object_id')
 
     transaction = models.ForeignKey(
         'Transaction',
@@ -250,113 +249,7 @@ class Transaction(NonDeletableModel, models.Model):
         }
 
 
-LEDGER_ACCOUNTS_RECEIVABLE = "ar"
-LEDGER_REVENUE = "revenue"
-LEDGER_CASH = "cash"
-LEDGER_CHOICES = (
-    (LEDGER_ACCOUNTS_RECEIVABLE, "Accounts Receivable"),
-    (LEDGER_REVENUE, "Revenue"),
-    (LEDGER_CASH, "Cash")
-)
-
-
-class LedgerManager(NoDeleteManager):
-    # The value of `increased_by_debits` for this type of account.
-    ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS = {
-        LEDGER_ACCOUNTS_RECEIVABLE: True,
-        LEDGER_REVENUE: False,
-        LEDGER_CASH: True,
-    }
-
-    def get_or_create_ledger(self, entity, ledger_type):
-        """Convenience method to get the correct ledger.
-
-        Args:
-            entity: The Entity to get a ledger for (InsurancePayer or
-                    CustomerProfile)
-            ledger_type: The appropriate Ledger.LEDGER_CHOICES
-        """
-        try:
-            return Ledger.objects.get(
-                type=ledger_type,
-                entity_content_type=ContentType.objects.get_for_model(entity),
-                entity_id=entity.pk,
-                increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
-                    ledger_type],
-            ), False
-        except Ledger.DoesNotExist:
-            last_ledger = Ledger.objects.order_by('number').last()
-            last_ledger_number = last_ledger.number if last_ledger else 0
-            return Ledger.objects.create(
-                name=ledger_type + unicode(entity),
-                type=ledger_type,
-                entity_content_type=ContentType.objects.get_for_model(entity),
-                entity_id=entity.pk,
-                increased_by_debits=self.ACCOUNT_TYPE_TO_INCREASED_BY_DEBITS[
-                    ledger_type],
-                number=last_ledger_number + 1
-            ), True
-
-    def get_or_create_ledger_by_name(self, name, increased_by_debits):
-        try:
-            return Ledger.objects.get(
-                type='',
-                entity_content_type=None,
-                entity_id=None,
-                name=name,
-                increased_by_debits=increased_by_debits,
-            )
-        except Ledger.DoesNotExist:
-            last_ledger = Ledger.objects.order_by('number').last()
-            last_ledger_number = last_ledger.number if last_ledger else 0
-            return Ledger.objects.create(
-                name=name,
-                type='',
-                entity_content_type=None,
-                entity_id=None,
-                increased_by_debits=increased_by_debits,
-                number=last_ledger_number + 1
-            )
-
-
 class Ledger(NonDeletableModel, models.Model):
-    """
-    Ledgers are the record of debits and credits for a given entity.
-    """
-    class Meta:
-        unique_together = ('type', 'entity_content_type', 'entity_id')
-
-    # Fields for object-attached Ledgers
-    type = models.CharField(
-        help_text=_("The ledger type, eg Accounts Receivable, Revenue, etc"),
-        choices=LEDGER_CHOICES,
-        max_length=128,
-        # A blank `type` here means that the type of account represented by
-        # this ledger is not of the types in LEDGER_CHOICES: it most likely has
-        # a null `entity` and is a Counsyl-wide account like "Unreconciled
-        # Cash".
-        blank=True,
-    )
-
-    # The non-Ledger object that this Ledger is attached to.
-    # TODO: Consider removing this GFK and moving its functionality to the
-    # similar GFKs on Transaction.
-    entity_content_type = models.ForeignKey(
-        ContentType,
-        blank=True,
-        null=True,
-    )
-    entity_id = models.PositiveIntegerField(
-        db_index=True,
-        blank=True,
-        null=True,
-    )
-    entity = GenericForeignKey(
-        'entity_content_type',
-        'entity_id',
-    )
-
-    # Fields for company-wide ledgers
     name = models.CharField(
         help_text=_("Name of this ledger"),
         unique=True,
@@ -372,16 +265,12 @@ class Ledger(NonDeletableModel, models.Model):
         default=None,
     )
 
-    # Fields for both types of Ledgers
-
-    objects = LedgerManager()
-
     def get_balance(self):
         """Get the current balance on this Ledger."""
         return self.entries.aggregate(balance=Sum('amount'))['balance']
 
     def __unicode__(self):
-        return self.name or repr(self.entity)
+        return self.name
 
 
 class LedgerEntry(NonDeletableModel, models.Model):
