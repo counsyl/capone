@@ -32,8 +32,8 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     as there are pieces of evidence.
     """
     class Meta:
-        unique_together = ('transaction', 'related_object_content_type',
-                           'related_object_id')
+        unique_together = (
+            'transaction', 'related_object_content_type', 'related_object_id')
 
     transaction = models.ForeignKey(
         'Transaction',
