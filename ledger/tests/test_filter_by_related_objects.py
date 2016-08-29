@@ -1,6 +1,7 @@
 from decimal import Decimal as D
 
 from django.test import TestCase
+from nose_parameterized import parameterized
 
 from ledger.api.actions import create_transaction
 from ledger.api.actions import credit
@@ -63,6 +64,19 @@ class TestFilterByRelatedObjects(TestCase):
             ])
         )
 
+    @parameterized.expand([
+        (MatchType.ANY, Transaction.objects.all().values_list('id')),
+        (MatchType.ALL, Transaction.objects.all().values_list('id')),
+        (MatchType.NONE, Transaction.objects.all().values_list('id')),
+        (MatchType.EXACT, Transaction.objects.none().values_list('id')),
+    ])
+    def test_filter_with_no_evidence(self, match_type, result_queryset):
+        self.assertEqual(
+            set(result_queryset),
+            set(Transaction.objects.filter_by_related_objects(
+                [], match_type=match_type).values_list('id'))
+        )
+
     def test_any_filter(self):
         self.assertIn(
             self.transaction_with_both_orders,
@@ -92,11 +106,6 @@ class TestFilterByRelatedObjects(TestCase):
             ], match_type=MatchType.ANY)
         )
 
-    def test_any_filter_no_evidence(self):
-        self.assertEqual(
-            set(Transaction.objects.all().values_list('id')),
-            set(Transaction.objects.filter_by_related_objects(
-                [], match_type=MatchType.ANY).values_list('id'))
         )
 
     def test_all_filter(self):
@@ -142,13 +151,6 @@ class TestFilterByRelatedObjects(TestCase):
             ], match_type=MatchType.ALL)
         )
 
-    def test_all_filter_no_evidence(self):
-        self.assertEqual(
-            set(Transaction.objects.all().values_list('id')),
-            set(Transaction.objects.filter_by_related_objects(
-                [], match_type=MatchType.ALL).values_list('id'))
-        )
-
     def test_none_filter(self):
         self.assertNotIn(
             self.transaction_with_both_orders,
@@ -192,13 +194,6 @@ class TestFilterByRelatedObjects(TestCase):
             ], match_type=MatchType.NONE)
         )
 
-    def test_none_filter_no_evidence(self):
-        self.assertEqual(
-            set(Transaction.objects.all().values_list('id')),
-            set(Transaction.objects.filter_by_related_objects(
-                [], match_type=MatchType.NONE).values_list('id'))
-        )
-
     def test_exact_filter(self):
         self.assertIn(
             self.transaction_with_both_orders,
@@ -240,13 +235,6 @@ class TestFilterByRelatedObjects(TestCase):
             Transaction.objects.filter_by_related_objects([
                 self.order_1, self.order_2,
             ], match_type=MatchType.EXACT)
-        )
-
-    def test_exact_filter_no_evidence(self):
-        self.assertEqual(
-            set(),
-            set(Transaction.objects.filter_by_related_objects(
-                [], match_type=MatchType.EXACT).values_list('id'))
         )
 
     def test_invalid_match_type(self):
