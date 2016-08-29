@@ -86,8 +86,8 @@ class TransactionQuerySet(NonDeletableQuerySet):
             ALL).
 
         The current implementation of EXACT is not as performant as the other
-        options, so be careful using it with large numbers of
-        `related_objects`.
+        options, even though it still creates a constant number of queries, so
+        be careful using it with large numbers of `related_objects`.
         """
         content_types = ContentType.objects.get_for_models(
             *related_objects)
