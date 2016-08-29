@@ -2,6 +2,7 @@ import operator
 
 from nose.tools import assert_equal
 
+from ledger.models import MatchType
 from ledger.models import Transaction
 
 
@@ -26,15 +27,13 @@ def assert_transaction_in_ledgers_for_amounts_with_evidence(
         (Transaction.objects.filter(ledgers__name=ledger)
          for ledger, _ in ledger_amount_pairs),
     )
-    matching_transactions = (
+    matching_transaction = (
         Transaction
         .objects
-        .filter_by_related_objects(evidence)
         .filter(id__in=transactions_in_all_ledgers)
+        .filter_by_related_objects(evidence, match_type=MatchType.EXACT)
+        .get()
     )
-    # Remove reliance on `get` here by using the new `EXACT` feature of
-    # `filter_by_related_objects`.
-    matching_transaction = matching_transactions.get()
     assert_equal(
         sorted(
             matching_transaction.entries.values_list(
