@@ -9,8 +9,6 @@ from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
 from ledger.exceptions import TransactionBalanceException
-from ledger.models import Ledger
-from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.tests.factories import CreditCardTransactionFactory
@@ -24,12 +22,6 @@ class TransactionBase(TestCase):
     def setUp(self):
         self.user1 = UserFactory()
         self.user2 = UserFactory()
-        self.user1_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.user1,
-            LEDGER_ACCOUNTS_RECEIVABLE)
-        self.user2_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.user2,
-            LEDGER_ACCOUNTS_RECEIVABLE)
         self.posted_timestamp = datetime.now()
 
 

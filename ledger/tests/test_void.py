@@ -8,28 +8,19 @@ from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
 from ledger.exceptions import UnvoidableTransactionException
-from ledger.models import Ledger
 from ledger.models import LedgerEntry
-from ledger.models import LEDGER_ACCOUNTS_RECEIVABLE
-from ledger.models import LEDGER_CASH
-from ledger.models import LEDGER_REVENUE
 from ledger.models import Transaction
+from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import TransactionFactory
 from ledger.tests.factories import UserFactory
 
 
 class TestVoidBase(TestCase):
     def setUp(self):
-        self.entity = UserFactory()
         self.creation_user = UserFactory()
-        self.entity_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity, LEDGER_ACCOUNTS_RECEIVABLE)
-        self.entity_rev_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity, LEDGER_REVENUE)
-        self.entity_cash_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.entity, LEDGER_CASH)
-        self.creation_user_ar_ledger, _ = Ledger.objects.get_or_create_ledger(
-            self.creation_user, LEDGER_ACCOUNTS_RECEIVABLE)
+        self.ar_ledger = LedgerFactory()
+        self.rev_ledger = LedgerFactory()
+        self.creation_user_ar_ledger = LedgerFactory()
 
 
 class TestVoidTransaction(TestVoidBase):
@@ -37,8 +28,8 @@ class TestVoidTransaction(TestVoidBase):
         amount = D(100)
         # First record a charge
         txn = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount), ledger=self.entity_ar_ledger),
-            LedgerEntry(amount=credit(amount), ledger=self.entity_rev_ledger),
+            LedgerEntry(amount=debit(amount), ledger=self.ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
         ])
 
         # Then void it
@@ -46,15 +37,15 @@ class TestVoidTransaction(TestVoidBase):
 
         self.assertEqual(void_txn.voids, txn)
 
-        self.assertEqual(self.entity_ar_ledger.get_balance(), D(0))
-        self.assertEqual(self.entity_rev_ledger.get_balance(), D(0))
+        self.assertEqual(self.ar_ledger.get_balance(), D(0))
+        self.assertEqual(self.rev_ledger.get_balance(), D(0))
 
     def test_cant_void_twice(self):
         amount = D(100)
         # First record a charge
         txn = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount), ledger=self.entity_ar_ledger),
-            LedgerEntry(amount=credit(amount), ledger=self.entity_rev_ledger),
+            LedgerEntry(amount=debit(amount), ledger=self.ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
         ])
 
         # Then void it
@@ -70,8 +61,8 @@ class TestVoidTransaction(TestVoidBase):
         amount = D(100)
         # First record a charge
         txn = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount), ledger=self.entity_ar_ledger),
-            LedgerEntry(amount=credit(amount), ledger=self.entity_rev_ledger),
+            LedgerEntry(amount=debit(amount), ledger=self.ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
         ])
 
         # Then void it
@@ -83,29 +74,29 @@ class TestVoidTransaction(TestVoidBase):
         void_void_txn = (void_transaction(void_txn, self.creation_user))
         self.assertEqual(void_void_txn.voids, void_txn)
 
-        self.assertEqual(self.entity_ar_ledger.get_balance(), amount)
-        self.assertEqual(self.entity_rev_ledger.get_balance(), -amount)
+        self.assertEqual(self.ar_ledger.get_balance(), amount)
+        self.assertEqual(self.rev_ledger.get_balance(), -amount)
 
     def test_void_multiple_charges(self):
         amount_1 = D(100)
         amount_2 = D(200)
 
         txn_1 = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount_1), ledger=self.entity_ar_ledger),
+            LedgerEntry(amount=debit(amount_1), ledger=self.ar_ledger),
             LedgerEntry(
-                amount=credit(amount_1), ledger=self.entity_rev_ledger),
+                amount=credit(amount_1), ledger=self.rev_ledger),
         ])
         txn_2 = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount_2), ledger=self.entity_ar_ledger),
+            LedgerEntry(amount=debit(amount_2), ledger=self.ar_ledger),
             LedgerEntry(
-                amount=credit(amount_2), ledger=self.entity_rev_ledger),
+                amount=credit(amount_2), ledger=self.rev_ledger),
         ])
         self.assertNotEqual(txn_1, txn_2)
 
         void_transaction(txn_1, self.creation_user)
 
-        self.assertEqual(self.entity_ar_ledger.get_balance(), amount_2)
-        self.assertEqual(self.entity_rev_ledger.get_balance(), -amount_2)
+        self.assertEqual(self.ar_ledger.get_balance(), amount_2)
+        self.assertEqual(self.rev_ledger.get_balance(), -amount_2)
 
     def test_void_from_create_transaction(self):
         amount = D(100)
@@ -115,25 +106,25 @@ class TestVoidTransaction(TestVoidBase):
             evidence=evidence,
             ledger_entries=[
                 LedgerEntry(
-                    ledger=self.entity_ar_ledger,
+                    ledger=self.ar_ledger,
                     amount=credit(amount),
                 ),
                 LedgerEntry(
-                    ledger=self.entity_rev_ledger,
+                    ledger=self.rev_ledger,
                     amount=debit(amount),
                 ),
             ],
         )
-        self.assertEqual(self.entity_ar_ledger.get_balance(), credit(amount))
-        self.assertEqual(self.entity_rev_ledger.get_balance(), debit(amount))
+        self.assertEqual(self.ar_ledger.get_balance(), credit(amount))
+        self.assertEqual(self.rev_ledger.get_balance(), debit(amount))
         voiding_transaction = void_transaction(transaction, self.creation_user)
         self.assertEqual(
             set(tro.related_object for tro
                 in voiding_transaction.related_objects.all()),
             set(evidence),
         )
-        self.assertEqual(self.entity_ar_ledger.get_balance(), D(0))
-        self.assertEqual(self.entity_rev_ledger.get_balance(), D(0))
+        self.assertEqual(self.ar_ledger.get_balance(), D(0))
+        self.assertEqual(self.rev_ledger.get_balance(), D(0))
         self.assertEqual(voiding_transaction.voids, transaction)
         self.assertEqual(
             voiding_transaction.posted_timestamp,
@@ -153,11 +144,11 @@ class TestVoidTransaction(TestVoidBase):
             evidence=evidence,
             ledger_entries=[
                 LedgerEntry(
-                    ledger=self.entity_ar_ledger,
+                    ledger=self.ar_ledger,
                     amount=credit(amount),
                 ),
                 LedgerEntry(
-                    ledger=self.entity_rev_ledger,
+                    ledger=self.rev_ledger,
                     amount=debit(amount),
                 ),
             ],
@@ -179,8 +170,8 @@ class TestVoidTimestamps(TestVoidBase):
         amount = D(100)
         # First record a charge
         charge_txn = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount), ledger=self.entity_ar_ledger),
-            LedgerEntry(amount=credit(amount), ledger=self.entity_rev_ledger),
+            LedgerEntry(amount=debit(amount), ledger=self.ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
         ])
 
         # Then void it
@@ -193,8 +184,8 @@ class TestVoidTimestamps(TestVoidBase):
         amount = D(100)
         # First record a charge
         charge_txn = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount), ledger=self.entity_ar_ledger),
-            LedgerEntry(amount=credit(amount), ledger=self.entity_rev_ledger),
+            LedgerEntry(amount=debit(amount), ledger=self.ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
         ])
 
         # Then void it
