@@ -85,149 +85,37 @@ class TestFilterByRelatedObjects(TestCase):
                 [], match_type=match_type).values_list('id'))
         )
 
-    def test_any_filter(self):
-        self.assertIn(
+    @parameterized.expand([
+        (MatchType.ANY, [True, True, True, False, True]),
+        (MatchType.ALL, [True, False, False, False, True]),
+        (MatchType.NONE, [False, False, False, True, False]),
+        (MatchType.EXACT, [True, False, False, False, False]),
+    ])
+    def test_filters(self, match_type, results):
+        query_list = [
             self.transaction_with_both_orders,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ANY)
-        )
-
-        self.assertIn(
             self.transaction_with_only_order_1,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ANY)
-        )
-
-        self.assertIn(
             self.transaction_with_only_order_2,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ANY)
-        )
-
-        self.assertNotIn(
             self.transaction_with_neither_order,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ANY)
-        )
-
-        self.assertIn(
             self.transaction_with_three_orders,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ALL)
-        )
+        ]
 
-    def test_all_filter(self):
-        self.assertIn(
-            self.transaction_with_both_orders,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ALL)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_only_order_1,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ALL)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_only_order_2,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ALL)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_neither_order,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ALL)
-        )
-
-        self.assertIn(
-            self.transaction_with_three_orders,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.ALL)
-        )
-
-    def test_none_filter(self):
-        self.assertNotIn(
-            self.transaction_with_both_orders,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.NONE)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_only_order_1,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.NONE)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_only_order_2,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.NONE)
-        )
-
-        self.assertIn(
-            self.transaction_with_neither_order,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.NONE)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_three_orders,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.NONE)
-        )
-
-    def test_exact_filter(self):
-        self.assertIn(
-            self.transaction_with_both_orders,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.EXACT)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_only_order_1,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.EXACT)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_only_order_2,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.EXACT)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_neither_order,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.EXACT)
-        )
-
-        self.assertNotIn(
-            self.transaction_with_three_orders,
-            Transaction.objects.filter_by_related_objects([
-                self.order_1, self.order_2,
-            ], match_type=MatchType.EXACT)
-        )
+        for query, query_should_be_in_result in zip(query_list, results):
+            if query_should_be_in_result:
+                self.assertIn(
+                    query,
+                    Transaction.objects.filter_by_related_objects(
+                        [self.order_1, self.order_2],
+                        match_type=match_type
+                    )
+                )
+            else:
+                self.assertNotIn(
+                    query,
+                    Transaction.objects.filter_by_related_objects([
+                        self.order_1, self.order_2,
+                    ], match_type=match_type)
+                )
 
     def test_invalid_match_type(self):
         with self.assertRaises(ValueError):
