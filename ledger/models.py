@@ -320,43 +320,6 @@ class LedgerManager(NoDeleteManager):
 
 
 class Ledger(NonDeletableModel, models.Model):
-    """
-    Ledgers are the record of debits and credits for a given entity.
-    """
-    class Meta:
-        unique_together = ('type', 'entity_content_type', 'entity_id')
-
-    # Fields for object-attached Ledgers
-    type = models.CharField(
-        help_text=_("The ledger type, eg Accounts Receivable, Revenue, etc"),
-        choices=LEDGER_CHOICES,
-        max_length=128,
-        # A blank `type` here means that the type of account represented by
-        # this ledger is not of the types in LEDGER_CHOICES: it most likely has
-        # a null `entity` and is a Counsyl-wide account like "Unreconciled
-        # Cash".
-        blank=True,
-    )
-
-    # The non-Ledger object that this Ledger is attached to.
-    # TODO: Consider removing this GFK and moving its functionality to the
-    # similar GFKs on Transaction.
-    entity_content_type = models.ForeignKey(
-        ContentType,
-        blank=True,
-        null=True,
-    )
-    entity_id = models.PositiveIntegerField(
-        db_index=True,
-        blank=True,
-        null=True,
-    )
-    entity = GenericForeignKey(
-        'entity_content_type',
-        'entity_id',
-    )
-
-    # Fields for company-wide ledgers
     name = models.CharField(
         help_text=_("Name of this ledger"),
         unique=True,
@@ -372,8 +335,6 @@ class Ledger(NonDeletableModel, models.Model):
         default=None,
     )
 
-    # Fields for both types of Ledgers
-
     objects = LedgerManager()
 
     def get_balance(self):
@@ -381,7 +342,7 @@ class Ledger(NonDeletableModel, models.Model):
         return self.entries.aggregate(balance=Sum('amount'))['balance']
 
     def __unicode__(self):
-        return self.name or repr(self.entity)
+        return self.name
 
 
 class LedgerEntry(NonDeletableModel, models.Model):
