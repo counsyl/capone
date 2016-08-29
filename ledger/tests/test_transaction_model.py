@@ -33,7 +33,7 @@ class TransactionBase(TestCase):
         self.posted_timestamp = datetime.now()
 
 
-class TestUnicodeMethods(TransactionBase):
+class TestUnicodeMethods(TestCase):
     def test_unicode_methods(self):
         txn = TransactionFactory()
 
