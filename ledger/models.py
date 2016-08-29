@@ -137,10 +137,18 @@ class TransactionQuerySet(NonDeletableQuerySet):
                 )
 
             exact_matches = []
+            related_objects_id_tuples = {
+                (
+                    related_object.id,
+                    content_types[related_object]
+                )
+                for related_object in related_objects
+            }
             for matched in self:
                 matched_objects = {
-                    m.related_object for m in matched.related_objects.all()}
-                if matched_objects == set(related_objects):
+                    (tro.related_object_id, tro.related_object_content_type)
+                    for tro in matched.related_objects.all()}
+                if matched_objects == related_objects_id_tuples:
                     exact_matches.append(matched.id)
             return self.filter(id__in=exact_matches)
         else:
