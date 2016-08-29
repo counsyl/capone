@@ -1,4 +1,5 @@
 import operator
+import uuid
 from decimal import Decimal
 from enum import Enum
 
@@ -14,7 +15,6 @@ from django.db import models
 from django.db.models import Q
 from django.db.models import Sum
 from django.utils.translation import ugettext_lazy as _
-from uuidfield.fields import UUIDField
 
 from ledger.exceptions import TransactionBalanceException
 
@@ -139,10 +139,9 @@ class Transaction(NonDeletableModel, models.Model):
         'Ledger',
         through='LedgerEntry')
 
-    transaction_id = UUIDField(
+    transaction_id = models.UUIDField(
         help_text=_("UUID for this transaction"),
-        auto=True,
-        version=4)
+        default=uuid.uuid4)
     voids = models.OneToOneField(
         'Transaction',
         blank=True,
@@ -368,10 +367,9 @@ class LedgerEntry(NonDeletableModel, models.Model):
         Transaction,
         related_name='entries')
 
-    entry_id = UUIDField(
+    entry_id = models.UUIDField(
         help_text=_("UUID for this ledger entry"),
-        auto=True,
-        version=4)
+        default=uuid.uuid4)
 
     amount = models.DecimalField(
         help_text=_(
