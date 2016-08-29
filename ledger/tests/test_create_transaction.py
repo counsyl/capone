@@ -401,27 +401,33 @@ class TestCreditAndDebit(TestCase):
         self.assertRaises(ValueError, debit, -self.AMOUNT)
 
 
-class TestRounding(TransactionBase):
+class TestRounding(TestCase):
     def _create_transaction_and_compare_to_amount(
             self, amount, comparison_amount=None):
+        ledger1 = LedgerFactory()
+        ledger2 = LedgerFactory()
         transaction = create_transaction(
-            self.user2,
+            UserFactory(),
             ledger_entries=[
                 LedgerEntry(
-                    ledger=self.user1_ledger,
+                    ledger=ledger1,
                     amount=amount),
                 LedgerEntry(
-                    ledger=self.user2_ledger,
+                    ledger=ledger2,
                     amount=-amount),
             ]
         )
 
-        entry = transaction.entries.get(ledger=self.user1_ledger)
+        entry1 = transaction.entries.get(ledger=ledger1)
+        entry2 = transaction.entries.get(ledger=ledger2)
         if comparison_amount:
-            self.assertNotEqual(entry.amount, amount)
-            self.assertEqual(entry.amount, comparison_amount)
+            self.assertNotEqual(entry1.amount, amount)
+            self.assertEqual(entry1.amount, comparison_amount)
+            self.assertNotEqual(entry2.amount, -amount)
+            self.assertEqual(-entry2.amount, comparison_amount)
         else:
-            self.assertEqual(entry.amount, amount)
+            self.assertEqual(entry1.amount, amount)
+            self.assertEqual(entry2.amount, -amount)
 
     def test_precision(self):
         self._create_transaction_and_compare_to_amount(
