@@ -3,39 +3,10 @@ from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
 
+from ledger.exceptions import ExistingLedgerEntriesException
+from ledger.exceptions import NoLedgerEntriesException
+from ledger.exceptions import TransactionBalanceException
 from ledger.models import LedgerBalance
-from ledger.models import Transaction
-
-
-def get_all_transactions_for_object(obj, ledgers=()):
-    """
-    Get all transactions for an object, optionally restricted by ledgers
-    """
-    transactions = (
-        Transaction
-        .objects
-        .filter(
-            related_objects__related_object_content_type=(
-                ContentType.objects.get_for_model(obj)),
-            related_objects__related_object_id=obj.id,
-        )
-        .distinct()
-    )
-
-    if ledgers:
-        transactions = transactions.filter(ledgers__in=ledgers)
-
-    return transactions
-
-
-def get_ledger_balances_for_transactions(transactions):
-    balances = defaultdict(lambda: Decimal(0))
-
-    for transaction in transactions:
-        for entry in transaction.entries.all():
-            balances[entry.ledger] += entry.amount
-
-    return balances
 
 
 def get_balances_for_object(obj):
@@ -88,14 +59,12 @@ def validate_transaction(
     """
     total = sum([entry.amount for entry in ledger_entries])
     if total != Decimal(0):
-        raise Transaction.TransactionBalanceException(
+        raise TransactionBalanceException(
             "Credits do not equal debits. Mis-match of %s." % total)
 
     if not ledger_entries:
-        raise Transaction.NoLedgerEntriesException(
-            "Transaction has no entries.")
+        raise NoLedgerEntriesException("Transaction has no entries.")
 
     for ledger_entry in ledger_entries:
         if ledger_entry.pk is not None:
-            raise Transaction.ExistingLedgerEntriesException(
-                "LedgerEntry already exists.")
+            raise ExistingLedgerEntriesException("LedgerEntry already exists.")

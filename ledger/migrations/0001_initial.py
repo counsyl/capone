@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 from django.conf import settings
-import uuidfield.fields
 
 
 class Migration(migrations.Migration):
@@ -44,7 +43,7 @@ class Migration(migrations.Migration):
             name='LedgerEntry',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('entry_id', uuidfield.fields.UUIDField(verbose_name='UUID for this ledger entry', unique=True, max_length=32, editable=False, blank=True)),
+                ('entry_id', models.UUIDField(verbose_name='UUID for this ledger entry', unique=True, max_length=32, editable=False, blank=True)),
                 ('amount', models.DecimalField(help_text='Debits are positive, credits are negative.', verbose_name='Amount of this entry.', max_digits=24, decimal_places=4)),
                 ('action_type', models.CharField(max_length=128, verbose_name='Type of action that created this LedgerEntry', blank=True)),
                 ('ledger', models.ForeignKey(related_name='entries', to='ledger.Ledger')),
@@ -58,7 +57,7 @@ class Migration(migrations.Migration):
             name='Transaction',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('transaction_id', uuidfield.fields.UUIDField(verbose_name='UUID for this transaction', unique=True, max_length=32, editable=False, blank=True)),
+                ('transaction_id', models.UUIDField(verbose_name='UUID for this transaction', unique=True, max_length=32, editable=False, blank=True)),
                 ('notes', models.TextField(verbose_name='Any notes to go along with this Transaction.', blank=True)),
                 ('_creation_timestamp', models.DateTimeField(auto_now_add=True, verbose_name='UTC time this transaction was recorded locally', db_index=True)),
                 ('_posted_timestamp', models.DateTimeField(verbose_name='UTC time the transaction was posted', db_index=True)),

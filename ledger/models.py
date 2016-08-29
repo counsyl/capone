@@ -1,4 +1,7 @@
+import operator
+import uuid
 from decimal import Decimal
+from enum import Enum
 
 from counsyl_django_utils.models.non_deletable import NoDeleteManager
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
@@ -12,40 +15,12 @@ from django.db import models
 from django.db.models import Q
 from django.db.models import Sum
 from django.utils.translation import ugettext_lazy as _
-from uuidfield.fields import UUIDField
+
+from ledger.exceptions import TransactionBalanceException
 
 
 POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # nopep8
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
-
-
-class TransactionRelatedObjectManager(NoDeleteManager):
-    def create_for_object(self, related_object, **kwargs):
-        kwargs['related_object_content_type'] = (
-            ContentType.objects.get_for_model(related_object))
-        kwargs['related_object_id'] = related_object.pk
-        return self.create(**kwargs)
-
-    def get_for_objects(self, related_objects=()):
-        """
-        Get the TransactionRelatedObjects for an iterable of related_objects.
-
-        Args:
-            related_objects: A queryset of objects of the same type, or a list
-                of objects of different types. If not supplied, all objects
-                will be returned. If the given queryset is empty then no
-                TransactionRelatedObjects will be returned.
-        """
-        # content_types is a dict(model_instance -> ContentType)
-        content_types = ContentType.objects.get_for_models(*related_objects)
-
-        # Find all the TransactionRelatedObjects for the given related_objects
-        qs = self.none()
-        for related_object in related_objects:
-            qs |= self.filter(
-                Q(related_object_content_type=content_types[related_object],
-                  related_object_id=related_object.id))
-        return qs
 
 
 class TransactionRelatedObject(NonDeletableModel, models.Model):
@@ -63,9 +38,6 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     transaction = models.ForeignKey(
         'Transaction',
         related_name='related_objects')
-    primary = models.BooleanField(
-        help_text=_("Is this the primary related object?"),
-        default=False)
     related_object_content_type = models.ForeignKey(
         ContentType)
     related_object_id = models.PositiveIntegerField(
@@ -74,77 +46,113 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
         'related_object_content_type',
         'related_object_id')
 
-    objects = TransactionRelatedObjectManager()
-
     def __unicode__(self):
         return "TransactionRelatedObject: %s(id=%d)" % (
             self.related_object_content_type.model_class().__name__,
             self.related_object_id)
 
 
+class MatchType(Enum):
+    ANY = 'any'
+    ALL = 'all'
+    NONE = 'none'
+    EXACT = 'exact'
+
+
 class TransactionQuerySet(NonDeletableQuerySet):
-    def filter_by_related_objects(self, related_objects=(), require_all=True):
-        """Filter Transactions by arbitrary related objects.
-
-        Args:
-            related_objects: A queryset of objects of the same type, or a list
-                of objects of different types. If not supplied, all objects
-                will be returned. If the given queryset is empty then no
-                Transactions will be returned.
-            require_all: If True, then all related objects must be present
-                in the Transaction's related objects list. Defaults to True.
-        """
-        if related_objects is None:
-            return self
-        elif not related_objects:
-            return self.none()
-
-        if require_all:
-            qs = self
-            ctypes = {
-                related_object: ContentType.objects.get_for_model(related_object)  # nopep8
-                for related_object in related_objects
-            }
-            for related_object in related_objects:
-                ctype = ctypes[related_object]
-                qs = qs.filter(
-                    related_objects__related_object_content_type=ctype,
-                    related_objects__related_object_id=related_object.id)
-            return qs.distinct()
-        else:
-            # If we aren't requiring all related_objects to be in the set
-            # of related objects for the returned object, then just find
-            # all objects that have these related objects and filter out
-            # the duplicates.
-            related_objects_qs = (
-                TransactionRelatedObject.objects.get_for_objects(
-                    related_objects))
-            return self.filter(
-                related_objects__in=related_objects_qs).distinct('id')
-
     def non_void(self):
-        """
-        Filter out voided and voiding transactions.
-        """
         return self.filter(
             voided_by__isnull=True,
             voids__isnull=True,
         )
 
+    def filter_by_related_objects(
+            self, related_objects=(), match_type=MatchType.ALL):
+        """
+        Filter Transactions to only those with related_objects as evidence.
 
-class TransactionManager(NoDeleteManager):
-    def create_for_related_object(self, related_object, **kwargs):
-        transaction = self.create(**kwargs)
-        TransactionRelatedObject.objects.create_for_object(
-            related_object, primary=True, transaction=transaction)
-        return transaction
+        This filter takes an option, `match_type` that controls how the
+        matching to `related_objects` is construed:
 
-    def get_queryset(self):
-        return TransactionQuerySet(self.model)
+        -   ANY: Return Transactions that have *any* of the objects in
+            `related_objects` as evidence.
+        -   ALL: Return Transactions that have *all* of the objects in
+            `related_objects` as evidence: they can have other evidence
+            objects, but they must have all of `related_objects` (c.f. EXACT).
+        -   NONE: Return only those Transactions that have *none* of
+            `related_objects` as evidence.  They may have other evidence.
+        -   EXACT: Return only those Transactions whose evidence matches
+            `related_objects` *exactly*: they may not have other evidence (c.f.
+            ALL).
 
-    def filter_by_related_objects(self, related_objects=None, **kwargs):
-        return self.get_queryset().filter_by_related_objects(
-            related_objects, **kwargs)
+        The current implementation of EXACT is not as performant as the other
+        options, even though it still creates a constant number of queries, so
+        be careful using it with large numbers of `related_objects`.
+        """
+        content_types = ContentType.objects.get_for_models(
+            *related_objects)
+
+        if match_type == MatchType.ANY:
+            combined_query = reduce(
+                operator.or_,
+                [
+                    Q(
+                        related_objects__related_object_content_type=(
+                            content_types[related_object]),
+                        related_objects__related_object_id=related_object.id,
+                    )
+                    for related_object in related_objects
+                ],
+                Q(),
+            )
+            return self.filter(combined_query).distinct()
+        elif match_type == MatchType.ALL:
+            for related_object in related_objects:
+                self = self.filter(
+                    related_objects__related_object_content_type=(
+                        content_types[related_object]),
+                    related_objects__related_object_id=related_object.id,
+                )
+            return self
+        elif match_type == MatchType.NONE:
+            for related_object in related_objects:
+                self = self.exclude(
+                    related_objects__related_object_content_type=(
+                        content_types[related_object]),
+                    related_objects__related_object_id=related_object.id,
+                )
+            return self
+        elif match_type == MatchType.EXACT:
+            for related_object in related_objects:
+                self = (
+                    self
+                    .filter(
+                        related_objects__related_object_content_type=(
+                            content_types[related_object]),
+                        related_objects__related_object_id=related_object.id,
+                    )
+                    .prefetch_related(
+                        'related_objects',
+                    )
+                )
+
+            exact_matches = []
+            related_objects_id_tuples = {
+                (
+                    related_object.id,
+                    content_types[related_object].id
+                )
+                for related_object in related_objects
+            }
+            for matched in self:
+                matched_objects = {
+                    (tro.related_object_id, tro.related_object_content_type_id)
+                    for tro in matched.related_objects.all()}
+                if matched_objects == related_objects_id_tuples:
+                    exact_matches.append(matched.id)
+            return self.filter(id__in=exact_matches)
+        else:
+            raise ValueError("Invalid match_type.")
 
 
 class Transaction(NonDeletableModel, models.Model):
@@ -164,10 +172,9 @@ class Transaction(NonDeletableModel, models.Model):
         'Ledger',
         through='LedgerEntry')
 
-    transaction_id = UUIDField(
+    transaction_id = models.UUIDField(
         help_text=_("UUID for this transaction"),
-        auto=True,
-        version=4)
+        default=uuid.uuid4)
     voids = models.OneToOneField(
         'Transaction',
         blank=True,
@@ -203,43 +210,24 @@ class Transaction(NonDeletableModel, models.Model):
         default=MANUAL,
     )
 
-    objects = TransactionManager()
-
-    @property
-    def primary_related_object(self):
-        """Get the primary related object for this Transaction."""
-        return self.related_objects.get(primary=True).related_object
-
-    @property
-    def secondary_related_objects(self):
-        """Get a list of the secondary related objects for this Transaction."""
-        return [tro.related_object for tro in
-                self.related_objects.exclude(primary=True)]
+    objects = TransactionQuerySet.as_manager()
 
     def clean(self):
         self.validate()
-        """
-        TODO: I'd like to have this validation, but the Transaction must exist
-            before it can have a related object. Ideas?
-        if self.related_objects.filter(primary=True).count() == 0:
-            raise Transaction.PrimaryRelatedObjectException(
-                "You must supply a primary related object.")
-        elif self.related_objects.filter(primary=True).count() > 1:
-            raise Transaction.PrimaryRelatedObjectException(
-                "There may only be one primary related object.")"""
 
     def validate(self):
-        """Validates that this Transaction properly balances.
+        """
+        Validates that this Transaction properly balances.
 
-        A Transaction balances if its credit amounts match its debit amounts.
-        If the Transaction does not balance, then a TransactionBalanceException
-        is raised.
-
-        Returns True if the Transaction validates.
+        This method is not as thorough as
+        `ledger.api.queries.validate_transaction` because not all of the
+        validations in that file apply to an already-created object.  Instead,
+        the only check that makes sense is that the entries for the transaction
+        still balance.
         """
         total = sum(self.entries.values_list('amount', flat=True))
         if total != Decimal(0):
-            raise Transaction.TransactionBalanceException(
+            raise TransactionBalanceException(
                 "Credits do not equal debits. Mis-match of %s." % total)
         return True
 
@@ -260,27 +248,6 @@ class Transaction(NonDeletableModel, models.Model):
             'related_objects':
             [unicode(obj) for obj in self.related_objects.all()],
         }
-
-    class TransactionException(Exception):
-        pass
-
-    class TransactionBalanceException(TransactionException):
-        pass
-
-    class UnvoidableTransactionException(TransactionException):
-        pass
-
-    class UnmodifiableTransactionException(TransactionException):
-        pass
-
-    class PrimaryRelatedObjectException(TransactionException):
-        pass
-
-    class NoLedgerEntriesException(TransactionException):
-        pass
-
-    class ExistingLedgerEntriesException(TransactionException):
-        pass
 
 
 LEDGER_ACCOUNTS_RECEIVABLE = "ar"
@@ -417,32 +384,6 @@ class Ledger(NonDeletableModel, models.Model):
         return self.name or repr(self.entity)
 
 
-class LedgerEntryQuerySet(NonDeletableQuerySet):
-    def filter_by_related_objects(self, related_objects=None, **kwargs):
-        """Filter LedgerEntries by arbitrary related objects.
-
-        Args:
-            related_objects: A queryset of objects of the same type, or a list
-                of objects of different types. If not supplied, all objects
-                will be returned.
-        """
-        # Because related_objects are stored on transactions, we'll have to
-        # find all Transactions that reference the related objects, and then
-        # filter down to only the LedgerEntries we want
-        transactions = Transaction.objects.filter_by_related_objects(
-            related_objects, **kwargs)
-        return self.filter(transaction__in=transactions)
-
-
-class LedgerEntryManager(NoDeleteManager):
-    def get_queryset(self):
-        return LedgerEntryQuerySet(self.model)
-
-    def filter_by_related_objects(self, related_objects=None, **kwargs):
-        return self.get_queryset().filter_by_related_objects(
-            related_objects, **kwargs)
-
-
 class LedgerEntry(NonDeletableModel, models.Model):
     """A single entry in a single column in a ledger.
 
@@ -459,10 +400,9 @@ class LedgerEntry(NonDeletableModel, models.Model):
         Transaction,
         related_name='entries')
 
-    entry_id = UUIDField(
+    entry_id = models.UUIDField(
         help_text=_("UUID for this ledger entry"),
-        auto=True,
-        version=4)
+        default=uuid.uuid4)
 
     amount = models.DecimalField(
         help_text=_(
@@ -476,8 +416,6 @@ class LedgerEntry(NonDeletableModel, models.Model):
         help_text=_("Type of action that created this LedgerEntry"),
         max_length=128,
         blank=True)
-
-    objects = LedgerEntryManager()
 
     def __unicode__(self):
         return u"LedgerEntry: ${amount} in {ledger}".format(

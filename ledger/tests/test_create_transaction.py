@@ -1,59 +1,26 @@
+import mock
 from datetime import datetime
 from decimal import Decimal as D
 
 from django.test import TestCase
 
+from ledger.exceptions import ExistingLedgerEntriesException
+from ledger.exceptions import NoLedgerEntriesException
+from ledger.exceptions import TransactionBalanceException
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.api.actions import create_transaction
 from ledger.api.actions import credit
 from ledger.api.actions import debit
-from ledger.api.queries import get_all_transactions_for_object
 from ledger.api.queries import get_balances_for_object
-from ledger.api.queries import get_ledger_balances_for_transactions
 from ledger.api.queries import validate_transaction
 from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import OrderFactory
 from ledger.tests.factories import UserFactory
+from ledger.tests.test_transaction_model import TransactionBase
 from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
-
-
-def get_full_ledger_for_object_using_reconciliation(obj):
-    """
-    Get all Transactions for all objects related to `obj`.
-
-    "Related to" above is defined as any object that is in
-    `Transaction.related_objects` along with `obj` where that Transaction is of
-    type `RECONCILIATION`.
-
-    For instance, if a CreditCardTransaction has been reconciled with
-    a particular Order, this function should first find that Reconciliation
-    Transaction, and then get all Transactions that are either attached to
-    `obj` or any other object that was attached to the Reconciliation
-    Transaction, in this case the Revenue Recognition for the original Order,
-    the original ledger entry for the CreditCardTransaction, and then finally,
-    the Reconciliation entry.
-    """
-    recon_transactions = (
-        get_all_transactions_for_object(obj)
-        .filter(type=Transaction.RECONCILIATION)
-    )
-
-    linked_objects = []
-    for transaction in recon_transactions:
-        for related_object in transaction.related_objects.all():
-            linked_objects.append(related_object.related_object)
-
-    transactions = []
-
-    for linked_object in linked_objects:
-        transactions.extend(get_all_transactions_for_object(linked_object))
-
-    # Cast to set() to de-dupe entries, since `obj` should appear twice for
-    # a reconciled entry.
-    return set(transactions)
 
 
 def create_recon_report():
@@ -222,12 +189,10 @@ class TestCompanyWideLedgers(TestCase):
 
         # Assert that revenue is recognized and reconciled.
         self.assertEqual(
-            get_ledger_balances_for_transactions(
-                get_full_ledger_for_object_using_reconciliation(
-                    order)),
+            get_balances_for_object(order),
             {
-                self.accounts_receivable: 0,
-                self.cash_unrecon: 0,
+                self.accounts_receivable: self.AMOUNT,
+                self.cash_unrecon: -self.AMOUNT,
                 self.cash_recon: self.AMOUNT,
                 self.revenue: -self.AMOUNT,
             },
@@ -302,12 +267,10 @@ class TestCompanyWideLedgers(TestCase):
             )
 
             self.assertEqual(
-                get_ledger_balances_for_transactions(
-                    get_full_ledger_for_object_using_reconciliation(
-                        order)),
+                get_balances_for_object(order),
                 {
-                    self.accounts_receivable: 0,
-                    self.cash_unrecon: 0,
+                    self.accounts_receivable: self.AMOUNT,
+                    self.cash_unrecon: -self.AMOUNT,
                     self.cash_recon: self.AMOUNT,
                     self.revenue: -self.AMOUNT,
                 },
@@ -330,62 +293,6 @@ class TestCompanyWideLedgers(TestCase):
                 credit_card_transaction2.id,
             ),
         )
-
-
-class TestLedger(TestCompanyWideLedgers):
-    def test_unicode(self):
-        self.assertEqual(
-            unicode(self.accounts_receivable), "Accounts Receivable")
-
-
-class TestGetAllTransactionsForObject(TestCompanyWideLedgers):
-    def test_restricting_get_all_transactions_by_ledger(self):
-        order = OrderFactory(amount=self.AMOUNT)
-
-        txn_recognize = create_transaction(
-            self.user,
-            evidence=[order],
-            ledger_entries=[
-                LedgerEntry(
-                    ledger=self.revenue,
-                    amount=credit(self.AMOUNT)),
-                LedgerEntry(
-                    ledger=self.accounts_receivable,
-                    amount=debit(self.AMOUNT)),
-            ],
-        )
-
-        # NOTE: I'm fudging this Transaction a bit for the sake of this test:
-        # I'm attaching the txn_take_payment LedgerEntries to `order` and not
-        # to a CreditCardTransaction.
-        txn_take_payment = create_transaction(
-            self.user,
-            evidence=[order],
-            ledger_entries=[
-                LedgerEntry(
-                    ledger=self.accounts_receivable,
-                    amount=credit(self.AMOUNT)),
-                LedgerEntry(
-                    ledger=self.cash_unrecon,
-                    amount=debit(self.AMOUNT))
-            ],
-        )
-
-        self.assertEqual(
-            set(get_all_transactions_for_object(order)),
-            {txn_recognize, txn_take_payment})
-        self.assertEqual(
-            set(get_all_transactions_for_object(
-                order, ledgers=[self.revenue])),
-            {txn_recognize})
-        self.assertEqual(
-            set(get_all_transactions_for_object(
-                order, ledgers=[self.cash_unrecon])),
-            {txn_take_payment})
-        self.assertEqual(
-            set(get_all_transactions_for_object(
-                order, ledgers=[self.revenue, self.cash_unrecon])),
-            {txn_recognize, txn_take_payment})
 
 
 class TestCreateTransaction(TestCompanyWideLedgers):
@@ -412,7 +319,7 @@ class TestCreateTransaction(TestCompanyWideLedgers):
 
 class TestValidateTransaction(TestCompanyWideLedgers):
     def test_debits_not_equal_to_credits(self):
-        with self.assertRaises(Transaction.TransactionBalanceException):
+        with self.assertRaises(TransactionBalanceException):
             validate_transaction(
                 self.user,
                 ledger_entries=[
@@ -426,7 +333,112 @@ class TestValidateTransaction(TestCompanyWideLedgers):
             )
 
     def test_no_ledger_entries(self):
-        with self.assertRaises(Transaction.NoLedgerEntriesException):
+        with self.assertRaises(NoLedgerEntriesException):
             validate_transaction(
                 self.user,
             )
+
+
+class TestExistingLedgerEntriesException(TestCase):
+    def setUp(self):
+        self.amount = D(100)
+        self.user = UserFactory()
+
+        self.accounts_receivable = Ledger.objects.get_or_create_ledger_by_name(
+            'Accounts Receivable',
+            increased_by_debits=True,
+        )
+
+        self.cash = Ledger.objects.get_or_create_ledger_by_name(
+            'Cash',
+            increased_by_debits=True,
+        )
+
+    def test_with_existing_ledger_entry(self):
+        existing_transaction = create_transaction(
+            self.user,
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.accounts_receivable,
+                    amount=credit(self.amount)),
+                LedgerEntry(
+                    ledger=self.accounts_receivable,
+                    amount=debit(self.amount)),
+            ],
+        )
+
+        with self.assertRaises(ExistingLedgerEntriesException):
+            create_transaction(
+                self.user,
+                ledger_entries=list(existing_transaction.entries.all()),
+            )
+
+
+class TestCreditAndDebit(TestCase):
+    """
+    Test that `credit` and `debit` return the correctly signed amounts.
+    """
+    AMOUNT = D(100)
+
+    def assertPositive(self, amount):
+        self.assertGreaterEqual(amount, 0)
+
+    def assertNegative(self, amount):
+        self.assertLess(amount, 0)
+
+    def test_credit_and_debit_helper_functions(self):
+        with mock.patch('ledger.api.actions.settings') as mock_settings:
+            mock_settings.DEBITS_ARE_NEGATIVE = True
+            self.assertPositive(credit(self.AMOUNT))
+            self.assertNegative(debit(self.AMOUNT))
+        with mock.patch('ledger.api.actions.settings') as mock_settings:
+            mock_settings.DEBITS_ARE_NEGATIVE = False
+            self.assertNegative(credit(self.AMOUNT))
+            self.assertPositive(debit(self.AMOUNT))
+
+    def test_validation_error(self):
+        self.assertRaises(ValueError, credit, -self.AMOUNT)
+        self.assertRaises(ValueError, debit, -self.AMOUNT)
+
+
+class TestRounding(TransactionBase):
+    def _create_transaction_and_compare_to_amount(
+            self, amount, comparison_amount=None):
+        transaction = create_transaction(
+            self.user2,
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.user1_ledger,
+                    amount=amount),
+                LedgerEntry(
+                    ledger=self.user2_ledger,
+                    amount=-amount),
+            ]
+        )
+
+        entry = transaction.entries.get(ledger=self.user1_ledger)
+        if comparison_amount:
+            self.assertNotEqual(entry.amount, amount)
+            self.assertEqual(entry.amount, comparison_amount)
+        else:
+            self.assertEqual(entry.amount, amount)
+
+    def test_precision(self):
+        self._create_transaction_and_compare_to_amount(
+            D('-499.9999'))
+
+    def test_round_up(self):
+        self._create_transaction_and_compare_to_amount(
+            D('499.99995'), D('500'))
+
+    def test_round_down(self):
+        self._create_transaction_and_compare_to_amount(
+            D('499.99994'), D('499.9999'))
+
+    def test_round_up_negative(self):
+        self._create_transaction_and_compare_to_amount(
+            D('-499.99994'), D('-499.9999'))
+
+    def test_round_down_negative(self):
+        self._create_transaction_and_compare_to_amount(
+            D('-499.99995'), D('-500'))

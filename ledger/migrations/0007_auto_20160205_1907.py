@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import uuidfield.fields
 
 
 class Migration(migrations.Migration):
@@ -63,7 +62,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='ledgerentry',
             name='entry_id',
-            field=uuidfield.fields.UUIDField(help_text='UUID for this ledger entry', unique=True, max_length=32, editable=False, blank=True),
+            field=models.UUIDField(help_text='UUID for this ledger entry', unique=True, max_length=32, editable=False, blank=True),
         ),
         migrations.AlterField(
             model_name='transaction',
@@ -73,7 +72,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='transaction',
             name='transaction_id',
-            field=uuidfield.fields.UUIDField(help_text='UUID for this transaction', unique=True, max_length=32, editable=False, blank=True),
+            field=models.UUIDField(help_text='UUID for this transaction', unique=True, max_length=32, editable=False, blank=True),
         ),
         migrations.AlterField(
             model_name='transaction',
