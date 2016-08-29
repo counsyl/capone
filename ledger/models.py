@@ -123,16 +123,21 @@ class TransactionQuerySet(NonDeletableQuerySet):
                 )
             return self
         elif match_type == MatchType.EXACT:
-            qs = Transaction.objects.all()
             for related_object in related_objects:
-                qs = qs.filter(
-                    related_objects__related_object_content_type=(
-                        content_types[related_object]),
-                    related_objects__related_object_id=related_object.id,
+                self = (
+                    self
+                    .filter(
+                        related_objects__related_object_content_type=(
+                            content_types[related_object]),
+                        related_objects__related_object_id=related_object.id,
+                    )
+                    .prefetch_related(
+                        'related_objects__related_object',
+                    )
                 )
 
             exact_matches = []
-            for matched in qs:
+            for matched in self:
                 matched_objects = {
                     m.related_object for m in matched.related_objects.all()}
                 if matched_objects == set(related_objects):
