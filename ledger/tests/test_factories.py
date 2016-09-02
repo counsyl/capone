@@ -5,6 +5,7 @@ from django.test import TestCase
 
 from ledger.api.actions import credit
 from ledger.api.actions import debit
+from ledger.api.queries import assert_transaction_in_ledgers_for_amounts_with_evidence  # nopep8
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
@@ -13,7 +14,6 @@ from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import TransactionFactory
 from ledger.tests.factories import UserFactory
 from ledger.tests.models import CreditCardTransaction
-from ledger.tests.utils import assert_transaction_in_ledgers_for_amounts_with_evidence  # nopep8
 
 
 class TestTransactionFactory(TestCase):
