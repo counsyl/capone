@@ -73,12 +73,19 @@ class TestTransactionFactory(TestCase):
             ('posted_timestamp', time),
             ('notes', 'booga'),
             ('type', Transaction.RECONCILIATION),
+            ('user', UserFactory()),
         ]
 
         for field_name, value in FIELDS_TO_VALUES:
-            txn = TransactionFactory(**{field_name: value})
-            self.assertEqual(getattr(txn, field_name), value)
-
-        user = UserFactory()
-        txn = TransactionFactory(user)
-        self.assertEqual(txn.created_by, user)
+            TransactionFactory(
+                evidence=[self.credit_card_transaction],
+                **{field_name: value})
+            ledger = Ledger.objects.last()
+            assert_transaction_in_ledgers_for_amounts_with_evidence(
+                ledger_amount_pairs=[
+                    (ledger.name, credit(Decimal('100'))),
+                    (ledger.name, debit(Decimal('100'))),
+                ],
+                evidence=[self.credit_card_transaction],
+                **{field_name: value}
+            )
