@@ -77,10 +77,7 @@ def validate_transaction(
 def assert_transaction_in_ledgers_for_amounts_with_evidence(
         ledger_amount_pairs,
         evidence,
-        posted_timestamp=None,
-        notes=None,
-        type=None,
-        user=None,
+        **kwargs
 ):
     """
     There is exactly one transaction with the given entries and evidence.
@@ -115,5 +112,15 @@ def assert_transaction_in_ledgers_for_amounts_with_evidence(
         set(evidence),
     )
 
-    if posted_timestamp:
-        assert_equal(matching_transaction.posted_timestamp, posted_timestamp)
+    TRANSACTION_FIELD_NAMES = [
+        ('notes', 'notes'),
+        ('posted_timestamp', 'posted_timestamp'),
+        ('type', 'type'),
+        ('user', 'created_by'),
+    ]
+
+    for arg_name, transaction_name in TRANSACTION_FIELD_NAMES:
+        if kwargs.get(arg_name):
+            assert_equal(
+                getattr(
+                    matching_transaction, transaction_name), kwargs[arg_name])
