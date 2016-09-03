@@ -1,12 +1,16 @@
+import operator
 from collections import defaultdict
 from decimal import Decimal
 
 from django.contrib.contenttypes.models import ContentType
+from nose.tools import assert_equal
 
 from ledger.exceptions import ExistingLedgerEntriesException
 from ledger.exceptions import NoLedgerEntriesException
 from ledger.exceptions import TransactionBalanceException
 from ledger.models import LedgerBalance
+from ledger.models import MatchType
+from ledger.models import Transaction
 
 
 def get_balances_for_object(obj):
@@ -68,3 +72,55 @@ def validate_transaction(
     for ledger_entry in ledger_entries:
         if ledger_entry.pk is not None:
             raise ExistingLedgerEntriesException("LedgerEntry already exists.")
+
+
+def assert_transaction_in_ledgers_for_amounts_with_evidence(
+        ledger_amount_pairs,
+        evidence,
+        **kwargs
+):
+    """
+    There is exactly one transaction with the given entries and evidence.
+
+    The entries are specified as a list of (ledger name, amount) pairs.
+
+    If posted_timestamp is given, the transaction's posted_timestamp
+    is asserted equal to that value.
+    """
+    transactions_in_all_ledgers = reduce(
+        operator.and_,
+        (Transaction.objects.filter(ledgers__name=ledger)
+         for ledger, _ in ledger_amount_pairs),
+    )
+    matching_transaction = (
+        Transaction
+        .objects
+        .filter(id__in=transactions_in_all_ledgers)
+        .filter_by_related_objects(evidence, match_type=MatchType.EXACT)
+        .get()
+    )
+    assert_equal(
+        sorted(
+            matching_transaction.entries.values_list(
+                'ledger__name', 'amount')
+        ),
+        sorted(ledger_amount_pairs),
+    )
+    assert_equal(
+        set(o.related_object
+            for o in matching_transaction.related_objects.all()),
+        set(evidence),
+    )
+
+    TRANSACTION_FIELD_NAMES = [
+        ('notes', 'notes'),
+        ('posted_timestamp', 'posted_timestamp'),
+        ('type', 'type'),
+        ('user', 'created_by'),
+    ]
+
+    for arg_name, transaction_name in TRANSACTION_FIELD_NAMES:
+        if kwargs.get(arg_name):
+            assert_equal(
+                getattr(
+                    matching_transaction, transaction_name), kwargs[arg_name])
