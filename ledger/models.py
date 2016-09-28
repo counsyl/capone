@@ -212,7 +212,7 @@ class Transaction(NonDeletableModel, models.Model):
         (RECONCILIATION, RECONCILIATION),
     )
 
-    type2 = models.ForeignKey(
+    type = models.ForeignKey(
         TransactionType,
     )
 
