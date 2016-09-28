@@ -212,12 +212,6 @@ class Transaction(NonDeletableModel, models.Model):
         (RECONCILIATION, RECONCILIATION),
     )
 
-    type = models.CharField(
-        help_text=_("The type of transaction.  AUTOMATIC is for recurring tasks, and RECONCILIATION is for special Reconciliation transactions."),  # nopep8
-        choices=TRANSACTION_TYPE_CHOICES,
-        max_length=128,
-        default=MANUAL,
-    )
     type2 = models.ForeignKey(
         TransactionType,
     )
