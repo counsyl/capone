@@ -9,14 +9,17 @@ def create_and_copy_transaction_types(apps, schema_editor):
     TransactionType = apps.get_model('ledger', 'TransactionType')
     Transaction = apps.get_model('ledger', 'Transaction')
 
-    for ttype_name in ['MANUAL', 'AUTOMATIC', 'RECONCILIATION']:
+    for ttype_name, pretty_name in [
+            ('MANUAL', 'Manual'),
+            ('AUTOMATIC', 'Automatic'),
+            ('RECONCILIATION', 'Reconciliation'),
+    ]:
         ttype = TransactionType.objects.create(
-            name=ttype_name,
+            name=pretty_name,
             description='',
         )
 
         Transaction.objects.filter(type=ttype_name).update(type2=ttype)
-
 
 
 class Migration(migrations.Migration):
