@@ -220,8 +220,6 @@ class Transaction(NonDeletableModel, models.Model):
     )
     type2 = models.ForeignKey(
         TransactionType,
-        null=True,
-        blank=True,
     )
 
     objects = TransactionQuerySet.as_manager()
