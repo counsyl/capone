@@ -154,6 +154,16 @@ class TransactionQuerySet(NonDeletableQuerySet):
             raise ValueError("Invalid match_type.")
 
 
+class TransactionType(TimeStampedModel):
+    name = models.CharField(
+        help_text=_("Name of this transaction type"),
+        unique=True,
+        max_length=255)
+    description = models.TextField(
+        help_text=_("Any notes to go along with this Transaction."),
+        blank=True)
+
+
 class Transaction(NonDeletableModel, models.Model):
     """
     Transactions link together many LedgerEntries.
@@ -207,6 +217,11 @@ class Transaction(NonDeletableModel, models.Model):
         choices=TRANSACTION_TYPE_CHOICES,
         max_length=128,
         default=MANUAL,
+    )
+    type2 = models.ForeignKey(
+        TransactionType,
+        null=True,
+        blank=True,
     )
 
     objects = TransactionQuerySet.as_manager()
