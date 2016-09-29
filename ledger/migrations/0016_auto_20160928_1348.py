@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.db.models.deletion
+import ledger.models
 
 
 class Migration(migrations.Migration):
@@ -16,6 +17,10 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='transaction',
             name='type2',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='ledger.TransactionType'),
+            field=models.ForeignKey(
+                default=ledger.models.get_or_create_manual_transaction_type_id,
+                on_delete=django.db.models.deletion.CASCADE,
+                to='ledger.TransactionType',
+            ),
         ),
     ]
