@@ -41,6 +41,26 @@ class TestVoidTransaction(TestVoidBase):
         self.assertEqual(self.ar_ledger.get_balance(), D(0))
         self.assertEqual(self.rev_ledger.get_balance(), D(0))
 
+    def test_void_with_non_default_type(self):
+        amount = D(100)
+        # First record a charge
+        txn = TransactionFactory(self.creation_user, ledger_entries=[
+            LedgerEntry(amount=debit(amount), ledger=self.ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
+        ])
+
+        # Then void it
+        new_ttype = TransactionTypeFactory()
+        void_txn = void_transaction(txn, self.creation_user, type=new_ttype)
+
+        self.assertEqual(void_txn.voids, txn)
+
+        self.assertEqual(self.ar_ledger.get_balance(), D(0))
+        self.assertEqual(self.rev_ledger.get_balance(), D(0))
+
+        self.assertEqual(void_txn.type, new_ttype)
+        self.assertNotEqual(void_txn.type, txn.type)
+
     def test_cant_void_twice(self):
         amount = D(100)
         # First record a charge
