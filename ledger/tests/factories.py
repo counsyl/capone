@@ -44,7 +44,7 @@ class CreditCardTransactionFactory(factory.DjangoModelFactory):
     cardholder_name = factory.Sequence(lambda n: "Cardholder %s" % n)
 
 
-class TransactionType(factory.DjangoModelFactory):
+class TransactionTypeFactory(factory.DjangoModelFactory):
     class Meta:
         model = TransactionType
 
@@ -84,6 +84,6 @@ def TransactionFactory(
         evidence=evidence,
         ledger_entries=ledger_entries,
         notes=notes,
-        type=type or TransactionType(),
+        type=type or TransactionTypeFactory(),
         posted_timestamp=posted_timestamp,
     )

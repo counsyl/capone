@@ -8,10 +8,10 @@ from ledger.api.actions import debit
 from ledger.api.queries import assert_transaction_in_ledgers_for_amounts_with_evidence  # nopep8
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
-from ledger.models import Transaction
 from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import TransactionFactory
+from ledger.tests.factories import TransactionTypeFactory
 from ledger.tests.factories import UserFactory
 
 
@@ -72,7 +72,7 @@ class TestTransactionFactory(TestCase):
         FIELDS_TO_VALUES = [
             ('posted_timestamp', time),
             ('notes', 'booga'),
-            ('type', Transaction.RECONCILIATION),
+            ('type', TransactionTypeFactory()),
             ('user', UserFactory()),
         ]
 

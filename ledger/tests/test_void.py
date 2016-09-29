@@ -9,9 +9,9 @@ from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
 from ledger.exceptions import UnvoidableTransactionException
 from ledger.models import LedgerEntry
-from ledger.models import Transaction
 from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import TransactionFactory
+from ledger.tests.factories import TransactionTypeFactory
 from ledger.tests.factories import UserFactory
 
 
@@ -21,6 +21,7 @@ class TestVoidBase(TestCase):
         self.ar_ledger = LedgerFactory()
         self.rev_ledger = LedgerFactory()
         self.creation_user_ar_ledger = LedgerFactory()
+        self.ttype = TransactionTypeFactory()
 
 
 class TestVoidTransaction(TestVoidBase):
@@ -152,15 +153,15 @@ class TestVoidTransaction(TestVoidBase):
                     amount=debit(amount),
                 ),
             ],
-            type=Transaction.AUTOMATIC,
+            type=self.ttype,
         )
         voiding_transaction = void_transaction(
             transaction,
             self.creation_user,
             notes='test notes',
-            type=Transaction.MANUAL)
+        )
         self.assertEqual(voiding_transaction.notes, 'test notes')
-        self.assertEqual(voiding_transaction.type, Transaction.MANUAL)
+        self.assertEqual(voiding_transaction.type, transaction.type)
 
 
 class TestVoidTimestamps(TestVoidBase):
