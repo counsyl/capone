@@ -8,6 +8,7 @@ from django.db.transaction import atomic
 
 from ledger.api.queries import validate_transaction
 from ledger.exceptions import UnvoidableTransactionException
+from ledger.models import get_or_create_manual_transaction_type
 from ledger.models import Ledger
 from ledger.models import LedgerBalance
 from ledger.models import LedgerEntry
@@ -131,9 +132,6 @@ def create_transaction(
     if not posted_timestamp:
         posted_timestamp = datetime.now()
 
-    if not type:
-        type = Transaction.MANUAL
-
     validate_transaction(
         user,
         evidence,
@@ -147,7 +145,7 @@ def create_transaction(
         created_by=user,
         notes=notes,
         posted_timestamp=posted_timestamp,
-        type=type,
+        type=type or get_or_create_manual_transaction_type(),
     )
 
     for ledger_entry in ledger_entries:

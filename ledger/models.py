@@ -164,6 +164,10 @@ class TransactionType(TimeStampedModel):
         blank=True)
 
 
+def get_or_create_manual_transaction_type():
+    return TransactionType.objects.get_or_create(name='Manual')[0]
+
+
 class Transaction(NonDeletableModel, models.Model):
     """
     Transactions link together many LedgerEntries.
@@ -203,17 +207,9 @@ class Transaction(NonDeletableModel, models.Model):
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         db_index=True)
 
-    AUTOMATIC = 'Automatic'
-    MANUAL = 'Manual'
-    RECONCILIATION = 'Reconciliation'
-    TRANSACTION_TYPE_CHOICES = (
-        (AUTOMATIC, AUTOMATIC),
-        (MANUAL, MANUAL),
-        (RECONCILIATION, RECONCILIATION),
-    )
-
     type = models.ForeignKey(
         TransactionType,
+        default=get_or_create_manual_transaction_type,
     )
 
     objects = TransactionQuerySet.as_manager()
