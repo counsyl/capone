@@ -54,7 +54,7 @@ def void_transaction(
         LedgerEntry(
             ledger=ledger_entry.ledger,
             amount=-ledger_entry.amount,
-            action_type='VoidTransaction')
+        )
         for ledger_entry in transaction.entries.all()
     ]
 

@@ -304,10 +304,6 @@ class LedgerEntry(NonDeletableModel, models.Model):
         ),
         max_digits=24,
         decimal_places=4)
-    action_type = models.CharField(
-        help_text=_("Type of action that created this LedgerEntry"),
-        max_length=128,
-        blank=True)
 
     def __unicode__(self):
         return u"LedgerEntry: ${amount} in {ledger}".format(
