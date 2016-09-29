@@ -168,6 +168,10 @@ def get_or_create_manual_transaction_type():
     return TransactionType.objects.get_or_create(name='Manual')[0]
 
 
+def get_or_create_manual_transaction_type_id():
+    return get_or_create_manual_transaction_type().id
+
+
 class Transaction(NonDeletableModel, models.Model):
     """
     Transactions link together many LedgerEntries.
@@ -209,7 +213,7 @@ class Transaction(NonDeletableModel, models.Model):
 
     type = models.ForeignKey(
         TransactionType,
-        default=get_or_create_manual_transaction_type,
+        default=get_or_create_manual_transaction_type_id,
     )
 
     objects = TransactionQuerySet.as_manager()
