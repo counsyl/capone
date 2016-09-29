@@ -14,10 +14,10 @@ def create_and_copy_transaction_types(apps, schema_editor):
             ('AUTOMATIC', 'Automatic'),
             ('RECONCILIATION', 'Reconciliation'),
     ]:
-        ttype = TransactionType.objects.create(
+        ttype = TransactionType.objects.get_or_create(
             name=pretty_name,
             description='',
-        )
+        )[0]
 
         Transaction.objects.filter(type=ttype_name).update(type2=ttype)
 
