@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.db.models.deletion
+import ledger.models
 
 
 class Migration(migrations.Migration):
@@ -16,11 +17,11 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TransactionType',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),  # nopep8
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('modified_at', models.DateTimeField(auto_now=True)),
-                ('name', models.CharField(help_text='Name of this transaction type', max_length=255, unique=True)),
-                ('description', models.TextField(blank=True, help_text='Any notes to go along with this Transaction.')),
+                ('name', models.CharField(help_text='Name of this transaction type', max_length=255, unique=True)),  # nopep8
+                ('description', models.TextField(blank=True, help_text='Any notes to go along with this Transaction.')),  # nopep8
             ],
             options={
                 'abstract': False,
@@ -29,6 +30,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transaction',
             name='type2',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='ledger.TransactionType'),
+            field=models.ForeignKey(
+                default=ledger.models.get_or_create_manual_transaction_type_id,
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                to='ledger.TransactionType'
+            ),
         ),
     ]
