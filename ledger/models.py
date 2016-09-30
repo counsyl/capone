@@ -280,7 +280,7 @@ class Ledger(NonDeletableModel, models.Model):
         return self.entries.aggregate(balance=Sum('amount'))['balance']
 
     def __unicode__(self):
-        return self.name
+        return "Ledger %s" % self.name
 
 
 class LedgerEntry(NonDeletableModel, models.Model):
@@ -314,7 +314,7 @@ class LedgerEntry(NonDeletableModel, models.Model):
 
     def __unicode__(self):
         return u"LedgerEntry: ${amount} in {ledger}".format(
-            amount=self.amount, ledger=self.ledger)
+            amount=self.amount, ledger=self.ledger.name)
 
 
 class LedgerBalance(TimeStampedModel):
