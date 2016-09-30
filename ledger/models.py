@@ -163,6 +163,9 @@ class TransactionType(TimeStampedModel):
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
 
+    def __unicode__(self):
+        return u"Transaction Type %s" % self.name
+
 
 def get_or_create_manual_transaction_type():
     return TransactionType.objects.get_or_create(name='Manual')[0]

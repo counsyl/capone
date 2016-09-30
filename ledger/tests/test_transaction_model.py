@@ -15,6 +15,7 @@ from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import OrderFactory
 from ledger.tests.factories import TransactionFactory
+from ledger.tests.factories import TransactionTypeFactory
 from ledger.tests.factories import UserFactory
 
 
@@ -46,6 +47,9 @@ class TestUnicodeMethods(TestCase):
 
         ledger = LedgerFactory(name='foo')
         self.assertEqual(unicode(ledger), "foo")
+
+        ttype = TransactionTypeFactory(name='foo')
+        self.assertEqual(unicode(ttype), "Transaction Type foo")
 
 
 class TestTransactionSummary(TransactionBase):
