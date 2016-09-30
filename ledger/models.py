@@ -154,6 +154,27 @@ class TransactionQuerySet(NonDeletableQuerySet):
             raise ValueError("Invalid match_type.")
 
 
+class TransactionType(TimeStampedModel):
+    name = models.CharField(
+        help_text=_("Name of this transaction type"),
+        unique=True,
+        max_length=255)
+    description = models.TextField(
+        help_text=_("Any notes to go along with this Transaction."),
+        blank=True)
+
+    def __unicode__(self):
+        return u"Transaction Type %s" % self.name
+
+
+def get_or_create_manual_transaction_type():
+    return TransactionType.objects.get_or_create(name='Manual')[0]
+
+
+def get_or_create_manual_transaction_type_id():
+    return get_or_create_manual_transaction_type().id
+
+
 class Transaction(NonDeletableModel, models.Model):
     """
     Transactions link together many LedgerEntries.
@@ -193,20 +214,9 @@ class Transaction(NonDeletableModel, models.Model):
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         db_index=True)
 
-    AUTOMATIC = 'Automatic'
-    MANUAL = 'Manual'
-    RECONCILIATION = 'Reconciliation'
-    TRANSACTION_TYPE_CHOICES = (
-        (AUTOMATIC, AUTOMATIC),
-        (MANUAL, MANUAL),
-        (RECONCILIATION, RECONCILIATION),
-    )
-
-    type = models.CharField(
-        help_text=_("The type of transaction.  AUTOMATIC is for recurring tasks, and RECONCILIATION is for special Reconciliation transactions."),  # nopep8
-        choices=TRANSACTION_TYPE_CHOICES,
-        max_length=128,
-        default=MANUAL,
+    type = models.ForeignKey(
+        TransactionType,
+        default=get_or_create_manual_transaction_type_id,
     )
 
     objects = TransactionQuerySet.as_manager()
@@ -270,7 +280,7 @@ class Ledger(NonDeletableModel, models.Model):
         return self.entries.aggregate(balance=Sum('amount'))['balance']
 
     def __unicode__(self):
-        return self.name
+        return "Ledger %s" % self.name
 
 
 class LedgerEntry(NonDeletableModel, models.Model):
@@ -301,14 +311,10 @@ class LedgerEntry(NonDeletableModel, models.Model):
         ),
         max_digits=24,
         decimal_places=4)
-    action_type = models.CharField(
-        help_text=_("Type of action that created this LedgerEntry"),
-        max_length=128,
-        blank=True)
 
     def __unicode__(self):
         return u"LedgerEntry: ${amount} in {ledger}".format(
-            amount=self.amount, ledger=self.ledger)
+            amount=self.amount, ledger=self.ledger.name)
 
 
 class LedgerBalance(TimeStampedModel):

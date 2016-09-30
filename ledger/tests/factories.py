@@ -8,6 +8,7 @@ from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.models import Ledger
 from ledger.models import LedgerEntry
+from ledger.models import TransactionType
 from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
 
@@ -43,6 +44,13 @@ class CreditCardTransactionFactory(factory.DjangoModelFactory):
     cardholder_name = factory.Sequence(lambda n: "Cardholder %s" % n)
 
 
+class TransactionTypeFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = TransactionType
+
+    name = factory.Sequence(lambda n: "Transaction Type %s" % n)
+
+
 def TransactionFactory(
     user=None,
     evidence=None,
@@ -76,6 +84,6 @@ def TransactionFactory(
         evidence=evidence,
         ledger_entries=ledger_entries,
         notes=notes,
-        type=type,
+        type=type or TransactionTypeFactory(),
         posted_timestamp=posted_timestamp,
     )

@@ -9,9 +9,9 @@ from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
 from ledger.exceptions import UnvoidableTransactionException
 from ledger.models import LedgerEntry
-from ledger.models import Transaction
 from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import TransactionFactory
+from ledger.tests.factories import TransactionTypeFactory
 from ledger.tests.factories import UserFactory
 
 
@@ -21,6 +21,7 @@ class TestVoidBase(TestCase):
         self.ar_ledger = LedgerFactory()
         self.rev_ledger = LedgerFactory()
         self.creation_user_ar_ledger = LedgerFactory()
+        self.ttype = TransactionTypeFactory()
 
 
 class TestVoidTransaction(TestVoidBase):
@@ -39,6 +40,26 @@ class TestVoidTransaction(TestVoidBase):
 
         self.assertEqual(self.ar_ledger.get_balance(), D(0))
         self.assertEqual(self.rev_ledger.get_balance(), D(0))
+
+    def test_void_with_non_default_type(self):
+        amount = D(100)
+        # First record a charge
+        txn = TransactionFactory(self.creation_user, ledger_entries=[
+            LedgerEntry(amount=debit(amount), ledger=self.ar_ledger),
+            LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
+        ])
+
+        # Then void it
+        new_ttype = TransactionTypeFactory()
+        void_txn = void_transaction(txn, self.creation_user, type=new_ttype)
+
+        self.assertEqual(void_txn.voids, txn)
+
+        self.assertEqual(self.ar_ledger.get_balance(), D(0))
+        self.assertEqual(self.rev_ledger.get_balance(), D(0))
+
+        self.assertEqual(void_txn.type, new_ttype)
+        self.assertNotEqual(void_txn.type, txn.type)
 
     def test_cant_void_twice(self):
         amount = D(100)
@@ -152,15 +173,15 @@ class TestVoidTransaction(TestVoidBase):
                     amount=debit(amount),
                 ),
             ],
-            type=Transaction.AUTOMATIC,
+            type=self.ttype,
         )
         voiding_transaction = void_transaction(
             transaction,
             self.creation_user,
             notes='test notes',
-            type=Transaction.MANUAL)
+        )
         self.assertEqual(voiding_transaction.notes, 'test notes')
-        self.assertEqual(voiding_transaction.type, Transaction.MANUAL)
+        self.assertEqual(voiding_transaction.type, transaction.type)
 
 
 class TestVoidTimestamps(TestVoidBase):

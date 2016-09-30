@@ -13,6 +13,7 @@ from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import LedgerEntry
 from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import TransactionFactory
+from ledger.tests.factories import TransactionTypeFactory
 from ledger.tests.factories import UserFactory
 
 
@@ -26,11 +27,13 @@ class TestAssertTransactionInLedgersForAmountsWithEvidence(TestCase):
         user1 = UserFactory()
         user2 = UserFactory()
         credit_card_transaction = CreditCardTransactionFactory()
+        ttype1 = TransactionTypeFactory(name='1')
+        ttype2 = TransactionTypeFactory(name='2')
 
         FIELDS_TO_VALUES = [
             ('posted_timestamp', time, wrong_time),
             ('notes', 'foo', 'bar'),
-            ('type', Transaction.RECONCILIATION, Transaction.MANUAL),
+            ('type', ttype1, ttype2),
             ('user', user1, user2),
         ]
 
