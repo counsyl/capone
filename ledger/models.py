@@ -22,7 +22,7 @@ POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and cr
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
 
 
-class TransactionRelatedObject(NonDeletableModel, models.Model):
+class TransactionRelatedObject(NonDeletableModel, TimeStampedModel):
     """
     A piece of evidence for a particular Transaction.
 
@@ -44,8 +44,6 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     related_object = GenericForeignKey(
         'related_object_content_type',
         'related_object_id')
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
 
     def __unicode__(self):
         return "TransactionRelatedObject: %s(id=%d)" % (
@@ -177,7 +175,7 @@ def get_or_create_manual_transaction_type_id():
     return get_or_create_manual_transaction_type().id
 
 
-class Transaction(NonDeletableModel, models.Model):
+class Transaction(NonDeletableModel, TimeStampedModel):
     """
     Transactions link together many LedgerEntries.
 
@@ -208,11 +206,6 @@ class Transaction(NonDeletableModel, models.Model):
         blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL)
-    created_at = models.DateTimeField(
-        help_text=_("Time this transaction was recorded locally.  This field should *always* equal when this object was created."),  # nopep8
-        auto_now_add=True,
-        db_index=True)
-    modified_at = models.DateTimeField()
     posted_timestamp = models.DateTimeField(
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         db_index=True)
@@ -262,7 +255,7 @@ class Transaction(NonDeletableModel, models.Model):
         }
 
 
-class Ledger(NonDeletableModel, models.Model):
+class Ledger(NonDeletableModel, TimeStampedModel):
     name = models.CharField(
         help_text=_("Name of this ledger"),
         unique=True,
@@ -277,8 +270,6 @@ class Ledger(NonDeletableModel, models.Model):
         help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
         default=None,
     )
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
 
     def get_balance(self):
         """Get the current balance on this Ledger."""
@@ -288,7 +279,7 @@ class Ledger(NonDeletableModel, models.Model):
         return "Ledger %s" % self.name
 
 
-class LedgerEntry(NonDeletableModel, models.Model):
+class LedgerEntry(NonDeletableModel, TimeStampedModel):
     """A single entry in a single column in a ledger.
 
     LedgerEntries must always be part of a transaction so that they balance
@@ -316,8 +307,6 @@ class LedgerEntry(NonDeletableModel, models.Model):
         ),
         max_digits=24,
         decimal_places=4)
-    created_at = models.DateTimeField()
-    modified_at = models.DateTimeField()
 
     def __unicode__(self):
         return u"LedgerEntry: ${amount} in {ledger}".format(
