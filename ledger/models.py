@@ -44,6 +44,8 @@ class TransactionRelatedObject(NonDeletableModel, models.Model):
     related_object = GenericForeignKey(
         'related_object_content_type',
         'related_object_id')
+    created_at = models.DateTimeField()
+    modified_at = models.DateTimeField()
 
     def __unicode__(self):
         return "TransactionRelatedObject: %s(id=%d)" % (
@@ -210,6 +212,7 @@ class Transaction(NonDeletableModel, models.Model):
         help_text=_("Time this transaction was recorded locally.  This field should *always* equal when this object was created."),  # nopep8
         auto_now_add=True,
         db_index=True)
+    modified_at = models.DateTimeField()
     posted_timestamp = models.DateTimeField(
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         db_index=True)
@@ -274,6 +277,8 @@ class Ledger(NonDeletableModel, models.Model):
         help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
         default=None,
     )
+    created_at = models.DateTimeField()
+    modified_at = models.DateTimeField()
 
     def get_balance(self):
         """Get the current balance on this Ledger."""
@@ -311,6 +316,8 @@ class LedgerEntry(NonDeletableModel, models.Model):
         ),
         max_digits=24,
         decimal_places=4)
+    created_at = models.DateTimeField()
+    modified_at = models.DateTimeField()
 
     def __unicode__(self):
         return u"LedgerEntry: ${amount} in {ledger}".format(
