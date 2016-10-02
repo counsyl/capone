@@ -206,7 +206,7 @@ class Transaction(NonDeletableModel, models.Model):
         blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL)
-    creation_timestamp = models.DateTimeField(
+    created_at = models.DateTimeField(
         help_text=_("Time this transaction was recorded locally.  This field should *always* equal when this object was created."),  # nopep8
         auto_now_add=True,
         db_index=True)
