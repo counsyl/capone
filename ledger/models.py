@@ -89,7 +89,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
         be careful using it with large numbers of `related_objects`.
         """
         content_types = ContentType.objects.get_for_models(
-            *related_objects)
+            *[type(o) for o in related_objects])
 
         if match_type == MatchType.ANY:
             combined_query = reduce(
@@ -97,7 +97,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
                 [
                     Q(
                         related_objects__related_object_content_type=(
-                            content_types[related_object]),
+                            content_types[type(related_object)]),
                         related_objects__related_object_id=related_object.id,
                     )
                     for related_object in related_objects
@@ -109,7 +109,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
             for related_object in related_objects:
                 self = self.filter(
                     related_objects__related_object_content_type=(
-                        content_types[related_object]),
+                        content_types[type(related_object)]),
                     related_objects__related_object_id=related_object.id,
                 )
             return self
@@ -117,7 +117,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
             for related_object in related_objects:
                 self = self.exclude(
                     related_objects__related_object_content_type=(
-                        content_types[related_object]),
+                        content_types[type(related_object)]),
                     related_objects__related_object_id=related_object.id,
                 )
             return self
@@ -127,7 +127,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
                     self
                     .filter(
                         related_objects__related_object_content_type=(
-                            content_types[related_object]),
+                            content_types[type(related_object)]),
                         related_objects__related_object_id=related_object.id,
                     )
                     .prefetch_related(
@@ -139,7 +139,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
             related_objects_id_tuples = {
                 (
                     related_object.id,
-                    content_types[related_object].id
+                    content_types[type(related_object)].id
                 )
                 for related_object in related_objects
             }
