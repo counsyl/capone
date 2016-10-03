@@ -22,7 +22,7 @@ POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and cr
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
 
 
-class TransactionRelatedObject(NonDeletableModel, models.Model):
+class TransactionRelatedObject(NonDeletableModel, TimeStampedModel):
     """
     A piece of evidence for a particular Transaction.
 
@@ -89,7 +89,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
         be careful using it with large numbers of `related_objects`.
         """
         content_types = ContentType.objects.get_for_models(
-            *related_objects)
+            *[type(o) for o in related_objects])
 
         if match_type == MatchType.ANY:
             combined_query = reduce(
@@ -97,7 +97,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
                 [
                     Q(
                         related_objects__related_object_content_type=(
-                            content_types[related_object]),
+                            content_types[type(related_object)]),
                         related_objects__related_object_id=related_object.id,
                     )
                     for related_object in related_objects
@@ -109,7 +109,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
             for related_object in related_objects:
                 self = self.filter(
                     related_objects__related_object_content_type=(
-                        content_types[related_object]),
+                        content_types[type(related_object)]),
                     related_objects__related_object_id=related_object.id,
                 )
             return self
@@ -117,7 +117,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
             for related_object in related_objects:
                 self = self.exclude(
                     related_objects__related_object_content_type=(
-                        content_types[related_object]),
+                        content_types[type(related_object)]),
                     related_objects__related_object_id=related_object.id,
                 )
             return self
@@ -127,7 +127,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
                     self
                     .filter(
                         related_objects__related_object_content_type=(
-                            content_types[related_object]),
+                            content_types[type(related_object)]),
                         related_objects__related_object_id=related_object.id,
                     )
                     .prefetch_related(
@@ -139,7 +139,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
             related_objects_id_tuples = {
                 (
                     related_object.id,
-                    content_types[related_object].id
+                    content_types[type(related_object)].id
                 )
                 for related_object in related_objects
             }
@@ -175,7 +175,7 @@ def get_or_create_manual_transaction_type_id():
     return get_or_create_manual_transaction_type().id
 
 
-class Transaction(NonDeletableModel, models.Model):
+class Transaction(NonDeletableModel, TimeStampedModel):
     """
     Transactions link together many LedgerEntries.
 
@@ -206,10 +206,6 @@ class Transaction(NonDeletableModel, models.Model):
         blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL)
-    creation_timestamp = models.DateTimeField(
-        help_text=_("Time this transaction was recorded locally.  This field should *always* equal when this object was created."),  # nopep8
-        auto_now_add=True,
-        db_index=True)
     posted_timestamp = models.DateTimeField(
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         db_index=True)
@@ -259,7 +255,7 @@ class Transaction(NonDeletableModel, models.Model):
         }
 
 
-class Ledger(NonDeletableModel, models.Model):
+class Ledger(NonDeletableModel, TimeStampedModel):
     name = models.CharField(
         help_text=_("Name of this ledger"),
         unique=True,
@@ -283,7 +279,7 @@ class Ledger(NonDeletableModel, models.Model):
         return "Ledger %s" % self.name
 
 
-class LedgerEntry(NonDeletableModel, models.Model):
+class LedgerEntry(NonDeletableModel, TimeStampedModel):
     """A single entry in a single column in a ledger.
 
     LedgerEntries must always be part of a transaction so that they balance
