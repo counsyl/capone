@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from datetime import datetime
 from decimal import Decimal
 
@@ -32,13 +33,13 @@ class TestUnicodeMethods(TestCase):
 
         tro = txn.related_objects.last()
         self.assertEqual(
-            unicode(tro),
+            str(tro),
             u'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # nopep8
         )
 
         entry = txn.entries.last()
         self.assertEqual(
-            unicode(entry),
+            str(entry),
             "LedgerEntry: $%s in %s" % (
                 entry.amount,
                 entry.ledger.name,
@@ -46,10 +47,10 @@ class TestUnicodeMethods(TestCase):
         )
 
         ledger = LedgerFactory(name='foo')
-        self.assertEqual(unicode(ledger), "Ledger foo")
+        self.assertEqual(str(ledger), "Ledger foo")
 
         ttype = TransactionTypeFactory(name='foo')
-        self.assertEqual(unicode(ttype), "Transaction Type foo")
+        self.assertEqual(str(ttype), "Transaction Type foo")
 
 
 class TestTransactionSummary(TransactionBase):
@@ -67,7 +68,7 @@ class TestTransactionSummary(TransactionBase):
         self.assertEqual(
             txn.summary(),
             {
-                'entries': [unicode(entry) for entry in txn.entries.all()],
+                'entries': [str(entry) for entry in txn.entries.all()],
                 'related_objects': [
                     u'TransactionRelatedObject: CreditCardTransaction(id=%s)' %
                     ccx.id,
