@@ -10,6 +10,7 @@ from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
 from ledger.exceptions import TransactionBalanceException
+from ledger.models import LedgerBalance
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.tests.factories import CreditCardTransactionFactory
@@ -51,6 +52,16 @@ class TestUnicodeMethods(TestCase):
 
         ttype = TransactionTypeFactory(name='foo')
         self.assertEqual(str(ttype), "Transaction Type foo")
+
+        balance = LedgerBalance.objects.last()
+        self.assertEqual(
+            str(balance),
+            "LedgerBalance: %s for %s in %s" % (
+                balance.balance,
+                balance.related_object,
+                balance.ledger,
+            )
+        )
 
 
 class TestTransactionSummary(TransactionBase):
