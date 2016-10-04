@@ -34,7 +34,7 @@ class TestUnicodeMethods(TestCase):
         tro = txn.related_objects.last()
         self.assertEqual(
             str(tro),
-            u'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # nopep8
+            'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # nopep8
         )
 
         entry = txn.entries.last()
@@ -70,7 +70,7 @@ class TestTransactionSummary(TransactionBase):
             {
                 'entries': [str(entry) for entry in txn.entries.all()],
                 'related_objects': [
-                    u'TransactionRelatedObject: CreditCardTransaction(id=%s)' %
+                    'TransactionRelatedObject: CreditCardTransaction(id=%s)' %
                     ccx.id,
                 ],
             },

@@ -169,7 +169,7 @@ class TransactionType(TimeStampedModel):
         blank=True)
 
     def __str__(self):
-        return u"Transaction Type %s" % self.name
+        return "Transaction Type %s" % self.name
 
 
 def get_or_create_manual_transaction_type():
@@ -247,7 +247,7 @@ class Transaction(NonDeletableModel, TimeStampedModel):
         super(Transaction, self).save(**kwargs)
 
     def __str__(self):
-        return u"Transaction %s" % self.transaction_id
+        return "Transaction %s" % self.transaction_id
 
     def summary(self):
         """
@@ -316,7 +316,7 @@ class LedgerEntry(NonDeletableModel, TimeStampedModel):
         decimal_places=4)
 
     def __str__(self):
-        return u"LedgerEntry: ${amount} in {ledger}".format(
+        return "LedgerEntry: ${amount} in {ledger}".format(
             amount=self.amount, ledger=self.ledger.name)
 
 
