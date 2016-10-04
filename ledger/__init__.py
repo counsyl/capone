@@ -1,2 +1,2 @@
 from __future__ import unicode_literals
-"Django app representing a double-entry accounting ledger."
+"A Django app providing accounting ledgers using double-entry bookkeeping."
