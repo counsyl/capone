@@ -339,6 +339,13 @@ class LedgerBalance(TimeStampedModel):
         max_digits=24,
         decimal_places=4)
 
+    def __str__(self):
+        return "LedgerBalance: %s for %s in %s" % (
+            self.balance,
+            self.related_object,
+            self.ledger,
+        )
+
 
 def LedgerBalances():
     """
