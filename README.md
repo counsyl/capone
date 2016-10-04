@@ -266,14 +266,6 @@ remember there is no spoon. Also note that the Sums at the end still balance.
 
 # Local Development
 
-## Packages you may need
-
-You may need to install the following Debian packages to build `ledger`:
-
-```
-sudo apt-get install python-dev python3-dev
-```
-
 ## Setup:
 
 First, you must set up your working environment:
