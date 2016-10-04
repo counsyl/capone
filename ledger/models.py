@@ -2,6 +2,7 @@ import operator
 import uuid
 from decimal import Decimal
 from enum import Enum
+from functools import reduce
 
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from counsyl_django_utils.models.non_deletable import NonDeletableQuerySet
