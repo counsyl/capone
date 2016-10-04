@@ -17,6 +17,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL('SET CONSTRAINTS ALL IMMEDIATE'),
         migrations.AddField(
             model_name='ledger',
             name='number',

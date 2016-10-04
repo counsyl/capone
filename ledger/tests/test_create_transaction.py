@@ -17,9 +17,13 @@ from ledger.api.queries import validate_transaction
 from ledger.tests.factories import CreditCardTransactionFactory
 from ledger.tests.factories import LedgerFactory
 from ledger.tests.factories import OrderFactory
+from ledger.tests.factories import TransactionTypeFactory
 from ledger.tests.factories import UserFactory
 from ledger.tests.models import CreditCardTransaction
 from ledger.tests.models import Order
+
+
+RECONCILIATION_TYPE_NAME = 'Recon'
 
 
 def create_recon_report():
@@ -37,7 +41,7 @@ def create_recon_report():
     """
     report = ""
     for transaction in Transaction.objects.filter(
-            type=Transaction.RECONCILIATION):
+            type__name=RECONCILIATION_TYPE_NAME):
         related_objects = {
             type(related_object.related_object): related_object.related_object
             for related_object in transaction.related_objects.all()
@@ -66,6 +70,8 @@ class TestCompanyWideLedgers(TestCase):
         self.cash_unrecon = LedgerFactory(name='Cash (unreconciled)')
         self.cash_recon = LedgerFactory(name='Cash (reconciled)')
         self.revenue = LedgerFactory(name='Revenue', increased_by_debits=False)
+        self.recon_ttype = TransactionTypeFactory(
+            name=RECONCILIATION_TYPE_NAME)
 
     def test_using_company_wide_ledgers_for_reconciliation(self):
         """
@@ -165,7 +171,7 @@ class TestCompanyWideLedgers(TestCase):
                     ledger=self.cash_recon,
                     amount=debit(self.AMOUNT))
             ],
-            type=Transaction.RECONCILIATION,
+            type=self.recon_ttype,
         )
 
         # Assert that the correct entries were created.
@@ -248,7 +254,7 @@ class TestCompanyWideLedgers(TestCase):
                         ledger=self.cash_recon,
                         amount=debit(self.AMOUNT))
                 ],
-                type=Transaction.RECONCILIATION,
+                type=self.recon_ttype,
             )
 
             self.assertEqual(
