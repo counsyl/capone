@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from decimal import Decimal as D
 
 from counsyl_django_utils.testing.query_counting import testable_queries_context  # nopep8
