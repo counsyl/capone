@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from datetime import datetime
 from decimal import Decimal
@@ -49,6 +50,8 @@ class TestUnicodeMethods(TestCase):
 
         ledger = LedgerFactory(name='foo')
         self.assertEqual(str(ledger), "Ledger foo")
+        ledger = LedgerFactory(name='föo')
+        self.assertEqual(str(ledger), "Ledger föo")
 
         ttype = TransactionTypeFactory(name='foo')
         self.assertEqual(str(ttype), "Transaction Type foo")
