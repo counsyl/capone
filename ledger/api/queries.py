@@ -1,6 +1,8 @@
+from __future__ import unicode_literals
 import operator
 from collections import defaultdict
 from decimal import Decimal
+from functools import reduce
 
 from django.contrib.contenttypes.models import ContentType
 from nose.tools import assert_equal

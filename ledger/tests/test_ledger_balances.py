@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 from collections import defaultdict
 from decimal import Decimal
 
@@ -49,7 +50,7 @@ class TestLedgerBalances(TransactionTestCase):
             if balance is not None:
                 obj_to_ledger_balances[obj][ledger] = balance
 
-        for obj, expected_balances in obj_to_ledger_balances.viewitems():
+        for obj, expected_balances in obj_to_ledger_balances.items():
             actual_balances = get_balances_for_object(obj)
             self.assertEqual(actual_balances, expected_balances)
             self.assertNotIn(self.other_ledger, actual_balances)

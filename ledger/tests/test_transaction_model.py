@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+import sys
 from datetime import datetime
 from decimal import Decimal
 
@@ -9,6 +12,7 @@ from ledger.api.actions import credit
 from ledger.api.actions import debit
 from ledger.api.actions import void_transaction
 from ledger.exceptions import TransactionBalanceException
+from ledger.models import LedgerBalance
 from ledger.models import LedgerEntry
 from ledger.models import Transaction
 from ledger.tests.factories import CreditCardTransactionFactory
@@ -32,13 +36,13 @@ class TestUnicodeMethods(TestCase):
 
         tro = txn.related_objects.last()
         self.assertEqual(
-            unicode(tro),
-            u'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # nopep8
+            str(tro),
+            'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # nopep8
         )
 
         entry = txn.entries.last()
         self.assertEqual(
-            unicode(entry),
+            str(entry),
             "LedgerEntry: $%s in %s" % (
                 entry.amount,
                 entry.ledger.name,
@@ -46,10 +50,25 @@ class TestUnicodeMethods(TestCase):
         )
 
         ledger = LedgerFactory(name='foo')
-        self.assertEqual(unicode(ledger), "Ledger foo")
+        self.assertEqual(str(ledger), "Ledger foo")
+        ledger = LedgerFactory(name='föo')
+        if sys.version_info.major == 2:
+            str(ledger) == b"Ledger f\xc3\xb6o"
+        if sys.version_info.major == 3:
+            self.assertTrue(str(ledger) == "Ledger föo")
 
         ttype = TransactionTypeFactory(name='foo')
-        self.assertEqual(unicode(ttype), "Transaction Type foo")
+        self.assertEqual(str(ttype), "Transaction Type foo")
+
+        balance = LedgerBalance.objects.last()
+        self.assertEqual(
+            str(balance),
+            "LedgerBalance: %s for %s in %s" % (
+                balance.balance,
+                balance.related_object,
+                balance.ledger,
+            )
+        )
 
 
 class TestTransactionSummary(TransactionBase):
@@ -67,9 +86,9 @@ class TestTransactionSummary(TransactionBase):
         self.assertEqual(
             txn.summary(),
             {
-                'entries': [unicode(entry) for entry in txn.entries.all()],
+                'entries': [str(entry) for entry in txn.entries.all()],
                 'related_objects': [
-                    u'TransactionRelatedObject: CreditCardTransaction(id=%s)' %
+                    'TransactionRelatedObject: CreditCardTransaction(id=%s)' %
                     ccx.id,
                 ],
             },

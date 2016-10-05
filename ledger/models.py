@@ -1,7 +1,9 @@
+from __future__ import unicode_literals
 import operator
 import uuid
 from decimal import Decimal
 from enum import Enum
+from functools import reduce
 
 from counsyl_django_utils.models.non_deletable import NonDeletableModel
 from counsyl_django_utils.models.non_deletable import NonDeletableQuerySet
@@ -13,6 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
 from django.db.models import Sum
+from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
 from ledger.exceptions import TransactionBalanceException
@@ -22,6 +25,7 @@ POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and cr
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
 
 
+@python_2_unicode_compatible
 class TransactionRelatedObject(NonDeletableModel, TimeStampedModel):
     """
     A piece of evidence for a particular Transaction.
@@ -45,7 +49,7 @@ class TransactionRelatedObject(NonDeletableModel, TimeStampedModel):
         'related_object_content_type',
         'related_object_id')
 
-    def __unicode__(self):
+    def __str__(self):
         return "TransactionRelatedObject: %s(id=%d)" % (
             self.related_object_content_type.model_class().__name__,
             self.related_object_id)
@@ -154,6 +158,7 @@ class TransactionQuerySet(NonDeletableQuerySet):
             raise ValueError("Invalid match_type.")
 
 
+@python_2_unicode_compatible
 class TransactionType(TimeStampedModel):
     name = models.CharField(
         help_text=_("Name of this transaction type"),
@@ -163,8 +168,8 @@ class TransactionType(TimeStampedModel):
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
 
-    def __unicode__(self):
-        return u"Transaction Type %s" % self.name
+    def __str__(self):
+        return "Transaction Type %s" % self.name
 
 
 def get_or_create_manual_transaction_type():
@@ -175,6 +180,7 @@ def get_or_create_manual_transaction_type_id():
     return get_or_create_manual_transaction_type().id
 
 
+@python_2_unicode_compatible
 class Transaction(NonDeletableModel, TimeStampedModel):
     """
     Transactions link together many LedgerEntries.
@@ -240,8 +246,8 @@ class Transaction(NonDeletableModel, TimeStampedModel):
         self.full_clean()
         super(Transaction, self).save(**kwargs)
 
-    def __unicode__(self):
-        return u"Transaction %s" % self.transaction_id
+    def __str__(self):
+        return "Transaction %s" % self.transaction_id
 
     def summary(self):
         """
@@ -249,12 +255,13 @@ class Transaction(NonDeletableModel, TimeStampedModel):
         """
         return {
             'entries':
-            [unicode(entry) for entry in self.entries.all()],
+            [str(entry) for entry in self.entries.all()],
             'related_objects':
-            [unicode(obj) for obj in self.related_objects.all()],
+            [str(obj) for obj in self.related_objects.all()],
         }
 
 
+@python_2_unicode_compatible
 class Ledger(NonDeletableModel, TimeStampedModel):
     name = models.CharField(
         help_text=_("Name of this ledger"),
@@ -275,7 +282,7 @@ class Ledger(NonDeletableModel, TimeStampedModel):
         """Get the current balance on this Ledger."""
         return self.entries.aggregate(balance=Sum('amount'))['balance']
 
-    def __unicode__(self):
+    def __str__(self):
         return "Ledger %s" % self.name
 
 
@@ -308,11 +315,12 @@ class LedgerEntry(NonDeletableModel, TimeStampedModel):
         max_digits=24,
         decimal_places=4)
 
-    def __unicode__(self):
-        return u"LedgerEntry: ${amount} in {ledger}".format(
+    def __str__(self):
+        return "LedgerEntry: ${amount} in {ledger}".format(
             amount=self.amount, ledger=self.ledger.name)
 
 
+@python_2_unicode_compatible
 class LedgerBalance(TimeStampedModel):
     """
     Denormalized ledger balances for related objects.
@@ -337,6 +345,13 @@ class LedgerBalance(TimeStampedModel):
         default=Decimal(0),
         max_digits=24,
         decimal_places=4)
+
+    def __str__(self):
+        return "LedgerBalance: %s for %s in %s" % (
+            self.balance,
+            self.related_object,
+            self.ledger,
+        )
 
 
 def LedgerBalances():
