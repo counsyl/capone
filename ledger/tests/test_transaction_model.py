@@ -51,7 +51,11 @@ class TestUnicodeMethods(TestCase):
         ledger = LedgerFactory(name='foo')
         self.assertEqual(str(ledger), "Ledger foo")
         ledger = LedgerFactory(name='föo')
-        self.assertEqual(str(ledger), "Ledger föo")
+        self.assertTrue(
+            # For Python3
+            str(ledger) == "Ledger föo"
+            # For Python2
+            or str(ledger) == b"Ledger f\xc3\xb6o")
 
         ttype = TransactionTypeFactory(name='foo')
         self.assertEqual(str(ttype), "Transaction Type foo")
