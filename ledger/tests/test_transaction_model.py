@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+import sys
 from datetime import datetime
 from decimal import Decimal
 
@@ -51,11 +52,10 @@ class TestUnicodeMethods(TestCase):
         ledger = LedgerFactory(name='foo')
         self.assertEqual(str(ledger), "Ledger foo")
         ledger = LedgerFactory(name='föo')
-        self.assertTrue(
-            # For Python3
-            str(ledger) == "Ledger föo"
-            # For Python2
-            or str(ledger) == b"Ledger f\xc3\xb6o")
+        if sys.version_info.major == 2:
+            str(ledger) == b"Ledger f\xc3\xb6o"
+        if sys.version_info.major == 3:
+            self.assertTrue(str(ledger) == "Ledger föo")
 
         ttype = TransactionTypeFactory(name='foo')
         self.assertEqual(str(ttype), "Transaction Type foo")
