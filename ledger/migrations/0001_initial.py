@@ -10,15 +10,7 @@ import ledger.models
 import uuid
 
 
-# Functions from the following migrations need manual copying.
-# Move them and any dependencies into this file, then update the
-# RunPython operations to refer to the local versions:
-# ledger.migrations.0009_ledger_number
-# ledger.migrations.0015_auto_20160928_1347
-
 class Migration(migrations.Migration):
-
-    replaces = [('ledger', '0001_initial'), ('ledger', '0002_auto_20151211_1501'), ('ledger', '0003_auto_20151218_1318'), ('ledger', '0004_auto_20160121_1624'), ('ledger', '0005_auto_20160126_1504'), ('ledger', '0006_auto_20160126_2224'), ('ledger', '0007_auto_20160205_1907'), ('ledger', '0008_auto_20160404_1246'), ('ledger', '0009_ledger_number'), ('ledger', '0010_auto_20160825_2014'), ('ledger', '0011_auto_20160826_0232'), ('ledger', '0012_auto_20160829_0159'), ('ledger', '0013_auto_20160829_1717'), ('ledger', '0014_auto_20160928_1345'), ('ledger', '0015_auto_20160928_1347'), ('ledger', '0016_auto_20160928_1348'), ('ledger', '0017_remove_transaction_type'), ('ledger', '0018_auto_20160928_1349'), ('ledger', '0019_auto_20160929_1332'), ('ledger', '0020_auto_20161002_1439'), ('ledger', '0021_auto_20161002_1443'), ('ledger', '0022_auto_20161002_1445')]
 
     initial = True
 
