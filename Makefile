@@ -85,8 +85,8 @@ test: venv
 	tox -v $(TOX_ENV_FLAG); \
 	status=$$?; \
 	coverage combine; \
-	coverage html --directory=coverage --omit="*tests*"; \
-	coverage report --fail-under=100 --show-missing; \
+	coverage html --directory=coverage; \
+	coverage report --fail-under=100 --show-missing --omit="*migrations*,*tests*"; \
 	coverage_code=$$?; \
 	xunitmerge nosetests-*.xml $(TEST_OUTPUT); \
 	if [ $$coverage_code -gt 0 ] ; then echo "Failed: Test coverage is not 100%."; fi; \
