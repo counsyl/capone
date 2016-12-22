@@ -5,8 +5,6 @@ from decimal import Decimal
 from enum import Enum
 from functools import reduce
 
-from counsyl_django_utils.models.non_deletable import NonDeletableModel
-from counsyl_django_utils.models.timestamped import TimeStampedModel
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.fields import GenericRelation
@@ -25,7 +23,7 @@ NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and cr
 
 
 @python_2_unicode_compatible
-class TransactionRelatedObject(NonDeletableModel, TimeStampedModel):
+class TransactionRelatedObject(models.Model):
     """
     A piece of evidence for a particular Transaction.
 
@@ -47,6 +45,10 @@ class TransactionRelatedObject(NonDeletableModel, TimeStampedModel):
     related_object = GenericForeignKey(
         'related_object_content_type',
         'related_object_id')
+    created_at = models.DateTimeField(
+        auto_now_add=True)
+    modified_at = models.DateTimeField(
+        auto_now=True)
 
     def __str__(self):
         return "TransactionRelatedObject: %s(id=%d)" % (
@@ -158,7 +160,7 @@ class TransactionQuerySet(models.QuerySet):
 
 
 @python_2_unicode_compatible
-class TransactionType(TimeStampedModel):
+class TransactionType(models.Model):
     name = models.CharField(
         help_text=_("Name of this transaction type"),
         unique=True,
@@ -166,6 +168,10 @@ class TransactionType(TimeStampedModel):
     description = models.TextField(
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True)
+    modified_at = models.DateTimeField(
+        auto_now=True)
 
     def __str__(self):
         return "Transaction Type %s" % self.name
@@ -180,7 +186,7 @@ def get_or_create_manual_transaction_type_id():
 
 
 @python_2_unicode_compatible
-class Transaction(NonDeletableModel, TimeStampedModel):
+class Transaction(models.Model):
     """
     Transactions link together many LedgerEntries.
 
@@ -214,6 +220,10 @@ class Transaction(NonDeletableModel, TimeStampedModel):
     posted_timestamp = models.DateTimeField(
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         db_index=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True)
+    modified_at = models.DateTimeField(
+        auto_now=True)
 
     type = models.ForeignKey(
         TransactionType,
@@ -261,7 +271,7 @@ class Transaction(NonDeletableModel, TimeStampedModel):
 
 
 @python_2_unicode_compatible
-class Ledger(NonDeletableModel, TimeStampedModel):
+class Ledger(models.Model):
     name = models.CharField(
         help_text=_("Name of this ledger"),
         unique=True,
@@ -276,6 +286,10 @@ class Ledger(NonDeletableModel, TimeStampedModel):
         help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
         default=None,
     )
+    created_at = models.DateTimeField(
+        auto_now_add=True)
+    modified_at = models.DateTimeField(
+        auto_now=True)
 
     def get_balance(self):
         """Get the current balance on this Ledger."""
@@ -285,7 +299,7 @@ class Ledger(NonDeletableModel, TimeStampedModel):
         return "Ledger %s" % self.name
 
 
-class LedgerEntry(NonDeletableModel, TimeStampedModel):
+class LedgerEntry(models.Model):
     """A single entry in a single column in a ledger.
 
     LedgerEntries must always be part of a transaction so that they balance
@@ -314,13 +328,18 @@ class LedgerEntry(NonDeletableModel, TimeStampedModel):
         max_digits=24,
         decimal_places=4)
 
+    created_at = models.DateTimeField(
+        auto_now_add=True)
+    modified_at = models.DateTimeField(
+        auto_now=True)
+
     def __str__(self):
         return "LedgerEntry: ${amount} in {ledger}".format(
             amount=self.amount, ledger=self.ledger.name)
 
 
 @python_2_unicode_compatible
-class LedgerBalance(TimeStampedModel):
+class LedgerBalance(models.Model):
     """
     Denormalized ledger balances for related objects.
     """
@@ -344,6 +363,11 @@ class LedgerBalance(TimeStampedModel):
         default=Decimal(0),
         max_digits=24,
         decimal_places=4)
+
+    created_at = models.DateTimeField(
+        auto_now_add=True)
+    modified_at = models.DateTimeField(
+        auto_now=True)
 
     def __str__(self):
         return "LedgerBalance: %s for %s in %s" % (
