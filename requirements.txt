@@ -1,3 +1,2 @@
-counsyl-django-utils>=5.0.1
 Django>=1.8,< 1.11
 enum34==1.1.6
