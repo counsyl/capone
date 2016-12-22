@@ -4,7 +4,6 @@ import sys
 from datetime import datetime
 from decimal import Decimal
 
-from django.core.exceptions import PermissionDenied
 from django.test import TestCase
 
 from ledger.api.actions import create_transaction
@@ -127,12 +126,6 @@ class TestEditingTransactions(TestCase):
 
         with self.assertRaises(TransactionBalanceException):
             transaction.save()
-
-
-class TestDelete(TransactionBase):
-    def test_cant_delete(self):
-        transaction = TransactionFactory()
-        self.assertRaises(PermissionDenied, transaction.delete)
 
 
 class TestNonVoidFilter(TestCase):

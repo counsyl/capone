@@ -1,7 +1,6 @@
 from __future__ import unicode_literals
 from decimal import Decimal as D
 
-from counsyl_django_utils.testing.query_counting import testable_queries_context  # nopep8
 from django.test import TestCase
 from nose_parameterized import parameterized
 
@@ -126,21 +125,17 @@ class TestFilterByRelatedObjects(TestCase):
         (MatchType.EXACT, 4),
     ])
     def test_query_counts(self, match_type, query_counts):
-        with testable_queries_context() as connection:
-            before = len(connection.queries)
+        with self.assertNumQueries(query_counts):
             list(Transaction.objects.filter_by_related_objects(
                 [self.order_1],
                 match_type=match_type
             ))
-            after_one = len(connection.queries)
-            self.assertEqual(after_one - before, query_counts)
 
+        with self.assertNumQueries(query_counts):
             list(Transaction.objects.filter_by_related_objects(
                 [self.order_1, self.order_2],
                 match_type=match_type
             ))
-            after_two = len(connection.queries)
-            self.assertEqual(after_two - after_one, query_counts)
 
     def test_invalid_match_type(self):
         with self.assertRaises(ValueError):
