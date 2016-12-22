@@ -62,11 +62,12 @@ clean:
 	rm -rf dist/
 	rm -rf *.egg*/
 	rm -rf .eggs
-	rm -rf __pycache__/
+	find . -type f -name '*.pyc' -delete
+	find . -name __pycache__ -delete
 	rm -f MANIFEST
 	rm -f test.db
 	rm -f $(TEST_OUTPUT)
-	find $(PACKAGE_NAME) -type f -name '*.pyc' -delete
+	find . -type f -name '*.pyc' -delete
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
 	dropdb --if-exists ledger_test_db
 
