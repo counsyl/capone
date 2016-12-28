@@ -33,11 +33,11 @@ class TestLedgerBalances(TransactionTestCase):
         self.user = UserFactory()
 
     def tearDown(self):
-        Transaction.objects.all().delete(really_delete=True)
+        Transaction.objects.all().delete()
         (
             Ledger.objects
             .filter(id__in=(self.ar_ledger.id, self.cash_ledger.id))
-            .delete(really_delete=True)
+            .delete()
         )
         self.order_1.delete()
         self.order_2.delete()

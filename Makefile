@@ -62,11 +62,12 @@ clean:
 	rm -rf dist/
 	rm -rf *.egg*/
 	rm -rf .eggs
-	rm -rf __pycache__/
+	find . -type f -name '*.pyc' -delete
+	find . -name __pycache__ -delete
 	rm -f MANIFEST
 	rm -f test.db
 	rm -f $(TEST_OUTPUT)
-	find $(PACKAGE_NAME) -type f -name '*.pyc' -delete
+	find . -type f -name '*.pyc' -delete
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
 	dropdb --if-exists ledger_test_db
 
@@ -85,8 +86,8 @@ test: venv
 	tox -v $(TOX_ENV_FLAG); \
 	status=$$?; \
 	coverage combine; \
-	coverage html --directory=coverage --omit="*tests*"; \
-	coverage report --fail-under=100 --show-missing; \
+	coverage html --directory=coverage; \
+	coverage report --fail-under=100 --show-missing --omit="*migrations*,*tests*"; \
 	coverage_code=$$?; \
 	xunitmerge nosetests-*.xml $(TEST_OUTPUT); \
 	if [ $$coverage_code -gt 0 ] ; then echo "Failed: Test coverage is not 100%."; fi; \

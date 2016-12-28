@@ -1,5 +1,5 @@
 include AUTHORS
-include LICENSE.rst
+include LICENSE
 include README.md
 include requirements*.txt
 recursive-include ledger/static *
