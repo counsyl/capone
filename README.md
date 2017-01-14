@@ -320,3 +320,56 @@ Traceback (most recent call last):
 You can see
 `ledger.tests.test_assert_transaction_in_ledgers_for_amounts_with_evidence` for
 more examples!
+
+
+# Local Development
+
+## Setup:
+
+First, you must set up your working environment:
+
+    make setup
+
+This will build a local virtualenv and all other requirements for local
+development.
+
+
+## Running Commands:
+
+### Makefile
+
+Runserver:
+
+    make runserver
+
+Shell(plus):
+
+    make shell
+
+
+### `manage.py` commands
+
+Note: before any of these instructions, you may have to run `make develop` to
+set up a postgres database for this app.
+
+First, activate a virtualenv so that your commands have access to the
+environment built by `make setup`:
+
+From the repository root, run:
+
+    source .venv/bin/activate
+
+Then you should be free to run
+
+    ./manage.py makemigrations --settings=ledger.tests.settings
+
+or any other `manage.py` command, even those in the Makefile.
+
+To run individual tests, use the following:
+
+    ./manage.py test --settings=ledger.tests.settings ledger.tests
+
+Notice the `--settings=ledger.tests.settings` argument: because this repository
+is a django sub-module, it wouldn't make sense for it to come with its own
+default `settings.py` file.  Instead, it ships with one used to run its tests.
+To use `manage.py`, we have to pass an import path to it explicitly.
