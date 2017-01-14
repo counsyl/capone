@@ -49,6 +49,13 @@ Please consult the double-entry bookkeeping Wikipedia article for a more
 in-depth explanation of the "accounting equation" and whether debits increase
 or decrease an account.
 
+Also, note that the default convention in `ledger` is to store debits as
+positive numbers and credits as negative numbers.  This convention is common
+but completely arbitrary.  If you want to switch the convention around, you can
+set `DEBITS_ARE_NEGATIVE` to `True` in your settings.py file.  By default, that
+constant doesn't need to be defined, and if it remains undefined, `ledger` will
+interpret its value as `False`.
+
 
 ### Faking Evidence Models
 
