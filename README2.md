@@ -19,13 +19,13 @@ Let's start by creating two common ledger types, "Accounts Receivable" and
 "Revenue", which usually have transactions between themselves:
 
 ```
-In [1]: from ledger.models import Ledger
+>>> from ledger.models import Ledger
 
-In [1]: ar = Ledger.objects.create(name='Accounts Receivable', number=1, increased_by_debits=True)
-Out[1]: <Ledger: Ledger Accounts Receivable>
+>>> ar = Ledger.objects.create(name='Accounts Receivable', number=1, increased_by_debits=True)
+<Ledger: Ledger Accounts Receivable>
 
-In [2]: revenue = Ledger.objects.create(name='Revenue', number=2, increased_by_debits=True)
-Out[2]: <Ledger: Ledger Revenue>
+>>> revenue = Ledger.objects.create(name='Revenue', number=2, increased_by_debits=True)
+<Ledger: Ledger Revenue>
 ```
 
 Both of these accounts are asset accounts, so they're both increased by debits.
@@ -37,13 +37,13 @@ Now let's create a fake order, so that we have some evidence for these ledger
 entries, and a fake user, so we have someone to blame for these transactions:
 
 ```
-In [3]: from ledger.tests.factories import OrderFactory
+>>> from ledger.tests.factories import OrderFactory
 
-In [4]: order = OrderFactory()
+>>> order = OrderFactory()
 
-In [5]: from ledger.tests.factories import UserFactory
+>>> from ledger.tests.factories import UserFactory
 
-In [6]: user = UserFactory()
+>>> user = UserFactory()
 ```
 
 
@@ -52,20 +52,13 @@ In [6]: user = UserFactory()
 We're now ready to create a simple transaction:
 
 ```
-In [7]: from ledger.api.actions import create_transaction
-
-In [8]: from ledger.api.actions import credit
-
-In [9]: from ledger.api.actions import debit
-
-In [10]: from decimal import Decimal
-
-In [11]: from ledger.models import LedgerEntry
-
-In [12]: txn = create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
-
-In [13]: txn.summary()
-Out[13]:
+>>> from ledger.api.actions import create_transaction
+>>> from ledger.api.actions import credit
+>>> from ledger.api.actions import debit
+>>> from decimal import Decimal
+>>> from ledger.models import LedgerEntry
+>>> txn = create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
+>>> txn.summary()
 {
     u'entries': [
         'LedgerEntry: $100.0000 in Accounts Receivable',
@@ -85,7 +78,7 @@ Note also that the value for the credit and debit is the same: $100.  If we
 tried to create a transaction with mismatching amounts, we would get an error:
 
 ```
-In [14]: create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(101)), ledger=revenue)])
+>>> create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(101)), ledger=revenue)])
 ---------------------------------------------------------------------------
 TransactionBalanceException               Traceback (most recent call last)
 
@@ -106,16 +99,16 @@ docstring for details.
 
 
 ```
-In [15]: from ledger.api.queries import get_balances_for_object
+>>> from ledger.api.queries import get_balances_for_object
 
-In [16]: get_balances_for_object(order)
-Out[16]: defaultdict(<function <lambda> at 0x7fd7ecfa96e0>, {<Ledger: Ledger Accounts Receivable>: Decimal('100.0000'), <Ledger: Ledger Revenue>: Decimal('-100.0000')})
+>>> get_balances_for_object(order)
+defaultdict(<function <lambda> at 0x7fd7ecfa96e0>, {<Ledger: Ledger Accounts Receivable>: Decimal('100.0000'), <Ledger: Ledger Revenue>: Decimal('-100.0000')})
 
-In [45]: ar.get_balance()
-Out[45]: Decimal('100.0000')
+>>> ar.get_balance()
+Decimal('100.0000')
 
-In [46]: revenue.get_balance()
-Out[46]: Decimal('-100.0000')
+>>> revenue.get_balance()
+Decimal('-100.0000')
 ```
 
 
@@ -124,10 +117,10 @@ Out[46]: Decimal('-100.0000')
 We can also void that transaction, which enters a transaction with the same evidence but with all values of the opposite sign:
 
 ```
-In [15]: void = void_transaction(txn, user)
-Out[15]: <Transaction: Transaction 9cd85014-c588-43ff-9532-a6fc2429069e>
+>>> void = void_transaction(txn, user)
+<Transaction: Transaction 9cd85014-c588-43ff-9532-a6fc2429069e>
 
-In [16]: void_transaction(txn, user)
+>>> void_transaction(txn, user)
 ---------------------------------------------------------------------------
 UnvoidableTransactionException            Traceback (most recent call last)
 
@@ -135,29 +128,28 @@ UnvoidableTransactionException            Traceback (most recent call last)
 
 UnvoidableTransactionException: Cannot void the same Transaction #(e0842107-3a5b-4487-9b86-d1a5d7ab77b4) more than once.
 
-In [17]: void.summary()
-Out[17]:
+>>> void.summary()
 {u'entries': ['LedgerEntry: $-100.0000 in Accounts Receivable',
   'LedgerEntry: $100.0000 in Revenue'],
  u'related_objects': ['TransactionRelatedObject: Order(id=1)']}
 
-In [18]: txn.voids
+>>> txn.voids
 
-In [19]: void.voids
-Out[19]: <Transaction: Transaction e0842107-3a5b-4487-9b86-d1a5d7ab77b4>
+>>> void.voids
+<Transaction: Transaction e0842107-3a5b-4487-9b86-d1a5d7ab77b4>
 ```
 
 Note the new balances for evidence objects and `Ledgers`:
 
 ```
-In [20]: get_balances_for_object(order)
-Out[20]: defaultdict(<function <lambda> at 0x7fd7ecfa9758>, {<Ledger: Ledger Accounts Receivable>: Decimal('0.0000'), <Ledger: Ledger Revenue>: Decimal('0.0000')})
+>>> get_balances_for_object(order)
+defaultdict(<function <lambda> at 0x7fd7ecfa9758>, {<Ledger: Ledger Accounts Receivable>: Decimal('0.0000'), <Ledger: Ledger Revenue>: Decimal('0.0000')})
 
-In [21]: ar.get_balance()
-Out[21]: Decimal('0.0000')
+>>> ar.get_balance()
+Decimal('0.0000')
 
-In [22]: revenue.get_balance()
-Out[22]: Decimal('0.0000')
+>>> revenue.get_balance()
+Decimal('0.0000')
 ```
 
 
@@ -171,21 +163,18 @@ transaction, such as "Reconciliation" and "Revenue Recognition".
 By default, `Transactions` are of a special, auto-generated "manual" type:
 
 ```
-In [23]: txn.type
-Out[23]: <TransactionType: Transaction Type Manual>
+>>> txn.type
+<TransactionType: Transaction Type Manual>
 ``` 
 
 but you can create and assign `TransactionTypes` when creating `Transactions`:
 
 ```
-In [24]: from ledger.models import TransactionType
-
-In [25]: new_type = TransactionType.objects.create(name='New type')
-
-In [26]: txn = create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)], type=new_type)
-
-In [27]: txn.type
-Out[27]: <TransactionType: Transaction Type New type>
+>>> from ledger.models import TransactionType
+>>> new_type = TransactionType.objects.create(name='New type')
+>>> txn = create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)], type=new_type)
+>>> txn.type
+<TransactionType: Transaction Type New type>
 ```
 
 
@@ -196,8 +185,7 @@ Out[27]: <TransactionType: Transaction Type New type>
 `Transaction` has a `summary` method to summarize the data on the many models that can link to it:
 
 ```
-In [62]: txn.summary()
-Out[62]:
+>>> txn.summary()
 {u'entries': ['LedgerEntry: $100.0000 in Accounts Receivable',
   'LedgerEntry: $-100.0000 in Revenue'],
  u'related_objects': ['TransactionRelatedObject: Order(id=1)']}
@@ -206,16 +194,16 @@ Out[62]:
 To get the balance for a `Ledger`, use its `get_balance` method:
 
 ```
-In [60]: ar.get_balance()
-Out[60]: Decimal('100.0000')
+>>> ar.get_balance()
+Decimal('100.0000')
 ```
 
 To efficiently get the balance of all transactions with a particular object as
 evidence, use `get_balances_for_objects`:
 
 ```
-In [61]: get_balances_for_object(order)
-Out[61]: defaultdict(<function <lambda> at 0x7fd7ecfa9230>, {<Ledger: Ledger Accounts Receivable>: Decimal('100.0000'), <Ledger: Ledger Revenue>: Decimal('-100.0000')})
+>>> get_balances_for_object(order)
+defaultdict(<function <lambda> at 0x7fd7ecfa9230>, {<Ledger: Ledger Accounts Receivable>: Decimal('100.0000'), <Ledger: Ledger Revenue>: Decimal('-100.0000')})
 ```
 
 `Transactions` are validated before they are created, but if you need to do
@@ -223,9 +211,8 @@ this manually for some reason, use the `validate_transaction` function, which
 has the same prototype as `create_transaction`:
 
 ```
-In [63]: validate_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)], type=new_type)
-
-In [64]: validate_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(101)), ledger=revenue)], type=new_type)
+>>> validate_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)], type=new_type)
+>>> validate_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(101)), ledger=revenue)], type=new_type)
 ---------------------------------------------------------------------------
 TransactionBalanceException               Traceback (most recent call last)
 <ipython-input-64-07b6d139bb37> in <module>()
@@ -248,19 +235,19 @@ Along with the query possibilities from the Django ORM, `ledger` provides
 related to certain models as evidence.
 
 ```
-In [66]: Transaction.objects.count()
-Out[66]: 5
+>>> Transaction.objects.count()
+5
 
-In [67]: Transaction.objects.filter_by_related_objects([order]).count()
-Out[67]: 5
+>>> Transaction.objects.filter_by_related_objects([order]).count()
+5
 
-In [68]: order2 = OrderFactory()
+>>> order2 = OrderFactory()
 
-In [69]: create_transaction(user, evidence=[order2], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
-Out[69]: <Transaction: Transaction 68a4adb1-b898-493f-b5f3-4fe7132dd28d>
+>>> create_transaction(user, evidence=[order2], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
+<Transaction: Transaction 68a4adb1-b898-493f-b5f3-4fe7132dd28d>
 
-In [70]: Transaction.objects.filter_by_related_objects([order2]).count()
-Out[70]: 1
+>>> Transaction.objects.filter_by_related_objects([order2]).count()
+1
 ```
 
 `filter_by_related_objects` is defined on a custom `QuerySet` provided for
@@ -268,14 +255,14 @@ Out[70]: 1
 calls:
 
 ```
-In [71]: create_transaction(user, evidence=[order2], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
-Out[71]: <Transaction: Transaction 92049712-4982-4718-bc71-a405b0d762ac>
+>>> create_transaction(user, evidence=[order2], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
+<Transaction: Transaction 92049712-4982-4718-bc71-a405b0d762ac>
 
-In [72]: Transaction.objects.filter_by_related_objects([order2]).count()
-Out[72]: 2
+>>> Transaction.objects.filter_by_related_objects([order2]).count()
+2
 
-In [73]: Transaction.objects.filter_by_related_objects([order2]).filter(transaction_id='92049712-4982-4718-bc71-a405b0d762ac').count()
-Out[73]: 1
+>>> Transaction.objects.filter_by_related_objects([order2]).filter(transaction_id='92049712-4982-4718-bc71-a405b0d762ac').count()
+1
 ```
 
 `filter_by_related_objects` takes an optional `match_type` argument, which is
