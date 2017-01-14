@@ -4,6 +4,8 @@
 all modern accounting) for Django with the ability to link each journal entry
 to zero or more other Django models as evidence for the transaction.
 
+## Introduction
+
 In double-entry bookkeeping, all recordable events (purchases, sales, equipment
 depreciation, bad debt markdowns, etc.) are tracked as "ledger entries" or
 "transactions" in "ledgers".  Each ledger entry is made up of one or more
