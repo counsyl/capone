@@ -4,7 +4,25 @@
 all modern accounting) for Django with the ability to link each journal entry
 to zero or more other Django models as evidence for the transaction.
 
-TODO: one sentence to define DEB and how Ledger embodies it
+In double-entry bookkeeping, all recordable events (purchases, sales, equipment
+depreciation, bad debt markdowns, etc.) are tracked as "ledger entries" or
+"transactions" in "ledgers".  Each ledger entry is made up of one or more
+"credit" and one or more "debit" entry.  For the sake of this brief example,
+you can think of credits as increasing the amount of money recorded in a ledger
+and a debit decreasing it.  With that, the central idea behind double-entry
+bookkeeping is that the sum of every ledger entry's debits must equal the sum
+of its credits.  `ledger` implements a double-entry bookkeeping system by
+providing an API for checking that all created entries satisfy this condition
+or rolling back the transaction if not.
+
+Where `ledger` transcends other double-entry bookkeeping Django libraries is
+that it allows any number of arbitrary objects to be attached, via generic
+foreign key, to a ledger entry as "evidence" for that transaction's having
+happened.  For instance, a transaction recording a bank deposit from an
+insurance company paying for several different medical tests, each at
+a different price, could be linked to the original `Order` objects that
+triggered the test.  `ledger` also provides an API for the efficient querying
+of ledger entries by evidence.
 
 For more information on the concept of double-entry bookkeeping itself, we
 recommend the Wikipedia article:
@@ -20,15 +38,16 @@ Let's start by creating two common ledger types, "Accounts Receivable" and
 
 ```
 >>> from ledger.models import Ledger
-
 >>> ar = Ledger.objects.create(name='Accounts Receivable', number=1, increased_by_debits=True)
 <Ledger: Ledger Accounts Receivable>
-
 >>> revenue = Ledger.objects.create(name='Revenue', number=2, increased_by_debits=True)
 <Ledger: Ledger Revenue>
 ```
 
 Both of these accounts are asset accounts, so they're both increased by debits.
+Please consult the double-entry bookkeeping Wikipedia article for a more
+in-depth explanation of the "accounting equation" and whether debits increase
+or decrease an account.
 
 
 ### Faking Evidence Models
@@ -38,11 +57,8 @@ entries, and a fake user, so we have someone to blame for these transactions:
 
 ```
 >>> from ledger.tests.factories import OrderFactory
-
 >>> order = OrderFactory()
-
 >>> from ledger.tests.factories import UserFactory
-
 >>> user = UserFactory()
 ```
 
@@ -95,7 +111,9 @@ docstring for details.
 
 ### Ledger Balances
 
-`ledger` keeps track of the balance in each ledger for each evidence object in a denormalized and efficient way.  Let's use this behavior to get the balances of our ledgers as well as the balances in each ledger for our `order` object:
+`ledger` keeps track of the balance in each ledger for each evidence object in
+a denormalized and efficient way.  Let's use this behavior to get the balances
+of our ledgers as well as the balances in each ledger for our `order` object:
 
 
 ```
@@ -114,7 +132,8 @@ Decimal('-100.0000')
 
 ### Voiding Transactions
 
-We can also void that transaction, which enters a transaction with the same evidence but with all values of the opposite sign:
+We can also void that transaction, which enters a transaction with the same
+evidence but with all values of the opposite sign:
 
 ```
 >>> void = void_transaction(txn, user)
@@ -182,7 +201,8 @@ but you can create and assign `TransactionTypes` when creating `Transactions`:
 
 #### Getting Balances
 
-`Transaction` has a `summary` method to summarize the data on the many models that can link to it:
+`Transaction` has a `summary` method to summarize the data on the many models
+that can link to it:
 
 ```
 >>> txn.summary()
