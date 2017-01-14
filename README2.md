@@ -4,8 +4,14 @@
 all modern accounting) for Django with the ability to link each journal entry
 to zero or more other Django models as evidence for the transaction.
 
+TODO: one sentence to define DEB and how Ledger embodies it
 
-## Quick Start
+For more information on the concept of double-entry bookkeeping itself, we
+recommend the Wikipedia article:
+https://en.wikipedia.org/wiki/Double-entry_bookkeeping_system.
+
+
+## Usage
 
 ### Creating Ledgers
 
@@ -288,56 +294,22 @@ one `Transaction` with the ledger amounts, evidence, and other fields on ledger
 provided to the method.
 
 ```
-
+>>> create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
+<Transaction: Transaction b3e73f1d-6b10-4597-b19b-84800839d5b3>
+>>> with assert_raises(Transaction.DoesNotExist):
+...     assert_transaction_in_ledgers_for_amounts_with_evidence(ledger_amount_pairs=[(revenue.name, credit(Decimal(100))), (ar.name, debit(Decimal(100)))], evidence=[])
+...
+>>> assert_transaction_in_ledgers_for_amounts_with_evidence(ledger_amount_pairs=[(revenue.name, credit(Decimal(100))), (ar.name, debit(Decimal(100)))], evidence=[order])
+>>> with assert_raises(Transaction.DoesNotExist):
+...     assert_transaction_in_ledgers_for_amounts_with_evidence(ledger_amount_pairs=[(revenue.name, credit(Decimal(100))), (ar.name, debit(Decimal(100)))], evidence=[order])
+...
+Traceback (most recent call last):
+  File "<console>", line 2, in <module>
+    File "/usr/lib/python2.7/unittest/case.py", line 116, in __exit__
+        "{0} not raised".format(exc_name))
+        AssertionError: DoesNotExist not raised
 ```
 
-See `ledger.tests.test_assert_transaction_in_ledgers_for_amounts_with_evidence`
-for more examples.
-
-
-## Introduction
-
-what is it?  mention double-entry, the fact that this library allows you to add "evidence" to transactions, and that it has a rich query API
-
-give a quick overview of what's in this document
-    -   why you would want to keep ledgers
-    -   double entry, history and practice
-    -   how to use leder for basic stuff
-    -   an example on reconciliation, a more complex operation that uses evidence
-
-## Principles
-
-some of these might become sections in their own right
-
--   history of double entry
--   why would you use double entry
--   accounting equation
--   each ledger has a "type": increased or decreased by debits
--   sign conventions of credits and debits (or you can keep them in two columns)
--   implementation detail: it would be more agnostic to hav a "credit/debit" flag, but harder to do sums
--   non-code example of buying something
--   non-code exampleof selling something
--   how each of these ideas is implemented in code
-
--   somehow you'll have to explain "recognizing revenue" in here, i think, or our examples won't make sense.
-
-
-## Examples
-
-### Record-Keeping Examples
-
--   code example of buying something
--   code exampleof selling something
-
-now, let's get into some of the more complex bookkeeping schemes we use at counsyl
-
--   credit card transactions with fees, etc.
--   reconciling bulk payments from insurance companies into their constituate payments
--   monthly closes and carry-over balances
-
-### Query Examples
-
--   getting full ledger totals for an item
--   implementation detail: explain LedgerBalance
--   getting unreconciled samples
--   writing tests with `assert_ledger_entries`
+You can see
+`ledger.tests.test_assert_transaction_in_ledgers_for_amounts_with_evidence` for
+more examples!
