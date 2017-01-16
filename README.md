@@ -19,7 +19,7 @@ or rolling back the transaction if not.
 
 Where `ledger` transcends other double-entry bookkeeping Django libraries is
 that it allows any number of arbitrary objects to be attached, via generic
-foreign key, to a ledger entry as "evidence" for that transaction's having
+foreign keys, to a ledger entry as "evidence" for that transaction's having
 happened.  For instance, a transaction recording a bank deposit from an
 insurance company paying for several different medical tests, each at
 a different price, could be linked to the original `Order` objects that
