@@ -84,6 +84,23 @@ default `settings.py` file.  Instead, it ships with one used to run its tests.
 To use `manage.py`, we have to pass an import path to it explicitly.
 
 
+## Models
+
+Let's introduce the models provided by `ledger` and how they relate to one
+another.
+
+### Accounting Models
+#### Ledger
+#### Transaction
+#### TransactionType
+#### LedgerEntry
+### Evidence Models
+#### TransactionRelatedObject
+#### MatchType
+### Balance Models
+#### LedgerBalance
+
+
 ## Usage
 
 ### Creating Ledgers
