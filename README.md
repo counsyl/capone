@@ -90,7 +90,7 @@ Let's introduce the models provided by `ledger` and how they relate to one
 another.
 
 Note that all objects in this library, have `created_at` and `modified_at`
-fields that are `auto_now_add` `and auto_now`, respectively.
+fields that are `auto_now_add` and `auto_now`, respectively.
 
 ### Accounting Models
 
