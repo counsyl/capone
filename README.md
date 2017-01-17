@@ -91,6 +91,50 @@ another.
 
 ### Accounting Models
 #### Ledger
+
+A Ledger is the top-most organization of information in double-entry
+bookkeeping as well as the `ledger` app.  Most ledgers have names familiar to
+those with any knowledge of accounting, such as "revenue" or "accounts
+receivable".
+
+Ledgers are synonymous with the accounting concept of an Account, so you may
+see references to Accounts in this documentation or elsewhere in the accounting
+literature.
+
+As a data structure, a Ledger in this library is little more than a name,
+description, and unique number: LedgerEntries (see below) point to a Ledger to
+represent their being "in" a Ledger.  Transactions (see below also) that are
+"between" two ledgers have a LedgerEntry pointing to one Ledger and another
+LedgerEntry pointing to another Ledger.
+
+Ledger, like all other objects in this library, have `created_at` and
+`modified_at` fields that are `auto_now_add` `and auto_now`, respectively.
+
+##### `increased_by_debits`
+
+Ledger also has the sometimes confusing field `increased_by_debits`.  All
+Ledgers are of one of two types: either debits increase the value of an account
+or credits do.  By convention, asset and expense accounts are of the former
+type, while liabilities, equity, and revenue are of the latter: in short, an
+increase to an "asset"-type account is a debit, and an increase to
+a "liability" or "equity"-type account is a credit.  To put it another way, the
+accounting equation says (by definition) that "assets == liabilities + owner
+equity": terms on the right of the equals sign are increased by debits, and
+terms on the left of the equals sign are decreased by debits.  We can therefore
+use the accounting equation to know whether to use debits or credits to model
+an increase in a ledger.
+
+So because debits and credits mean different things in different types of
+accounts, this is how we can have a transaction with an "equal and opposite"
+credit and debit pair of the same dollar amount that represents a net increase
+in the value of a company: a debit in Accounts Receivable and a credit in
+Revenue increases both accounts while satisfying the accounting equation.
+
+Currently, field `increased_by_debits` is not used by the code in `ledger` but
+is provided as a convenience to users who might wish to incorporate this
+information into an external report or calculation.
+
+
 #### Transaction
 #### TransactionType
 #### LedgerEntry
@@ -263,7 +307,7 @@ By default, `Transactions` are of a special, auto-generated "manual" type:
 ```
 >>> txn.type
 <TransactionType: Transaction Type Manual>
-``` 
+```
 
 but you can create and assign `TransactionTypes` when creating `Transactions`:
 
