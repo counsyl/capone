@@ -205,19 +205,43 @@ referring to a single `LedgerEntry`.
 
 ### Evidence Models
 
-The models in this section are those that deal with adding evidence to
-`Transactions` and searching over that evidence.
+The models in this section deal with adding evidence to `Transactions` and
+searching over that evidence.
 
 
 #### TransactionRelatedObject
-#### MatchType
-### Balance Models
 
-The model in this section deals with keeping a denormalized sum over all
-Ledgers for each evidence object for easier querying.
+A `TransactionRelatedObject` (`TRO`) models the "evidence" relationship that
+makes the `ledger` library unique.  `TROs` link a `Transaction` to an arbitrary
+object in the larger app that this library is used in using a generic foreign
+key.  One `TRO` links one `Transaction` and one arbitrary object, so we make as
+many `TROs` as we want pieces of evidence.  There are several convenience
+methods in `ledger.api.queries` for efficiently querying over `Transactions`
+based on evidence and evidence objects based on their `Transactions`.
 
 
 #### LedgerBalance
+
+A `LedgerBalance` is similar to a `TRO` in that it allows linking `ledger`
+objects with objects from the wider app the library is used in via generic
+foreign keys.  The purpose of `LedgerBalance` is to denormalize for more
+efficient querying the current sum of debits and credits for an object in
+a specific Ledger.  Therefore, there is only one `LedgerBalance` for each
+`(ledger, related_object)` tuple.
+
+You should never have to manually create or edit a `LedgerBalance`: doing so,
+as well as keeping them up-to-date, is handeled by `ledger` internals.  Of
+course, deleting them is verboten.
+
+The purpose of `LedgerBalance` can be best demonstrated by considering the
+deceiptively simple query, "how many Orders (a non-`ledger` model we presumably
+created in the app where we include `ledger` as a library) have an Accounts
+Receivable balance greater than zero?"  One would have to calculate the ledger
+balance over literally the product of all ledgers and all non-`ledger` objects
+in the database, and then filter them for all those with balances above zero,
+which is obviously a too-expensive query.  By keeping track of the per-`Ledger`
+balance for each object used as evidence in a `Transaction`, we can much more
+easily make these queries with very little overhead.
 
 
 ## Usage
