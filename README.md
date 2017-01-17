@@ -102,25 +102,25 @@ credits and debits, and any metadata one wishes to store with these objects.
 
 #### Ledger
 
-A Ledger is the top-most organization of information in double-entry
+A `Ledger` is the top-most organization of information in double-entry
 bookkeeping as well as the `ledger` app.  Most ledgers have names familiar to
 those with any knowledge of accounting, such as "revenue" or "accounts
 receivable".
 
-Ledgers are synonymous with the accounting concept of an Account, so you may
-see references to Accounts in this documentation or elsewhere in the accounting
-literature.
+`Ledgers` are synonymous with the accounting concept of an "account", so you
+may see references to Accounts in this documentation or elsewhere in the
+accounting literature.
 
-As a data structure, a Ledger in this library is little more than a name,
-description, and unique number: LedgerEntries (see below) point to a Ledger to
-represent their being "in" a Ledger.  Transactions (see below also) that are
-"between" two ledgers have a LedgerEntry pointing to one Ledger and another
-LedgerEntry pointing to another Ledger.
+As a data structure, a `Ledger` in this library is little more than a name,
+description, and unique number: `LedgerEntries` (see below) point to a `Ledger`
+to represent their being "in" a `Ledger`.  `Transactions` (see below also) that
+are "between" two `Ledgers` have a `LedgerEntry` pointing to one `Ledger` and
+another `LedgerEntry` pointing to another `Ledger`.
 
 ##### `increased_by_debits`
 
-Ledger also has the sometimes confusing field `increased_by_debits`.  All
-Ledgers are of one of two types: either debits increase the value of an account
+`Ledger` also has the sometimes confusing field `increased_by_debits`.  All
+`Ledgers` are of one of two types: either debits increase the value of an account
 or credits do.  By convention, asset and expense accounts are of the former
 type, while liabilities, equity, and revenue are of the latter: in short, an
 increase to an "asset"-type account is a debit, and an increase to
@@ -166,27 +166,28 @@ normal operation.
 
 `Transaction` also has the following fields to provide metadata for each transaction:
 
--   `created_by`:  The user who created this transaction.
+-   `created_by`:  The user who created this `Transaction`.
 -   `notes`: A free-form text field for adding to a `Transaction` any
     information not expressed in the numerous metadata fields.
--   `posted_timestamp`:  The time a transaction should be considered valid
+-   `posted_timestamp`:  The time a `Transaction` should be considered valid
     from.  `ledger.api.actions.create_transaction` automatically deals with
     filling in this value with the current time.   You can change this value to
     post-date `Transactions` because `created_at` will always represent the
     true object creation time.
--   `transaction_id`: A UUID for the transaction, useful for unambiguously
+-   `transaction_id`: A UUID for the `Transaction`, useful for unambiguously
     referring to a `Transaction` without using primary keys or other database
     internals.
--   `type`:  A user-defined type for the transaction (see `TransactionType`
+-   `type`:  A user-defined type for the `Transaction` (see `TransactionType`
     below).
 
 
 #### TransactionType
 
-A `TransactionType` is a user-defined, human-readable "type" for a transaction,
-useful for sorting, aggregating, or annotating `Transactions`.  The default
-`TransactionType` is `MANUAL`, which is created automatically by the library,
-but you can define others, say for bots or certain classes of users.
+A `TransactionType` is a user-defined, human-readable "type" for
+a `Transaction`, useful for sorting, aggregating, or annotating `Transactions`.
+The default `TransactionType` is `MANUAL`, which is created automatically by
+the library, but you can define others, say for bots or certain classes of
+users.
 
 Currently, `TransactionType` is not used by the code in `ledger` but is
 provided as a convenience to users who might wish to incorporate this
@@ -195,8 +196,8 @@ information into an external report or calculation.
 
 #### LedgerEntry
 
-LedgerEntries represent single debit or credit entries in a single Ledger.
-LedgerEntries are grouped together into Transactions (see above) with the
+`LedgerEntries` represent single debit or credit entries in a single `Ledger`.
+`LedgerEntries` are grouped together into `Transactions` (see above) with the
 constraint that the `LedgerEntries'` sum of credits and debits must be equal.
 
 `LedgerEntries` have a field `entry_id`, which is a UUID for unambiguously
@@ -239,9 +240,9 @@ created in the app where we include `ledger` as a library) have an Accounts
 Receivable balance greater than zero?"  One would have to calculate the ledger
 balance over literally the product of all ledgers and all non-`ledger` objects
 in the database, and then filter them for all those with balances above zero,
-which is obviously a too-expensive query.  By keeping track of the per-`Ledger`
-balance for each object used as evidence in a `Transaction`, we can much more
-easily make these queries with very little overhead.
+to answer this question, which is obviously too expensive.  By keeping track of
+the per-`Ledger` balance for each object used as evidence in a `Transaction`,
+we can much more easily make these queries with very little overhead.
 
 
 ## Usage
