@@ -93,6 +93,13 @@ Note that all objects in this library, have `created_at` and `modified_at`
 fields that are `auto_now_add` `and auto_now`, respectively.
 
 ### Accounting Models
+
+The models in this section are those that correspond most to well known
+accounting concepts, i.e. those involved in keeping accounts using the
+principles of double-entry bookkeeping.  They model ledgers, journal entries,
+credits and debits, and any metadata one wishes to store with these objects.
+
+
 #### Ledger
 
 A Ledger is the top-most organization of information in double-entry
@@ -197,9 +204,19 @@ referring to a single `LedgerEntry`.
 
 
 ### Evidence Models
+
+The models in this section are those that deal with adding evidence to
+`Transactions` and searching over that evidence.
+
+
 #### TransactionRelatedObject
 #### MatchType
 ### Balance Models
+
+The model in this section deals with keeping a denormalized sum over all
+Ledgers for each evidence object for easier querying.
+
+
 #### LedgerBalance
 
 
