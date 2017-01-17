@@ -6,16 +6,16 @@ to zero or more other Django models as evidence for the transaction.
 
 ## Introduction
 
-In double-entry bookkeeping, all recordable events (purchases, sales, equipment
-depreciation, bad debt markdowns, etc.) are tracked as "ledger entries" or
-"transactions" in "ledgers".  Each ledger entry is made up of one or more
-"credit" and one or more "debit" entries.  For the sake of this brief example,
-you can think of credits as increasing the amount of money recorded in a ledger
-and a debit decreasing it.  With that, the central idea behind double-entry
-bookkeeping is that the sum of every ledger entry's debits must equal the sum
-of its credits.  `ledger` implements a double-entry bookkeeping system by
-providing an API for checking that all created entries satisfy this condition
-or rolling back the transaction if not.
+In double-entry bookkeeping (DEB), all recordable events (purchases, sales,
+equipment depreciation, bad debt markdowns, etc.) are tracked as "ledger
+entries" or "transactions" in "ledgers".  Each ledger entry is made up of one
+or more "credit" and one or more "debit" entries.  For the sake of this brief
+example, you can think of credits as increasing the amount of money recorded in
+a ledger and a debit decreasing it.  With that, the central idea behind
+double-entry bookkeeping is that the sum of every ledger entry's debits must
+equal the sum of its credits.  `ledger` implements a double-entry bookkeeping
+system by providing an API for checking that all created entries satisfy this
+condition or rolling back the transaction if not.
 
 Where `ledger` transcends other double-entry bookkeeping Django libraries is
 that it allows any number of arbitrary objects to be attached, via generic
