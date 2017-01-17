@@ -187,6 +187,15 @@ information into an external report or calculation.
 
 
 #### LedgerEntry
+
+LedgerEntries represent single debit or credit entries in a single Ledger.
+LedgerEntries are grouped together into Transactions (see above) with the
+constraint that the `LedgerEntries'` sum of credits and debits must be equal.
+
+`LedgerEntries` have a field `entry_id`, which is a UUID for unambiguously
+referring to a single `LedgerEntry`.
+
+
 ### Evidence Models
 #### TransactionRelatedObject
 #### MatchType
