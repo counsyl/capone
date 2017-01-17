@@ -89,6 +89,9 @@ To use `manage.py`, we have to pass an import path to it explicitly.
 Let's introduce the models provided by `ledger` and how they relate to one
 another.
 
+Note that all objects in this library, have `created_at` and `modified_at`
+fields that are `auto_now_add` `and auto_now`, respectively.
+
 ### Accounting Models
 #### Ledger
 
@@ -106,9 +109,6 @@ description, and unique number: LedgerEntries (see below) point to a Ledger to
 represent their being "in" a Ledger.  Transactions (see below also) that are
 "between" two ledgers have a LedgerEntry pointing to one Ledger and another
 LedgerEntry pointing to another Ledger.
-
-Ledger, like all other objects in this library, have `created_at` and
-`modified_at` fields that are `auto_now_add` `and auto_now`, respectively.
 
 ##### `increased_by_debits`
 
