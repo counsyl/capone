@@ -136,6 +136,44 @@ information into an external report or calculation.
 
 
 #### Transaction
+
+A `Transaction` is a record of any financial transaction that you'd like to
+record.  It is a collection of debits and credits whose sums equal one another.
+Practially all models in `ledger` link to or through `Transaction`: in a sense
+you could say it's the main model provided by `ledger`.  A `Transaction` can
+sometimes be referred to as a "journal entry" elsewhere.
+
+`Transaction` records debits and credits by linking to `LedgerEntries`, which
+include dollar amounts of the proper sign, and those `LedgerEntries` themselves
+point to `Ledger`.  In other words, `Transaction` and `Ledger` are linked in
+a many-to-many fashion by going through `LedgerEntry` as a custom through
+model.
+
+`Transactions` should never be deleted.  Instead, a new `Transaction` with
+debits and credits swapped should be created using
+`ledger.api.actions.void_transaction` to negate the effect of the `Transaction`
+you'd like to remove.  The `voids` field on the new `Transaction` will
+automatically be filled in with the old `Transaction` you wish to remove.  By
+this method, you'll never have to delete data from your system as a part of
+normal operation.
+
+`Transaction` also has the following fields to provide metadata for each transaction:
+
+-   `created_by`:  The user who created this transaction.
+-   `notes`: A free-form text field for adding to a `Transaction` any
+    information not expressed in the numerous metadata fields.
+-   `posted_timestamp`:  The time a transaction should be considered valid
+    from.  `ledger.api.actions.create_transaction` automatically deals with
+    filling in this value with the current time.   You can change this value to
+    post-date `Transactions` because `created_at` will always represent the
+    true object creation time.
+-   `transaction_id`: A UUID for the transaction, useful for unambiguously
+    referring to a `Transaction` without using primary keys or other database
+    internals.
+-   `type`:  A user-defined type for the transaction (see `TransactionType`
+    below).
+
+
 #### TransactionType
 
 A `TransactionType` is a user-defined, human-readable "type" for a transaction,
