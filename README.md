@@ -137,6 +137,17 @@ information into an external report or calculation.
 
 #### Transaction
 #### TransactionType
+
+A `TransactionType` is a user-defined, human-readable "type" for a transaction,
+useful for sorting, aggregating, or annotating `Transactions`.  The default
+`TransactionType` is `MANUAL`, which is created automatically by the library,
+but you can define others, say for bots or certain classes of users.
+
+Currently, `TransactionType` is not used by the code in `ledger` but is
+provided as a convenience to users who might wish to incorporate this
+information into an external report or calculation.
+
+
 #### LedgerEntry
 ### Evidence Models
 #### TransactionRelatedObject
