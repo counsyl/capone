@@ -1,272 +1,39 @@
 # Ledger
 
-The concepts behind ledgers and double entry bookkeeping are several hundred
-years old, so there must be something to it. At its core, the idea is simple:
+`Ledger` is a library that provides double-entry bookkeeping (the foundation of
+all modern accounting) for Django with the ability to link each journal entry
+to zero or more other Django models as evidence for the transaction.
 
-1. Maintain a ledger with three primary columns
-    1. Accounts Receivable (AR)
-    2. Revenue
-    3. Cash
-2. Break each column into Debits and Credits
-3. Any time you credit one account, you must debit one or more others such that
-they cancel out, or "balance"
+## Introduction
 
-That's pretty much all there is to it.
+In double-entry bookkeeping (DEB), all recordable events (purchases, sales,
+equipment depreciation, bad debt markdowns, etc.) are tracked as "ledger
+entries" or "transactions" in "ledgers".  Each ledger entry is made up of one
+or more "credit" and one or more "debit" entries.  For the sake of this brief
+example, you can think of credits as increasing the amount of money recorded in
+a ledger and a debit decreasing it.  With that, the central idea behind
+double-entry bookkeeping is that the sum of every ledger entry's debits must
+equal the sum of its credits.  `ledger` implements a double-entry bookkeeping
+system by providing an API for checking that all created entries satisfy this
+condition or rolling back the transaction if not.
 
-## A simple example
+Where `ledger` transcends other double-entry bookkeeping Django libraries is
+that it allows any number of arbitrary objects to be attached, via generic
+foreign keys, to a ledger entry as "evidence" for that transaction's having
+happened.  For instance, a transaction recording a bank deposit from an
+insurance company paying for several different medical tests, each at
+a different price, could be linked to the original `Order` objects that
+triggered the test.  `ledger` also provides an API for the efficient querying
+of ledger entries by evidence.
 
-Say we run ACME, Inc and we have a customer, Wile E. At a low level of detail
-we actually have a new ledger for every customer. In paper Ledgers this is
-often just condensed down into a single ledger, but we don't have the
-constraints of paper!)
-
-Note that the default convention in `ledger` is to store debits as positive
-numbers and credits as negative numbers.  This convention is common but
-completely arbitrary.  If you want to switch the convention around, you can set
-`DEBITS_ARE_NEGATIVE` to `True` in your settings.py file.  By default, that
-constant doesn't need to be defined, and if it remains undefined, `ledger` will
-interpret its value as `False`.
-
-### Charges
-Let's record a charge of $900 to Wile E.
-
-```python
-# Imports and setup
-from django.contrib.auth.models import User
-from counsyl.product.order.models import Product
-from ledger.api.actions import Charge
-from ledger.api.actions import TransactionContext
-
-wilee = User.objects.latest('id')
-product = Product.objects.earliest('id')
-
-# Business logic
-with TransactionContext(product, wilee) as txn:
-    txn.record(Charge(wilee, 900))
-```
-
-Here you see the two important concepts of the Ledger system:
-TransactionContexts and Actions. TransactionContexts
-are used to wrap a series of Actions into a single Transaction. They also
-perform necessary validation to ensure that credits and debits balance. In
-this example, `Charge` is the action we performed. It records a charge against
-wilee for $900.
-
-If we were to have written this on paper, you would see that this was actually
-recorded as a debit to AR and a credit to Revenue:
-
-<table>
-<tr>
-  <td>&nbsp;</td>
-  <td colspan=2>AR</td>
-  <td colspan=2>Rev</td>
-  <td colspan=2>Cash</td>
-</tr>
-<tr>
-  <td>&nbsp;</td>
-  <td>D</td>
-  <td>C</td>
-  <td>D</td>
-  <td>C</td>
-  <td>D</td>
-  <td>C</td>
-</tr>
-<tr>
-  <td>Charge</td>
-  <td>900</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-  <td>900</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-</tr>
-</table>
-
-We can also see that this transaction balances because the sum of credits ==
-the sum of debits.
-
-### Invoices
-
-We can send Wile E. an Invoice whenever we want.
-
-```python
-from ledger.api.invoice import Invoice
-
-invoice = Invoice(wilee)
-print(invoice.amount)
-# Decimal('900.0000')
-```
-
-An invoice tells you the amount a given entity owes and also gives you a
-list of LedgerEntries that are relevant to the Invoice.
-
-```python
-print(invoice.get_ledger_entries())
-# [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>]
-```
-
-The `get_ledger_entries` method accepts a parameter `exclude_voids` that, when
-True, returns only those entries which haven't been voided and, when True,
-returns all Ledger Entries.
-
-```python
-with TransactionContext(product, wilee) as txn:
-    txn.record(Charge(wilee, 100))
-
-invoice = Invoice(wilee)
-print(invoice.get_ledger_entries())
-# [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>, <LedgerEntry: LedgerEntry (6e6a903640be44b9b79fda2e4cdc313d) Charge for $100.0000>]
-
-# Let's undo that charge
-from ledger.api.actions import void_transaction
-void_transaction(txn.transaction, wilee)
-invoice = Invoice(wilee)
-print(invoice.get_ledger_entries())
-# [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>]
-print(invoice.get_ledger_entries(exclude_voids=False))
-# [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>, <LedgerEntry: LedgerEntry (6e6a903640be44b9b79fda2e4cdc313d) Charge for $100.0000>, <LedgerEntry: LedgerEntry (c7ae70b6acda417a98373fe55645a2e0) VoidTransaction for $-100.0000>]
-```
-
-### Payments
-Wile E. gets the invoice and send us the equivalent amount in Bitcoin, which
-we immediately sell. Due to Chinese speculation the value of Bitcoin went
-through the roof in the time if took his transaction to clear. We cash out
-$1000 worth of bitcoin into USD. Now we owe Wile E. a refund!
-
-```python
-from ledger.api.actions import Payment
-with TransactionContext(product, wilee) as txn:
-    txn.record(Payment(wilee, 1000))
-```
-
-Behind the scenes a `Payment` credits AR and debits Cash.
-
-<table>
-<tr>
-  <td>&nbsp;</td>
-  <td colspan=2>AR</td>
-  <td colspan=2>Rev</td>
-  <td colspan=2>Cash</td>
-</tr>
-<tr>
-  <td>&nbsp;</td>
-  <td>D</td>
-  <td>C</td>
-  <td>D</td>
-  <td>C</td>
-  <td>D</td>
-  <td>C</td>
-</tr>
-<tr>
-  <td>Charge</td>
-  <td>900</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-  <td>900</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-</tr>
-<tr>
-  <td>Payment</td>
-  <td>&nbsp;</td>
-  <td>1000</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-  <td>1000</td>
-  <td>&nbsp;</td>
-</tr>
-</table>
-
-Here again the credits == debits.
-
-### Refunds
-How do we know that we now owe Wile E a refund? Simple - the sum of credits
-to AR are larger than the sum of debits to AR. If we generate an invoice,
-we see that it's negative indicating we owe a refund:
-
-```python
-invoice = Invoice(wilee)
-print(invoice.amount)
-# Decimal('-100.0000')
-print(invoice.get_ledger_entries())
-# [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>, <LedgerEntry: LedgerEntry (1757f16763154292a1285498c87e4532) Payment for $-1000.0000>]
-```
-
-Recording a refund is easy
-
-```python
-from ledger.api.actions import Refund
-with TransactionContext(product, wilee) as txn:
-    txn.record(Refund(wilee, -1 * invoice.amount))
-
-invoice = Invoice(wilee)
-print(invoice.amount)
-# Decimal('0.0000')
-print(invoice.get_ledger_entries())
-# [<LedgerEntry: LedgerEntry (a076c129165449ce82f5344aa7b24b56) Charge for $900.0000>, <LedgerEntry: LedgerEntry (1757f16763154292a1285498c87e4532) Payment for $-1000.0000>, <LedgerEntry: LedgerEntry (565d9318594840b69690fdee11f48679) Refund for $100.0000>]
-```
-
-Refunds credit Cash and debit AR.
-
-<table>
-<tr>
-  <td>&nbsp;</td>
-  <td colspan=2>AR</td>
-  <td colspan=2>Rev</td>
-  <td colspan=2>Cash</td>
-</tr>
-<tr>
-  <td>&nbsp;</td>
-  <td>D</td>
-  <td>C</td>
-  <td>D</td>
-  <td>C</td>
-  <td>D</td>
-  <td>C</td>
-</tr>
-<tr>
-  <td>Charge</td>
-  <td>900</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-  <td>900</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-</tr>
-<tr>
-  <td>Payment</td>
-  <td>&nbsp;</td>
-  <td>1000</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-  <td>1000</td>
-  <td>&nbsp;</td>
-</tr>
-<tr>
-  <td>Refund</td>
-  <td>100</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-  <td>&nbsp;</td>
-  <td>100</td>
-</tr>
-<tr>
-  <td>Sum</td>
-  <td colspan=2>0</td>
-  <td colspan=2>-900</td>
-  <td colspan=2>900</td>
-</tr>
-</table>
-
-Note that, internally, credits are negative and debits are positive. Yes, it's
-weird to think of Revenue being recorded as a negative number, but just
-remember there is no spoon. Also note that the Sums at the end still balance.
+For more information on the concept of double-entry bookkeeping itself, we
+recommend the Wikipedia article:
+https://en.wikipedia.org/wiki/Double-entry_bookkeeping_system.
 
 
-# Local Development
+## Local Development
 
-## Setup:
+### Setup:
 
 First, you must set up your working environment:
 
@@ -276,9 +43,9 @@ This will build a local virtualenv and all other requirements for local
 development.
 
 
-## Running Commands:
+### Running Commands:
 
-### Makefile
+#### Makefile
 
 Runserver:
 
@@ -289,7 +56,7 @@ Shell(plus):
     make shell
 
 
-### `manage.py` commands
+#### `manage.py` commands
 
 Note: before any of these instructions, you may have to run `make develop` to
 set up a postgres database for this app.
@@ -317,164 +84,462 @@ default `settings.py` file.  Instead, it ships with one used to run its tests.
 To use `manage.py`, we have to pass an import path to it explicitly.
 
 
-# API
+## Models
 
-This common setup is necessary to run the following examples:
+Let's introduce the models provided by `ledger` and how they relate to one
+another.
 
-```python
-# Imports and setup
-from datetime import datetime
-from datetime import timedelta
-from django.contrib.auth.models import User
-from counsyl.product.order.models import Product
-from ledger.api.actions import Charge
-from ledger.api.actions import Payment
-from ledger.api.actions import Refund
-from ledger.api.actions import TransactionContext
-from ledger.api.actions import TransferAmount
-from ledger.api.actions import WriteDown
-from ledger.api.actions import void_transaction
+Note that all objects in this library, have `created_at` and `modified_at`
+fields that are `auto_now_add` and `auto_now`, respectively.
 
-entity = User.objects.earliest('?')
-user = User.objects.latest('id')
-product = Product.objects.latest('id')
+### Accounting Models
+
+The models in this section are those that correspond most to well known
+accounting concepts, i.e. those involved in keeping accounts using the
+principles of double-entry bookkeeping.  They model ledgers, journal entries,
+credits and debits, and any metadata one wishes to store with these objects.
+
+
+#### Ledger
+
+A `Ledger` is the top-most organization of information in double-entry
+bookkeeping as well as the `ledger` app.  Most ledgers have names familiar to
+those with any knowledge of accounting, such as "revenue" or "accounts
+receivable".
+
+`Ledgers` are synonymous with the accounting concept of an "account", so you
+may see references to Accounts in this documentation or elsewhere in the
+accounting literature.
+
+As a data structure, a `Ledger` in this library is little more than a name,
+description, and unique number: `LedgerEntries` (see below) point to a `Ledger`
+to represent their being "in" a `Ledger`.  `Transactions` (see below also) that
+are "between" two `Ledgers` have a `LedgerEntry` pointing to one `Ledger` and
+another `LedgerEntry` pointing to another `Ledger`.
+
+##### `increased_by_debits`
+
+`Ledger` also has the sometimes confusing field `increased_by_debits`.  All
+`Ledgers` are of one of two types: either debits increase the value of an account
+or credits do.  By convention, asset and expense accounts are of the former
+type, while liabilities, equity, and revenue are of the latter: in short, an
+increase to an "asset"-type account is a debit, and an increase to
+a "liability" or "equity"-type account is a credit.  To put it another way, the
+accounting equation says (by definition) that "assets == liabilities + owner
+equity": terms on the right of the equals sign are increased by debits, and
+terms on the left of the equals sign are decreased by debits.  We can therefore
+use the accounting equation to know whether to use debits or credits to model
+an increase in a ledger.
+
+So because debits and credits mean different things in different types of
+accounts, this is how we can have a transaction with an "equal and opposite"
+credit and debit pair of the same dollar amount that represents a net increase
+in the value of a company: a debit in Accounts Receivable and a credit in
+Revenue increases both accounts while satisfying the accounting equation.
+
+Currently, field `increased_by_debits` is not used by the code in `ledger` but
+is provided as a convenience to users who might wish to incorporate this
+information into an external report or calculation.
+
+
+#### Transaction
+
+A `Transaction` is a record of any financial transaction that you'd like to
+record.  It is a collection of debits and credits whose sums equal one another.
+Practially all models in `ledger` link to or through `Transaction`: in a sense
+you could say it's the main model provided by `ledger`.  A `Transaction` can
+sometimes be referred to as a "journal entry" elsewhere.
+
+`Transaction` records debits and credits by linking to `LedgerEntries`, which
+include dollar amounts of the proper sign, and those `LedgerEntries` themselves
+point to `Ledger`.  In other words, `Transaction` and `Ledger` are linked in
+a many-to-many fashion by going through `LedgerEntry` as a custom through
+model.
+
+`Transactions` should never be deleted.  Instead, a new `Transaction` with
+debits and credits swapped should be created using
+`ledger.api.actions.void_transaction` to negate the effect of the `Transaction`
+you'd like to remove.  The `voids` field on the new `Transaction` will
+automatically be filled in with the old `Transaction` you wish to remove.  By
+this method, you'll never have to delete data from your system as a part of
+normal operation.
+
+`Transaction` also has the following fields to provide metadata for each transaction:
+
+-   `created_by`:  The user who created this `Transaction`.
+-   `notes`: A free-form text field for adding to a `Transaction` any
+    information not expressed in the numerous metadata fields.
+-   `posted_timestamp`:  The time a `Transaction` should be considered valid
+    from.  `ledger.api.actions.create_transaction` automatically deals with
+    filling in this value with the current time.   You can change this value to
+    post-date `Transactions` because `created_at` will always represent the
+    true object creation time.
+-   `transaction_id`: A UUID for the `Transaction`, useful for unambiguously
+    referring to a `Transaction` without using primary keys or other database
+    internals.
+-   `type`:  A user-defined type for the `Transaction` (see `TransactionType`
+    below).
+
+
+#### TransactionType
+
+A `TransactionType` is a user-defined, human-readable "type" for
+a `Transaction`, useful for sorting, aggregating, or annotating `Transactions`.
+The default `TransactionType` is `MANUAL`, which is created automatically by
+the library, but you can define others, say for bots or certain classes of
+users.
+
+Currently, `TransactionType` is not used by the code in `ledger` but is
+provided as a convenience to users who might wish to incorporate this
+information into an external report or calculation.
+
+
+#### LedgerEntry
+
+`LedgerEntries` represent single debit or credit entries in a single `Ledger`.
+`LedgerEntries` are grouped together into `Transactions` (see above) with the
+constraint that the `LedgerEntries'` sum of credits and debits must be equal.
+
+`LedgerEntries` have a field `entry_id`, which is a UUID for unambiguously
+referring to a single `LedgerEntry`.
+
+
+### Evidence Models
+
+The models in this section deal with adding evidence to `Transactions` and
+searching over that evidence.
+
+
+#### TransactionRelatedObject
+
+A `TransactionRelatedObject` (`TRO`) models the "evidence" relationship that
+makes the `ledger` library unique.  `TROs` link a `Transaction` to an arbitrary
+object in the larger app that this library is used in using a generic foreign
+key.  One `TRO` links one `Transaction` and one arbitrary object, so we make as
+many `TROs` as we want pieces of evidence.  There are several convenience
+methods in `ledger.api.queries` for efficiently querying over `Transactions`
+based on evidence and evidence objects based on their `Transactions`.
+
+
+#### LedgerBalance
+
+A `LedgerBalance` is similar to a `TRO` in that it allows linking `ledger`
+objects with objects from the wider app the library is used in via generic
+foreign keys.  The purpose of `LedgerBalance` is to denormalize for more
+efficient querying the current sum of debits and credits for an object in
+a specific Ledger.  Therefore, there is only one `LedgerBalance` for each
+`(ledger, related_object)` tuple.
+
+You should never have to manually create or edit a `LedgerBalance`: doing so,
+as well as keeping them up-to-date, is handeled by `ledger` internals.  Of
+course, deleting them is verboten.
+
+The purpose of `LedgerBalance` can be best demonstrated by considering the
+deceiptively simple query, "how many Orders (a non-`ledger` model we presumably
+created in the app where we include `ledger` as a library) have an Accounts
+Receivable balance greater than zero?"  One would have to calculate the ledger
+balance over literally the product of all ledgers and all non-`ledger` objects
+in the database, and then filter them for all those with balances above zero,
+to answer this question, which is obviously too expensive.  By keeping track of
+the per-`Ledger` balance for each object used as evidence in a `Transaction`,
+we can much more easily make these queries with very little overhead.
+
+
+## Usage
+
+### Creating Ledgers
+
+Let's start by creating two common ledger types, "Accounts Receivable" and
+"Revenue", which usually have transactions between themselves:
+
+```
+>>> from ledger.models import Ledger
+>>> ar = Ledger.objects.create(name='Accounts Receivable', number=1, increased_by_debits=True)
+<Ledger: Ledger Accounts Receivable>
+>>> revenue = Ledger.objects.create(name='Revenue', number=2, increased_by_debits=True)
+<Ledger: Ledger Revenue>
 ```
 
-## Transactions
+Both of these accounts are asset accounts, so they're both increased by debits.
+Please consult the double-entry bookkeeping Wikipedia article for a more
+in-depth explanation of the "accounting equation" and whether debits increase
+or decrease an account.
 
-TransactionContexts wrap every single action that can create LedgerEntries on a
-Ledger and put them in the same Transaction. TransactionContexts act as context
-managers that perform necessary validation to ensure that credits and debits
-balance. 
+Also, note that the default convention in `ledger` is to store debits as
+positive numbers and credits as negative numbers.  This convention is common
+but completely arbitrary.  If you want to switch the convention around, you can
+set `DEBITS_ARE_NEGATIVE` to `True` in your settings.py file.  By default, that
+constant doesn't need to be defined, and if it remains undefined, `ledger` will
+interpret its value as `False`.
 
-TransactionContexts have two required arguments:
 
-* related_object - The object that caused this Transaction to be generated
-* created_by - The `User` that caused this Transaction to be generated
+### Faking Evidence Models
 
-and one optional argument:
+Now let's create a fake order, so that we have some evidence for these ledger
+entries, and a fake user, so we have someone to blame for these transactions:
 
-* posted_timestamp - The datetime that this transaction was posted in an
-  outside system.
-
-At its most basic, a TransactionContext looks like this:
-
-```python
-with TransactionContext(product, user) as txn:
-    txn.record(Charge(entity, 1000))
+```
+>>> from ledger.tests.factories import OrderFactory
+>>> order = OrderFactory()
+>>> from ledger.tests.factories import UserFactory
+>>> user = UserFactory()
 ```
 
-A TransactionContext can also contain many different actions:
 
-```python
-with TransactionContext(product, user) as txn:
-    txn.record(Charge(entity, 1000))
-    txn.record(WriteDown(entity, 100))  # Good customer discount
+### Creating Transactions
+
+We're now ready to create a simple transaction:
+
+```
+>>> from ledger.api.actions import create_transaction
+>>> from ledger.api.actions import credit
+>>> from ledger.api.actions import debit
+>>> from decimal import Decimal
+>>> from ledger.models import LedgerEntry
+>>> txn = create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
+>>> txn.summary()
+{
+    u'entries': [
+        'LedgerEntry: $100.0000 in Accounts Receivable',
+        'LedgerEntry: $-100.0000 in Revenue',
+    ],
+    u'related_objects': [
+        'TransactionRelatedObject: Order(id=1)',
+    ]
+}
 ```
 
-### Backdating Transactions
+Note that we use the helper functions `credit` and `debit` with positive
+numbers to keep the signs consistent in our code.  There should be no reason to
+use negative numbers with `ledger`.
 
-Sometimes we got paid a while ago but we didn't get notification of payment.
-In these cases it's helpful to backdate the payment:
+Note also that the value for the credit and debit is the same: $100.  If we
+tried to create a transaction with mismatching amounts, we would get an error:
 
-```python
-backdate_timestamp = datetime.now() - timedelta(days=10)
-with TransactionContext(product, user, posted_timestamp=backdate_timestamp) as txn:
-    txn.record(Payment(entity, 1000))
 ```
+>>> create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(101)), ledger=revenue)])
+---------------------------------------------------------------------------
+TransactionBalanceException               Traceback (most recent call last)
+
+[...]
+
+TransactionBalanceException: Credits do not equal debits. Mis-match of -1.
+```
+
+So the consistency required of double-entry bookkeeping is automatically kept.
+
+There are many other options for `create_transaction`: see below or its
+docstring for details.
+
+
+### Ledger Balances
+
+`ledger` keeps track of the balance in each ledger for each evidence object in
+a denormalized and efficient way.  Let's use this behavior to get the balances
+of our ledgers as well as the balances in each ledger for our `order` object:
+
+
+```
+>>> from ledger.api.queries import get_balances_for_object
+
+>>> get_balances_for_object(order)
+defaultdict(<function <lambda> at 0x7fd7ecfa96e0>, {<Ledger: Ledger Accounts Receivable>: Decimal('100.0000'), <Ledger: Ledger Revenue>: Decimal('-100.0000')})
+
+>>> ar.get_balance()
+Decimal('100.0000')
+
+>>> revenue.get_balance()
+Decimal('-100.0000')
+```
+
 
 ### Voiding Transactions
 
-TransactionContexts are context managers that give you a reference to the backing
-financial transaction in the database (via the `transaction` attribute). This
-is useful when you need to, say, void a transaction:
+We can also void that transaction, which enters a transaction with the same
+evidence but with all values of the opposite sign:
 
-```python
-with TransactionContext(product, user) as charge_txn:
-    charge_txn.record(Charge(entity, 1000))
+```
+>>> void = void_transaction(txn, user)
+<Transaction: Transaction 9cd85014-c588-43ff-9532-a6fc2429069e>
 
-void_transaction(charge_txn.transaction, user)
+>>> void_transaction(txn, user)
+---------------------------------------------------------------------------
+UnvoidableTransactionException            Traceback (most recent call last)
+
+[...]
+
+UnvoidableTransactionException: Cannot void the same Transaction #(e0842107-3a5b-4487-9b86-d1a5d7ab77b4) more than once.
+
+>>> void.summary()
+{u'entries': ['LedgerEntry: $-100.0000 in Accounts Receivable',
+  'LedgerEntry: $100.0000 in Revenue'],
+ u'related_objects': ['TransactionRelatedObject: Order(id=1)']}
+
+>>> txn.voids
+
+>>> void.voids
+<Transaction: Transaction e0842107-3a5b-4487-9b86-d1a5d7ab77b4>
 ```
 
-## LedgerEntryActions
+Note the new balances for evidence objects and `Ledgers`:
 
-All actions which can be performed on a ledger are exposed as a subclass of
-`LedgerEntryAction`. All LedgerEntryActions must be performed inside a
-TransactionContext.
+```
+>>> get_balances_for_object(order)
+defaultdict(<function <lambda> at 0x7fd7ecfa9758>, {<Ledger: Ledger Accounts Receivable>: Decimal('0.0000'), <Ledger: Ledger Revenue>: Decimal('0.0000')})
 
-The two types of LedgerEntryActions are
+>>> ar.get_balance()
+Decimal('0.0000')
 
-1. SingleEntityLedgerEntryAction, comprised of:
-    1. Charge
-    2. Payment
-    3. Refund
-    4. WriteDown
-2. TransferAmount
-
-All LedgerEntryActions expose a `get_ledger_entries` method, which is called by
-TransactionContext.record, that returns a list of `LedgerEntry` objects to be added
-to the enclosing Transaction.
-
-### SingleEntityLedgerEntryAction
-
-These types of actions have two required arguments in the constructor:
-
-* entity - The entity on whose ledger we are recording an action
-* amount - The dollar amount to submit for this action
-
-#### Charge
-
-A Charge debits AR and credits Revenue. Use this to record a charge for
-services performed.
-
-```python
-with TransactionContext(product, user) as txn:
-    txn.record(Charge(entity, 1000))
+>>> revenue.get_balance()
+Decimal('0.0000')
 ```
 
-#### Payment
 
-Payments record payments from an entity by crediting AR and debiting Cash. They
-are recorded against that entity. The `related_object` for a payment
-transaction is important. It is used to determine if that `related_object` has
-been fully paid for.
+### Transaction Types
 
-```python
-with TransactionContext(product, user) as txn:
-    txn.record(Payment(entity, 1000))
+You can label a `Transaction` using a foreign key to the `TransactionType` to,
+say, distinguish between manually made `Transactions` and those made by a bot,
+or between `Transactions` that represent two different types of financial
+transaction, such as "Reconciliation" and "Revenue Recognition".
+
+By default, `Transactions` are of a special, auto-generated "manual" type:
+
+```
+>>> txn.type
+<TransactionType: Transaction Type Manual>
 ```
 
-#### Refund
+but you can create and assign `TransactionTypes` when creating `Transactions`:
 
-Refunds credit Cash and debit AR. They are used to record when we refund a
-customer.
-
-```python
-with TransactionContext(product, user) as txn:
-    txn.record(Refund(entity, 1000))
+```
+>>> from ledger.models import TransactionType
+>>> new_type = TransactionType.objects.create(name='New type')
+>>> txn = create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)], type=new_type)
+>>> txn.type
+<TransactionType: Transaction Type New type>
 ```
 
-#### WriteDown
 
-WriteDowns comp a customer a certain amount. This is typically used for
-out-of-pocket max discounts, prompt payment discounts, or as promotions.
+### Querying Transactions
 
-```python
-with TransactionContext(product, user) as txn:
-    txn.record(Charge(entity, 1000))
-    txn.record(WriteDown(entity, 100))  # Promotion 1234
+#### Getting Balances
+
+`Transaction` has a `summary` method to summarize the data on the many models
+that can link to it:
+
+```
+>>> txn.summary()
+{u'entries': ['LedgerEntry: $100.0000 in Accounts Receivable',
+  'LedgerEntry: $-100.0000 in Revenue'],
+ u'related_objects': ['TransactionRelatedObject: Order(id=1)']}
 ```
 
-### TransferAmount
+To get the balance for a `Ledger`, use its `get_balance` method:
 
-TransferAmount takes three required parameters:
-
-* entity_from - The entity from whose ledger we are decreasing financial
-responsibility
-* entity_to - The entity who is receiving the financial responsibility
-* amount - The dollar amount to submit for this action
-
-```python
-with TransactionContext(product, user) as txn:
-    txn.record(TransferAmount(entity, user, 500))
 ```
+>>> ar.get_balance()
+Decimal('100.0000')
+```
+
+To efficiently get the balance of all transactions with a particular object as
+evidence, use `get_balances_for_objects`:
+
+```
+>>> get_balances_for_object(order)
+defaultdict(<function <lambda> at 0x7fd7ecfa9230>, {<Ledger: Ledger Accounts Receivable>: Decimal('100.0000'), <Ledger: Ledger Revenue>: Decimal('-100.0000')})
+```
+
+`Transactions` are validated before they are created, but if you need to do
+this manually for some reason, use the `validate_transaction` function, which
+has the same prototype as `create_transaction`:
+
+```
+>>> validate_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)], type=new_type)
+>>> validate_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(101)), ledger=revenue)], type=new_type)
+---------------------------------------------------------------------------
+TransactionBalanceException               Traceback (most recent call last)
+<ipython-input-64-07b6d139bb37> in <module>()
+----> 1 validate_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(101)), ledger=revenue)], type=new_type)
+
+/home/hunter/ledger/ledger/api/queries.pyc in validate_transaction(user, evidence, ledger_entries, notes, type, posted_timestamp)
+     67     if total != Decimal(0):
+     68         raise TransactionBalanceException(
+---> 69             "Credits do not equal debits. Mis-match of %s." % total)
+     70
+     71     if not ledger_entries:
+
+TransactionBalanceException: Credits do not equal debits. Mis-match of -1.
+```
+
+### Queries
+
+Along with the query possibilities from the Django ORM, `ledger` provides
+`Transaction.filter_by_related_objects` for finding `Transactions` that are
+related to certain models as evidence.
+
+```
+>>> Transaction.objects.count()
+5
+
+>>> Transaction.objects.filter_by_related_objects([order]).count()
+5
+
+>>> order2 = OrderFactory()
+
+>>> create_transaction(user, evidence=[order2], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
+<Transaction: Transaction 68a4adb1-b898-493f-b5f3-4fe7132dd28d>
+
+>>> Transaction.objects.filter_by_related_objects([order2]).count()
+1
+```
+
+`filter_by_related_objects` is defined on a custom `QuerySet` provided for
+`Transaction`, so calls to it can be chained like ordinary `QuerySet` function
+calls:
+
+```
+>>> create_transaction(user, evidence=[order2], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
+<Transaction: Transaction 92049712-4982-4718-bc71-a405b0d762ac>
+
+>>> Transaction.objects.filter_by_related_objects([order2]).count()
+2
+
+>>> Transaction.objects.filter_by_related_objects([order2]).filter(transaction_id='92049712-4982-4718-bc71-a405b0d762ac').count()
+1
+```
+
+`filter_by_related_objects` takes an optional `match_type` argument, which is
+of type `MatchType(Enum)` that allows one to filter in different ways, namely
+whether the matching transactions may have "any", "all", "none", or "exactly"
+the evidence provided, determined by `MatchTypes` `ANY`, `ALL`, `NONE`, and
+`EXACT`, respectively.
+
+
+### Asserting over Transactions
+
+For writing tests, the method
+`assert_transaction_in_ledgers_for_amounts_with_evidence` is provided for
+convenience.  As its name implies, it allows asserting the existence of exactly
+one `Transaction` with the ledger amounts, evidence, and other fields on ledger
+provided to the method.
+
+```
+>>> create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
+<Transaction: Transaction b3e73f1d-6b10-4597-b19b-84800839d5b3>
+>>> with assert_raises(Transaction.DoesNotExist):
+...     assert_transaction_in_ledgers_for_amounts_with_evidence(ledger_amount_pairs=[(revenue.name, credit(Decimal(100))), (ar.name, debit(Decimal(100)))], evidence=[])
+...
+>>> assert_transaction_in_ledgers_for_amounts_with_evidence(ledger_amount_pairs=[(revenue.name, credit(Decimal(100))), (ar.name, debit(Decimal(100)))], evidence=[order])
+>>> with assert_raises(Transaction.DoesNotExist):
+...     assert_transaction_in_ledgers_for_amounts_with_evidence(ledger_amount_pairs=[(revenue.name, credit(Decimal(100))), (ar.name, debit(Decimal(100)))], evidence=[order])
+...
+Traceback (most recent call last):
+  File "<console>", line 2, in <module>
+    File "/usr/lib/python2.7/unittest/case.py", line 116, in __exit__
+        "{0} not raised".format(exc_name))
+        AssertionError: DoesNotExist not raised
+```
+
+You can see
+`ledger.tests.test_assert_transaction_in_ledgers_for_amounts_with_evidence` for
+more examples!
