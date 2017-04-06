@@ -1,8 +1,9 @@
 # Ledger
 
 `Ledger` is a library that provides double-entry bookkeeping (the foundation of
-all modern accounting) for Django with the ability to link each journal entry
-to zero or more other Django models as evidence for the transaction.
+all modern accounting) for Django with the ability to link each recorded
+transaction to zero or more other Django models as evidence for that
+transaction.
 
 ## Introduction
 
@@ -17,14 +18,14 @@ equal the sum of its credits.  `ledger` implements a double-entry bookkeeping
 system by providing an API for checking that all created entries satisfy this
 condition or rolling back the transaction if not.
 
-Where `ledger` transcends other double-entry bookkeeping Django libraries is
+Where `ledger` surpasses other double-entry bookkeeping Django libraries is
 that it allows any number of arbitrary objects to be attached, via generic
 foreign keys, to a ledger entry as "evidence" for that transaction's having
-happened.  For instance, a transaction recording a bank deposit from an
-insurance company paying for several different medical tests, each at
-a different price, could be linked to the original `Order` objects that
-triggered the test.  `ledger` also provides an API for the efficient querying
-of ledger entries by evidence.
+happened.  For instance, a transaction recording a bank deposit paying for
+several medical tests at a time from an insurance company to your medical
+testing company could be linked to the original `Order` objects that
+recorded the test.  `ledger` also provides an API for the efficient querying of
+ledger entries by evidence.
 
 For more information on the concept of double-entry bookkeeping itself, we
 recommend the Wikipedia article:
@@ -45,21 +46,14 @@ development.
 
 ### Running Commands:
 
-#### Makefile
+The following commands are available for interacting with the app:
 
-Runserver:
-
-    make runserver
-
-Shell(plus):
+To start a shell instance so that you can interact with the app via the ORM:
 
     make shell
 
-
-#### `manage.py` commands
-
-Note: before any of these instructions, you may have to run `make develop` to
-set up a postgres database for this app.
+Note: before any of the following instructions, you may have to run `make
+develop` to set up a postgres database for this app.
 
 First, activate a virtualenv so that your commands have access to the
 environment built by `make setup`:
@@ -81,7 +75,8 @@ To run individual tests, use the following:
 Notice the `--settings=ledger.tests.settings` argument: because this repository
 is a django sub-module, it wouldn't make sense for it to come with its own
 default `settings.py` file.  Instead, it ships with one used to run its tests.
-To use `manage.py`, we have to pass an import path to it explicitly.
+To use `manage.py`, we have to pass an import path to the settings file
+explicitly.
 
 
 ## Models
@@ -89,7 +84,7 @@ To use `manage.py`, we have to pass an import path to it explicitly.
 Let's introduce the models provided by `ledger` and how they relate to one
 another.
 
-Note that all objects in this library, have `created_at` and `modified_at`
+Note that all objects in this library have `created_at` and `modified_at`
 fields that are `auto_now_add` and `auto_now`, respectively.
 
 ### Accounting Models
@@ -102,40 +97,45 @@ credits and debits, and any metadata one wishes to store with these objects.
 
 #### Ledger
 
-A `Ledger` is the top-most organization of information in double-entry
+A `Ledger` is the top-most level of organization of information in double-entry
 bookkeeping as well as the `ledger` app.  Most ledgers have names familiar to
 those with any knowledge of accounting, such as "revenue" or "accounts
 receivable".
 
 `Ledgers` are synonymous with the accounting concept of an "account", so you
-may see references to Accounts in this documentation or elsewhere in the
+may see references to accounts in this documentation or elsewhere in the
 accounting literature.
 
 As a data structure, a `Ledger` in this library is little more than a name,
 description, and unique number: `LedgerEntries` (see below) point to a `Ledger`
 to represent their being "in" a `Ledger`.  `Transactions` (see below also) that
 are "between" two `Ledgers` have a `LedgerEntry` pointing to one `Ledger` and
-another `LedgerEntry` pointing to another `Ledger`.
+another `LedgerEntry` pointing to the other `Ledger`.
 
 ##### `increased_by_debits`
 
 `Ledger` also has the sometimes confusing field `increased_by_debits`.  All
-`Ledgers` are of one of two types: either debits increase the value of an account
-or credits do.  By convention, asset and expense accounts are of the former
-type, while liabilities, equity, and revenue are of the latter: in short, an
-increase to an "asset"-type account is a debit, and an increase to
-a "liability" or "equity"-type account is a credit.  To put it another way, the
-accounting equation says (by definition) that "assets == liabilities + owner
-equity": terms on the right of the equals sign are increased by debits, and
-terms on the left of the equals sign are decreased by debits.  We can therefore
-use the accounting equation to know whether to use debits or credits to model
-an increase in a ledger.
+`Ledgers` are of one of two types: either debits increase the "value" of an
+account or credits do.  By convention, asset and expense accounts are of the
+former type, while liabilities, equity, and revenue are of the latter: in
+short, an increase to an "asset"-type account is a debit, and an increase to
+a "liability" or "equity"-type account is a credit.
 
-So because debits and credits mean different things in different types of
-accounts, this is how we can have a transaction with an "equal and opposite"
-credit and debit pair of the same dollar amount that represents a net increase
+Here's a handy mnemonic for the two types of accounts: The accounting equation
+says (by definition) that:
+
+    assets == liabilities + owner equity
+
+The terms on the right of the equals sign are increased by debits, and terms on
+the left of the equals sign are decreased by debits.  We can therefore use the
+accounting equation to know whether to use debits or credits to model an
+increase in a ledger.
+
+**So because debits and credits mean different things in different types of
+accounts, we can have a transaction with an "equal and opposite" credit and
+debit pair of the same dollar amount, but that still represents a net increase
 in the value of a company: a debit in Accounts Receivable and a credit in
-Revenue increases both accounts while satisfying the accounting equation.
+Revenue increases both accounts while satisfying the accounting equation.**
 
 Currently, field `increased_by_debits` is not used by the code in `ledger` but
 is provided as a convenience to users who might wish to incorporate this
@@ -144,17 +144,18 @@ information into an external report or calculation.
 
 #### Transaction
 
-A `Transaction` is a record of any financial transaction that you'd like to
-record.  It is a collection of debits and credits whose sums equal one another.
-Practially all models in `ledger` link to or through `Transaction`: in a sense
-you could say it's the main model provided by `ledger`.  A `Transaction` can
-sometimes be referred to as a "journal entry" elsewhere.
+A `Transaction` is a record of a discrete financial action, represented by
+a collection of debits and credits whose sums equal one another.  Practically
+all models in `ledger` link to or through `Transaction`: in a sense you could
+say it's the main model provided by `ledger`.  A `Transaction` can sometimes be
+referred to as a "journal entry".
 
-`Transaction` records debits and credits by linking to `LedgerEntries`, which
-include dollar amounts of the proper sign, and those `LedgerEntries` themselves
-point to `Ledger`.  In other words, `Transaction` and `Ledger` are linked in
-a many-to-many fashion by going through `LedgerEntry` as a custom through
-model.
+The `Transaction` model records debits and credits by linking to
+`LedgerEntries`, which include dollar amounts of the proper sign, and those
+`LedgerEntries` themselves point to `Ledger`.  In other words, `Transaction`
+and `Ledger` are linked in a many-to-many fashion by going through
+`LedgerEntry` as a custom through model.  The "proper sign" part is taken care
+of by the `credit` and `debit` convenience methods (see examples below).
 
 `Transactions` should never be deleted.  Instead, a new `Transaction` with
 debits and credits swapped should be created using
@@ -162,7 +163,8 @@ debits and credits swapped should be created using
 you'd like to remove.  The `voids` field on the new `Transaction` will
 automatically be filled in with the old `Transaction` you wish to remove.  By
 this method, you'll never have to delete data from your system as a part of
-normal operation.
+normal operation, which mimics one of the many benefits of traditional,
+non-computerized double-entry bookkeeping.
 
 `Transaction` also has the following fields to provide metadata for each transaction:
 
@@ -172,13 +174,13 @@ normal operation.
 -   `posted_timestamp`:  The time a `Transaction` should be considered valid
     from.  `ledger.api.actions.create_transaction` automatically deals with
     filling in this value with the current time.   You can change this value to
-    post-date `Transactions` because `created_at` will always represent the
-    true object creation time.
--   `transaction_id`: A UUID for the `Transaction`, useful for unambiguously
-    referring to a `Transaction` without using primary keys or other database
-    internals.
--   `type`:  A user-defined type for the `Transaction` (see `TransactionType`
-    below).
+    post-date or back-date `Transactions` because `created_at` will always
+    represent the true object creation time.
+-   `transaction_id`: A Universally Unique Identifier (UUID) for the
+    `Transaction`, useful for unambiguously referring to a `Transaction`
+    without using primary keys or other database internals.
+-   `type`:  A user-defined type for the `Transaction` (see the `TransactionType`
+    model below).
 
 
 #### TransactionType
@@ -198,7 +200,8 @@ information into an external report or calculation.
 
 `LedgerEntries` represent single debit or credit entries in a single `Ledger`.
 `LedgerEntries` are grouped together into `Transactions` (see above) with the
-constraint that the `LedgerEntries'` sum of credits and debits must be equal.
+constraint that the sum of all credit and debit `LedgerEntries` for a given
+`Transaction` must equal zero.
 
 `LedgerEntries` have a field `entry_id`, which is a UUID for unambiguously
 referring to a single `LedgerEntry`.
@@ -212,37 +215,38 @@ searching over that evidence.
 
 #### TransactionRelatedObject
 
-A `TransactionRelatedObject` (`TRO`) models the "evidence" relationship that
-makes the `ledger` library unique.  `TROs` link a `Transaction` to an arbitrary
+A `TransactionRelatedObject` (`TRO`) represents the "evidence" relationship that
+makes the `ledger` library unique.  A `TRO` links a `Transaction` to an arbitrary
 object in the larger app that this library is used in using a generic foreign
 key.  One `TRO` links one `Transaction` and one arbitrary object, so we make as
 many `TROs` as we want pieces of evidence.  There are several convenience
 methods in `ledger.api.queries` for efficiently querying over `Transactions`
-based on evidence and evidence objects based on their `Transactions`.
+based on evidence and evidence objects based on their `Transactions` (see
+examples below).
 
 
 #### LedgerBalance
 
 A `LedgerBalance` is similar to a `TRO` in that it allows linking `ledger`
-objects with objects from the wider app the library is used in via generic
+objects with objects from the wider app that the library is used in via generic
 foreign keys.  The purpose of `LedgerBalance` is to denormalize for more
 efficient querying the current sum of debits and credits for an object in
 a specific Ledger.  Therefore, there is only one `LedgerBalance` for each
 `(ledger, related_object)` tuple.
 
 You should never have to manually create or edit a `LedgerBalance`: doing so,
-as well as keeping them up-to-date, is handeled by `ledger` internals.  Of
-course, deleting them is verboten.
+as well as keeping them up-to-date, is handled by `ledger` internals.  For the
+same reasons, deleting them is not necessary or a good idea.
 
-The purpose of `LedgerBalance` can be best demonstrated by considering the
-deceiptively simple query, "how many Orders (a non-`ledger` model we presumably
+The purpose of `LedgerBalance` can best be demonstrated by considering the
+deceptively simple query, "how many Orders (a non-`ledger` model we presumably
 created in the app where we include `ledger` as a library) have an Accounts
 Receivable balance greater than zero?"  One would have to calculate the ledger
 balance over literally the product of all ledgers and all non-`ledger` objects
 in the database, and then filter them for all those with balances above zero,
 to answer this question, which is obviously too expensive.  By keeping track of
 the per-`Ledger` balance for each object used as evidence in a `Transaction`,
-we can much more easily make these queries with very little overhead.
+we can much more easily make these queries with reasonable overhead.
 
 
 ## Usage
@@ -261,9 +265,9 @@ Let's start by creating two common ledger types, "Accounts Receivable" and
 ```
 
 Both of these accounts are asset accounts, so they're both increased by debits.
-Please consult the double-entry bookkeeping Wikipedia article for a more
-in-depth explanation of the "accounting equation" and whether debits increase
-or decrease an account.
+Please consult the double-entry bookkeeping Wikipedia article or the
+explanation for `increased_by_debits` above for a more in-depth explanation of
+the "accounting equation" and whether debits increase or decrease an account.
 
 Also, note that the default convention in `ledger` is to store debits as
 positive numbers and credits as negative numbers.  This convention is common
@@ -275,8 +279,8 @@ interpret its value as `False`.
 
 ### Faking Evidence Models
 
-Now let's create a fake order, so that we have some evidence for these ledger
-entries, and a fake user, so we have someone to blame for these transactions:
+Now let's create a fake Order, so that we have some evidence for these ledger
+entries, and a fake User, so we'll have someone to blame for these transactions:
 
 ```
 >>> from ledger.tests.factories import OrderFactory
