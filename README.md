@@ -132,9 +132,9 @@ increase in a ledger.
 
 **So because debits and credits mean different things in different types of
 accounts, we can have a transaction with an "equal and opposite" credit and
-debit pair of the same dollar amount, but that still represents a net increase
-in the value of a company: a debit in Accounts Receivable and a credit in
-Revenue increases both accounts while satisfying the accounting equation.**
+debit pair of the same currency amount, but that still represents a net
+increase in the value of a company: a debit in Accounts Receivable and a credit
+in Revenue increases both accounts while satisfying the accounting equation.**
 
 Currently, field `increased_by_debits` is not used by the code in `ledger` but
 is provided as a convenience to users who might wish to incorporate this
@@ -150,7 +150,7 @@ say it's the main model provided by `ledger`.  A `Transaction` can sometimes be
 referred to as a "journal entry".
 
 The `Transaction` model records debits and credits by linking to
-`LedgerEntries`, which include dollar amounts of the proper sign, and those
+`LedgerEntries`, which include currency amounts of the proper sign, and those
 `LedgerEntries` themselves point to `Ledger`.  In other words, `Transaction`
 and `Ledger` are linked in a many-to-many fashion by going through
 `LedgerEntry` as a custom through model.  The "proper sign" part is taken care
