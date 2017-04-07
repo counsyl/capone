@@ -11,6 +11,12 @@ from ledger.models import LedgerBalances
 
 
 class Order(models.Model):
+    """
+    A fake order used for testing `ledger's` evidence functionality.
+
+    This model represents an order of goods and services that would be
+    tracked by the organization using `ledger`.
+    """
     patient_name = models.CharField(
         max_length=255,
     )
@@ -31,6 +37,12 @@ class Order(models.Model):
 
 
 class CreditCardTransaction(models.Model):
+    """
+    A fake credit card payment for testing `ledger's` evidence functionality.
+
+    This model represents a transaction representing money coming in or going
+    out of the organization using `ledger`.
+    """
     cardholder_name = models.CharField(
         max_length=255,
     )

@@ -53,6 +53,9 @@ class TestAssertTransactionInLedgersForAmountsWithEvidence(TestCase):
             )
 
     def test_no_matches(self):
+        """
+        No matching transaction raises DoesNotExist.
+        """
         TransactionFactory()
         credit_card_transaction = CreditCardTransactionFactory()
         ledger = Ledger.objects.last()
@@ -69,6 +72,9 @@ class TestAssertTransactionInLedgersForAmountsWithEvidence(TestCase):
             )
 
     def test_multiple_matches(self):
+        """
+        Multiple matching transactions raises MultipleObjectsReturned.
+        """
         credit_card_transaction = CreditCardTransactionFactory()
         amount = Decimal('100')
         ledger = LedgerFactory()
@@ -94,6 +100,9 @@ class TestAssertTransactionInLedgersForAmountsWithEvidence(TestCase):
             )
 
     def test_mismatch_on_ledger_entries(self):
+        """
+        An otherwise matching Trans. will fail if its LedgerEntries mismatch.
+        """
         credit_card_transaction = CreditCardTransactionFactory()
         amount = Decimal('100')
         ledger = LedgerFactory()
@@ -127,6 +136,9 @@ class TestAssertTransactionInLedgersForAmountsWithEvidence(TestCase):
             )
 
     def test_mismatch_on_evidence(self):
+        """
+        An otherwise matching Trans. will fail if its evidence is different.
+        """
         credit_card_transaction = CreditCardTransactionFactory()
         amount = Decimal('100')
         ledger = LedgerFactory()

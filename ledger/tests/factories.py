@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from decimal import Decimal
 
-import factory  # FactoryBoy
+import factory
 from django.contrib.auth import get_user_model
 
 from ledger.api.actions import create_transaction
@@ -15,9 +15,16 @@ from ledger.tests.models import Order
 
 
 class UserFactory(factory.DjangoModelFactory):
-    """Create User instances with monotonically increasing usernames."""
+    """
+    Factory for django.contrib.auth.get_user_model()
+
+    `ledger` relies on `django.contrib.auth` because each `Transaction` is
+    attached to the `User` who created it.  Therefore, we can't just use a stub
+    model here with, say, only a name field.
+    """
     class Meta:
         model = get_user_model()
+
     email = username = factory.Sequence(lambda n: "TransactionUser #%s" % n)
 
 
@@ -60,6 +67,13 @@ def TransactionFactory(
     type=None,
     posted_timestamp=None,
 ):
+    """
+    Factory for creating a Transaction
+
+    Instead of inheriting from DjangoModelFactory, TransactionFactory is
+    a method made to look like a factory call because the creation and
+    validation of Transactions is handeled by `create_transaction`.
+    """
     if user is None:
         user = UserFactory()
 

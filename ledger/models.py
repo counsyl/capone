@@ -11,7 +11,6 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
-from django.db.models import Sum
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
@@ -28,8 +27,10 @@ class TransactionRelatedObject(models.Model):
     A piece of evidence for a particular Transaction.
 
     TransactionRelatedObject has a FK to a Transaction and a GFK that can point
-    to any object in the database.  We create as many TransactionRelatedObjects
-    as there are pieces of evidence.
+    to any object in the database.  These evidence objects would be defined in
+    the larger app that uses `ledger` as a resource.  We create as many
+    TransactionRelatedObjects as there are pieces of evidence for
+    a `Transaction`.
     """
     class Meta:
         unique_together = (
@@ -57,6 +58,9 @@ class TransactionRelatedObject(models.Model):
 
 
 class MatchType(Enum):
+    """
+    Type of matching should be used by a call to `filter_by_related_objects`.
+    """
     ANY = 'any'
     ALL = 'all'
     NONE = 'none'
@@ -73,10 +77,10 @@ class TransactionQuerySet(models.QuerySet):
     def filter_by_related_objects(
             self, related_objects=(), match_type=MatchType.ALL):
         """
-        Filter Transactions to only those with related_objects as evidence.
+        Filter Transactions to only those with `related_objects` as evidence.
 
-        This filter takes an option, `match_type` that controls how the
-        matching to `related_objects` is construed:
+        This filter takes an option, `match_type`, which is of type MatchType,
+        that controls how the matching to `related_objects` is construed:
 
         -   ANY: Return Transactions that have *any* of the objects in
             `related_objects` as evidence.
@@ -161,6 +165,12 @@ class TransactionQuerySet(models.QuerySet):
 
 @python_2_unicode_compatible
 class TransactionType(models.Model):
+    """
+    A user-defined "type" to group `Transactions`.
+
+    By default, has the value `Manual`, which comes from
+    `get_or_create_manual_transaction_type`.
+    """
     name = models.CharField(
         help_text=_("Name of this transaction type"),
         unique=True,
@@ -178,16 +188,24 @@ class TransactionType(models.Model):
 
 
 def get_or_create_manual_transaction_type():
+    """
+    Callable for getting or creating the default `TransactionType`.
+    """
     return TransactionType.objects.get_or_create(name='Manual')[0]
 
 
 def get_or_create_manual_transaction_type_id():
+    """
+    Callable for getting or creating the default `TransactionType` id.
+    """
     return get_or_create_manual_transaction_type().id
 
 
 @python_2_unicode_compatible
 class Transaction(models.Model):
     """
+    The main model for representing a financial event in `ledger`.
+
     Transactions link together many LedgerEntries.
 
     A LedgerEntry cannot exist on its own, it must have an equal and opposite
@@ -241,11 +259,11 @@ class Transaction(models.Model):
 
         This method is not as thorough as
         `ledger.api.queries.validate_transaction` because not all of the
-        validations in that file apply to an already-created object.  Instead,
-        the only check that makes sense is that the entries for the transaction
-        still balance.
+        validations in that method apply to an already-created object.
+        Instead, the only check that makes sense is that the entries for the
+        transaction still balance.
         """
-        total = sum(self.entries.values_list('amount', flat=True))
+        total = sum([entry.amount for entry in self.entries.all()])
         if total != Decimal(0):
             raise TransactionBalanceException(
                 "Credits do not equal debits. Mis-match of %s." % total)
@@ -272,6 +290,9 @@ class Transaction(models.Model):
 
 @python_2_unicode_compatible
 class Ledger(models.Model):
+    """
+    A group of `LedgerEntries` all debiting or crediting the same resource.
+    """
     name = models.CharField(
         help_text=_("Name of this ledger"),
         unique=True,
@@ -292,17 +313,20 @@ class Ledger(models.Model):
         auto_now=True)
 
     def get_balance(self):
-        """Get the current balance on this Ledger."""
-        return self.entries.aggregate(balance=Sum('amount'))['balance']
+        """
+        Get the current sum of all the amounts on the entries in this Ledger.
+        """
+        return sum([entry.amount for entry in self.entries.all()])
 
     def __str__(self):
         return "Ledger %s" % self.name
 
 
 class LedgerEntry(models.Model):
-    """A single entry in a single column in a ledger.
+    """
+    A single entry in a single column in a ledger.
 
-    LedgerEntries must always be part of a transaction so that they balance
+    LedgerEntries must always be part of a Transaction so that they balance
     according to double-entry bookkeeping.
     """
     class Meta:
@@ -341,7 +365,13 @@ class LedgerEntry(models.Model):
 @python_2_unicode_compatible
 class LedgerBalance(models.Model):
     """
-    Denormalized ledger balances for related objects.
+    A Denormalized balance for a related object in a ledger.
+
+    The denormalized values on this model make querying for related objects
+    that have a specific balance in a Ledger more efficient.  Creating and
+    updating this model is taken care of automatically by `ledger`.  See the
+    README for a further explanation and demonstration of using the query API
+    that uses this model.
     """
     class Meta:
         unique_together = (

@@ -82,12 +82,13 @@ def assert_transaction_in_ledgers_for_amounts_with_evidence(
         **kwargs
 ):
     """
-    There is exactly one transaction with the given entries and evidence.
+    Assert there is exactly one transaction with given entries and evidence.
 
     The entries are specified as a list of (ledger name, amount) pairs.
 
-    If posted_timestamp is given, the transaction's posted_timestamp
-    is asserted equal to that value.
+    If kwargs are given, they are interpreted as values for fields on
+    `Transaction`, and it is asserted that the one and only matching
+    `Transaction` has these values as well.
     """
     transactions_in_all_ledgers = reduce(
         operator.and_,

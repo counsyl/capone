@@ -17,6 +17,12 @@ from ledger.tests.factories import UserFactory
 
 
 class TestTransactionFactory(TestCase):
+    """
+    Test TransactionFactory.
+
+    We test this "factory" because it's actually a method implemented in this
+    app, not a Factory Boy Factory.
+    """
     @classmethod
     def setUpTestData(cls):
         cls.credit_card_transaction = CreditCardTransactionFactory()

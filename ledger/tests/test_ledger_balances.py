@@ -22,6 +22,9 @@ from ledger.utils import rebuild_ledger_balances
 
 
 class TestLedgerBalances(TransactionTestCase):
+    """
+    Test that `LedgerBalances` are automatically created and updated.
+    """
 
     amount = Decimal('50.00')
 

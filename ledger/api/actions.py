@@ -29,9 +29,9 @@ def void_transaction(
     Create a new transaction that voids the given Transaction.
 
     The evidence will be the same as the voided Transaction. The ledger
-    entries will be the same except have the opposite sense.
+    entries will be the same except have debits and credits swapped.
 
-    If notes is not given, a default note will be set.
+    If `notes` is not given, a default note will be set.
 
     If the posted_timestamp or type is not given, they will be the same
     as the voided Transaction.
