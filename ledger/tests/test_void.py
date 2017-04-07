@@ -121,27 +121,6 @@ class TestVoidTransaction(TestVoidBase):
         self.assertEqual(self.ar_ledger.get_balance(), amount)
         self.assertEqual(self.rev_ledger.get_balance(), -amount)
 
-    def test_void_multiple_charges(self):
-        amount_1 = D(100)
-        amount_2 = D(200)
-
-        txn_1 = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount_1), ledger=self.ar_ledger),
-            LedgerEntry(
-                amount=credit(amount_1), ledger=self.rev_ledger),
-        ])
-        txn_2 = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount_2), ledger=self.ar_ledger),
-            LedgerEntry(
-                amount=credit(amount_2), ledger=self.rev_ledger),
-        ])
-        self.assertNotEqual(txn_1, txn_2)
-
-        void_transaction(txn_1, self.creation_user)
-
-        self.assertEqual(self.ar_ledger.get_balance(), amount_2)
-        self.assertEqual(self.rev_ledger.get_balance(), -amount_2)
-
     def test_void_with_overridden_notes_and_type(self):
         amount = D(100)
         evidence = UserFactory.create_batch(3)
