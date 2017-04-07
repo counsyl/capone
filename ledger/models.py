@@ -11,7 +11,6 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
-from django.db.models import Sum
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
@@ -245,7 +244,7 @@ class Transaction(models.Model):
         the only check that makes sense is that the entries for the transaction
         still balance.
         """
-        total = sum(self.entries.values_list('amount', flat=True))
+        total = sum([entry.amount for entry in self.entries.all()])
         if total != Decimal(0):
             raise TransactionBalanceException(
                 "Credits do not equal debits. Mis-match of %s." % total)
