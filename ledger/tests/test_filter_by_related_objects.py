@@ -39,7 +39,6 @@ class TestFilterByRelatedObjects(TestCase):
 
         cls.order_1 = OrderFactory()
         cls.order_2 = OrderFactory()
-        cls.order_not_in_transaction = OrderFactory()
 
         cls.ledger = LedgerFactory()
 
