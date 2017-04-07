@@ -28,19 +28,41 @@ class TestVoidBase(TestCase):
 class TestVoidTransaction(TestVoidBase):
     def test_simple_void(self):
         amount = D(100)
-        # First record a charge
-        txn = TransactionFactory(self.creation_user, ledger_entries=[
-            LedgerEntry(amount=debit(amount), ledger=self.ar_ledger),
-            LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
-        ])
-
-        # Then void it
-        void_txn = void_transaction(txn, self.creation_user)
-
-        self.assertEqual(void_txn.voids, txn)
-
+        evidence = UserFactory.create_batch(3)
+        transaction = create_transaction(
+            user=UserFactory(),
+            evidence=evidence,
+            ledger_entries=[
+                LedgerEntry(
+                    ledger=self.ar_ledger,
+                    amount=credit(amount),
+                ),
+                LedgerEntry(
+                    ledger=self.rev_ledger,
+                    amount=debit(amount),
+                ),
+            ],
+        )
+        self.assertEqual(self.ar_ledger.get_balance(), credit(amount))
+        self.assertEqual(self.rev_ledger.get_balance(), debit(amount))
+        voiding_transaction = void_transaction(transaction, self.creation_user)
+        self.assertEqual(
+            set(tro.related_object for tro
+                in voiding_transaction.related_objects.all()),
+            set(evidence),
+        )
         self.assertEqual(self.ar_ledger.get_balance(), D(0))
         self.assertEqual(self.rev_ledger.get_balance(), D(0))
+        self.assertEqual(voiding_transaction.voids, transaction)
+        self.assertEqual(
+            voiding_transaction.posted_timestamp,
+            transaction.posted_timestamp)
+        self.assertEqual(
+            voiding_transaction.type,
+            transaction.type)
+        self.assertEqual(
+            voiding_transaction.notes,
+            'Voiding transaction {}'.format(transaction))
 
     def test_void_with_non_default_type(self):
         amount = D(100)
@@ -119,44 +141,6 @@ class TestVoidTransaction(TestVoidBase):
 
         self.assertEqual(self.ar_ledger.get_balance(), amount_2)
         self.assertEqual(self.rev_ledger.get_balance(), -amount_2)
-
-    def test_void_from_create_transaction(self):
-        amount = D(100)
-        evidence = UserFactory.create_batch(3)
-        transaction = create_transaction(
-            user=UserFactory(),
-            evidence=evidence,
-            ledger_entries=[
-                LedgerEntry(
-                    ledger=self.ar_ledger,
-                    amount=credit(amount),
-                ),
-                LedgerEntry(
-                    ledger=self.rev_ledger,
-                    amount=debit(amount),
-                ),
-            ],
-        )
-        self.assertEqual(self.ar_ledger.get_balance(), credit(amount))
-        self.assertEqual(self.rev_ledger.get_balance(), debit(amount))
-        voiding_transaction = void_transaction(transaction, self.creation_user)
-        self.assertEqual(
-            set(tro.related_object for tro
-                in voiding_transaction.related_objects.all()),
-            set(evidence),
-        )
-        self.assertEqual(self.ar_ledger.get_balance(), D(0))
-        self.assertEqual(self.rev_ledger.get_balance(), D(0))
-        self.assertEqual(voiding_transaction.voids, transaction)
-        self.assertEqual(
-            voiding_transaction.posted_timestamp,
-            transaction.posted_timestamp)
-        self.assertEqual(
-            voiding_transaction.type,
-            transaction.type)
-        self.assertEqual(
-            voiding_transaction.notes,
-            'Voiding transaction {}'.format(transaction))
 
     def test_void_with_overridden_notes_and_type(self):
         amount = D(100)
