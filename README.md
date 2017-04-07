@@ -18,14 +18,13 @@ equal the sum of its credits.  `ledger` implements a double-entry bookkeeping
 system by providing an API for checking that all created entries satisfy this
 condition or rolling back the transaction if not.
 
-Where `ledger` surpasses other double-entry bookkeeping Django libraries is
-that it allows any number of arbitrary objects to be attached, via generic
-foreign keys, to a ledger entry as "evidence" for that transaction's having
-happened.  For instance, a transaction recording a bank deposit paying for
-several medical tests at a time from an insurance company to your medical
-testing company could be linked to the original `Order` objects that
-recorded the test.  `ledger` also provides an API for the efficient querying of
-ledger entries by evidence.
+In addition to this standard bookkeeping functionality, `ledger` also allows
+any number of arbitrary objects to be attached, via generic foreign keys, to
+a ledger entry as "evidence" for that transaction's having happened.  For
+instance, a transaction recording a bank deposit paying for several medical
+tests at a time from an insurance company to your medical testing company could
+be linked to the original `Order` objects that recorded the test.  `ledger`
+also provides an API for the efficient querying of ledger entries by evidence.
 
 For more information on the concept of double-entry bookkeeping itself, we
 recommend the Wikipedia article:
