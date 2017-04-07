@@ -173,8 +173,6 @@ class TestCreateTransaction(TestCase):
 
         self.assertEqual(txn_recognize.posted_timestamp, POSTED_DATETIME)
 
-
-class TestValidateTransaction(TestCompanyWideLedgers):
     def test_debits_not_equal_to_credits(self):
         with self.assertRaises(TransactionBalanceException):
             validate_transaction(
