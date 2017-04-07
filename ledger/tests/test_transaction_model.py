@@ -23,13 +23,19 @@ from ledger.tests.factories import UserFactory
 
 
 class TransactionBase(TestCase):
+    """
+    Base class for `Transaction` model test cases.
+    """
     def setUp(self):
         self.user1 = UserFactory()
         self.user2 = UserFactory()
         self.posted_timestamp = datetime.now()
 
 
-class TestUnicodeMethods(TestCase):
+class TestStrMethods(TestCase):
+    """
+    Test all __str__ methods.
+    """
     def test_unicode_methods(self):
         txn = TransactionFactory()
 
@@ -71,6 +77,9 @@ class TestUnicodeMethods(TestCase):
 
 
 class TestTransactionSummary(TransactionBase):
+    """
+    Test that Transaction.summary returns correct information.
+    """
     def test_transaction_summary(self):
         ledger = LedgerFactory()
         amount = Decimal('500')
@@ -95,7 +104,7 @@ class TestTransactionSummary(TransactionBase):
 
 
 class TestSettingExplicitTimestampField(TransactionBase):
-    def test_repr(self):
+    def test_setting_explicit_timestamp_field(self):
         transaction = TransactionFactory()
         old_posted_timestamp = transaction.posted_timestamp
         transaction.posted_timestamp = datetime.now()
@@ -129,7 +138,9 @@ class TestEditingTransactions(TestCase):
 
 
 class TestNonVoidFilter(TestCase):
-
+    """
+    Test Transaction.objects.non_void filter.
+    """
     def setUp(self):
         self.order = OrderFactory()
         self.ar_ledger = LedgerFactory(name='A/R')
@@ -151,11 +162,17 @@ class TestNonVoidFilter(TestCase):
         )
 
     def filtered_out_by_non_void(self, transaction):
+        """
+        Return whether `transaction` is in `Transaction.objects.non_void()`.
+        """
         queryset = Transaction.objects.filter(id=transaction.id)
         self.assertTrue(queryset.exists())
         return not queryset.non_void().exists()
 
     def test_non_void(self):
+        """
+        Test Transaction.objects.non_void filter.
+        """
         transaction_1 = self.add_transaction()
         self.assertFalse(self.filtered_out_by_non_void(transaction_1))
 

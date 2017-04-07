@@ -16,6 +16,9 @@ from ledger.tests.factories import UserFactory
 
 
 class TestFilterByRelatedObjects(TestCase):
+    """
+    Test Transaction.objects.filter_by_related_objects.
+    """
     AMOUNT = D('100')
 
     @classmethod
@@ -79,6 +82,9 @@ class TestFilterByRelatedObjects(TestCase):
         (MatchType.EXACT, Transaction.objects.none().values_list('id')),
     ])
     def test_filter_with_no_evidence(self, match_type, result_queryset):
+        """
+        Method returns correct Transactions with no evidence given.
+        """
         self.assertEqual(
             set(result_queryset),
             set(Transaction.objects.filter_by_related_objects(
@@ -92,6 +98,14 @@ class TestFilterByRelatedObjects(TestCase):
         (MatchType.EXACT, [True, False, False, False, False]),
     ])
     def test_filters(self, match_type, results):
+        """
+        Method returns correct Transactions with various evidence given.
+
+        This test uses the differing groups of transactions from
+        `setUpTestData` to test that different `MatchTypes` give the right
+        results.  Note that the list of booleans in the `parameterized.expand`
+        decorator maps to the querysets in `query_list`.
+        """
         query_list = [
             self.transaction_with_both_orders,
             self.transaction_with_only_order_1,
@@ -124,6 +138,9 @@ class TestFilterByRelatedObjects(TestCase):
         (MatchType.EXACT, 4),
     ])
     def test_query_counts(self, match_type, query_counts):
+        """
+        `filter_by_related_objects` should use a constant number of queries.
+        """
         with self.assertNumQueries(query_counts):
             list(Transaction.objects.filter_by_related_objects(
                 [self.order_1],
@@ -137,13 +154,19 @@ class TestFilterByRelatedObjects(TestCase):
             ))
 
     def test_invalid_match_type(self):
+        """
+        Invalid MatchTypes are not allowed.
+        """
         with self.assertRaises(ValueError):
             Transaction.objects.filter_by_related_objects(match_type='foo')
 
     def test_chaining_filter_to_existing_queryset(self):
-        self.assertEquals(Transaction.objects.count(), 5)
+        """
+        `filter_by_related_objects` can be used like any other queryset filter.
+        """
+        self.assertEqual(Transaction.objects.count(), 5)
 
-        self.assertEquals(
+        self.assertEqual(
             Transaction.objects.filter_by_related_objects(
                 [self.order_1]).count(), 4)
 
@@ -151,6 +174,6 @@ class TestFilterByRelatedObjects(TestCase):
             Transaction.objects.filter(ledgers__in=[self.ledger])
         )
 
-        self.assertEquals(
+        self.assertEqual(
             transactions_restricted_by_ledger.filter_by_related_objects(
                 [self.order_1]).distinct().count(), 4)

@@ -37,16 +37,16 @@ class TestCreateTransaction(TestCase):
         self.recon_ttype = TransactionTypeFactory(
             name=RECONCILIATION_TYPE_NAME)
 
-    def test_using_company_wide_ledgers_for_reconciliation(self):
+    def test_using_ledgers_for_reconciliation(self):
         """
-        Test ledger behavior with a Recon and Recog proof-of-principle
+        Test ledger behavior with a revenue reconciliation worked example.
 
-        This test creates an Order and a CreditCardTransaction and using the
+        This test creates an Order and a CreditCardTransaction and, using the
         four Ledgers created in setUp, it makes all of the ledger entries that
         an Order and Transaction would be expected to have.  There are three,
-        specifically: Revenue Recognition (CR: Revenue, DR:A/R), recording
-        incoming cash (CR: A/R, DR: Cash (unreconciled)) and Reconciliation
-        (CR: Cash (reconciled), DR: Cash (unreconciled)).
+        specifically: Revenue Recognition (credit: Revenue, debit:A/R), recording
+        incoming cash (credit: A/R, debit: Cash (unreconciled)) and Reconciliation
+        (credit: Cash (reconciled), debit: Cash (unreconciled)).
 
         In table form:
 
