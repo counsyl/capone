@@ -25,12 +25,12 @@ $(VENV_ACTIVATE): requirements*.txt
 	$(WITH_VENV) pip install -r requirements-dev.txt
 	touch $@
 
-develop: venv
+develop: setup
 	$(WITH_VENV) python setup.py develop
 
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
-setup: venv
+setup: venv migrate
 ifdef ARGS
 	$(WITH_VENV) python setup.py ${ARGS}
 else
