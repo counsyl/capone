@@ -291,8 +291,10 @@ class Ledger(models.Model):
         auto_now=True)
 
     def get_balance(self):
-        """Get the current balance on this Ledger."""
-        return self.entries.aggregate(balance=Sum('amount'))['balance']
+        """
+        Get the current sum of all the amounts on the entries in this Ledger.
+        """
+        return sum([entry.amount for entry in self.entries.all()])
 
     def __str__(self):
         return "Ledger %s" % self.name
