@@ -5,17 +5,17 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from ledger.api.actions import credit
-from ledger.api.actions import debit
-from ledger.api.queries import assert_transaction_in_ledgers_for_amounts_with_evidence  # nopep8
-from ledger.models import Ledger
-from ledger.models import Transaction
-from ledger.tests.factories import CreditCardTransactionFactory
-from ledger.tests.factories import LedgerEntry
-from ledger.tests.factories import LedgerFactory
-from ledger.tests.factories import TransactionFactory
-from ledger.tests.factories import TransactionTypeFactory
-from ledger.tests.factories import UserFactory
+from capone.api.actions import credit
+from capone.api.actions import debit
+from capone.api.queries import assert_transaction_in_ledgers_for_amounts_with_evidence  # nopep8
+from capone.models import Ledger
+from capone.models import Transaction
+from capone.tests.factories import CreditCardTransactionFactory
+from capone.tests.factories import LedgerEntry
+from capone.tests.factories import LedgerFactory
+from capone.tests.factories import TransactionFactory
+from capone.tests.factories import TransactionTypeFactory
+from capone.tests.factories import UserFactory
 
 
 class TestAssertTransactionInLedgersForAmountsWithEvidence(TestCase):

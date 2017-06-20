@@ -6,20 +6,20 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from ledger.api.actions import create_transaction
-from ledger.api.actions import credit
-from ledger.api.actions import debit
-from ledger.api.actions import void_transaction
-from ledger.exceptions import TransactionBalanceException
-from ledger.models import LedgerBalance
-from ledger.models import LedgerEntry
-from ledger.models import Transaction
-from ledger.tests.factories import CreditCardTransactionFactory
-from ledger.tests.factories import LedgerFactory
-from ledger.tests.factories import OrderFactory
-from ledger.tests.factories import TransactionFactory
-from ledger.tests.factories import TransactionTypeFactory
-from ledger.tests.factories import UserFactory
+from capone.api.actions import create_transaction
+from capone.api.actions import credit
+from capone.api.actions import debit
+from capone.api.actions import void_transaction
+from capone.exceptions import TransactionBalanceException
+from capone.models import LedgerBalance
+from capone.models import LedgerEntry
+from capone.models import Transaction
+from capone.tests.factories import CreditCardTransactionFactory
+from capone.tests.factories import LedgerFactory
+from capone.tests.factories import OrderFactory
+from capone.tests.factories import TransactionFactory
+from capone.tests.factories import TransactionTypeFactory
+from capone.tests.factories import UserFactory
 
 
 class TransactionBase(TestCase):

@@ -6,7 +6,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import ledger.models
+import capone.models
 import uuid
 
 
@@ -43,7 +43,7 @@ class Migration(migrations.Migration):
                 ('modified_at', models.DateTimeField(auto_now=True)),
                 ('related_object_id', models.PositiveIntegerField(db_index=True)),
                 ('balance', models.DecimalField(decimal_places=4, default=Decimal('0'), max_digits=24)),
-                ('ledger', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='ledger.Ledger')),
+                ('ledger', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='capone.Ledger')),
                 ('related_object_content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
             ],
         ),
@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                 ('modified_at', models.DateTimeField(auto_now=True)),
                 ('entry_id', models.UUIDField(default=uuid.uuid4, help_text='UUID for this ledger entry')),
                 ('amount', models.DecimalField(decimal_places=4, help_text='Amount for this entry.  Debits are positive, and credits are negative.', max_digits=24)),
-                ('ledger', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='entries', to='ledger.Ledger')),
+                ('ledger', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='entries', to='capone.Ledger')),
             ],
             options={
                 'verbose_name_plural': 'ledger entries',
@@ -71,7 +71,7 @@ class Migration(migrations.Migration):
                 ('notes', models.TextField(blank=True, help_text='Any notes to go along with this Transaction.')),
                 ('posted_timestamp', models.DateTimeField(db_index=True, help_text='Time the transaction was posted.  Change this field to model retroactive ledger entries.')),
                 ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('ledgers', models.ManyToManyField(through='ledger.LedgerEntry', to='ledger.Ledger')),
+                ('ledgers', models.ManyToManyField(through='capone.LedgerEntry', to='capone.Ledger')),
             ],
             options={
                 'abstract': False,
@@ -85,7 +85,7 @@ class Migration(migrations.Migration):
                 ('modified_at', models.DateTimeField(auto_now=True)),
                 ('related_object_id', models.PositiveIntegerField(db_index=True)),
                 ('related_object_content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='contenttypes.ContentType')),
-                ('transaction', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='related_objects', to='ledger.Transaction')),
+                ('transaction', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='related_objects', to='capone.Transaction')),
             ],
         ),
         migrations.CreateModel(
@@ -104,17 +104,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='transaction',
             name='type',
-            field=models.ForeignKey(default=ledger.models.get_or_create_manual_transaction_type_id, on_delete=django.db.models.deletion.CASCADE, to='ledger.TransactionType'),
+            field=models.ForeignKey(default=capone.models.get_or_create_manual_transaction_type_id, on_delete=django.db.models.deletion.CASCADE, to='capone.TransactionType'),
         ),
         migrations.AddField(
             model_name='transaction',
             name='voids',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='voided_by', to='ledger.Transaction'),
+            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='voided_by', to='capone.Transaction'),
         ),
         migrations.AddField(
             model_name='ledgerentry',
             name='transaction',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='entries', to='ledger.Transaction'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='entries', to='capone.Transaction'),
         ),
         migrations.AlterUniqueTogether(
             name='transactionrelatedobject',

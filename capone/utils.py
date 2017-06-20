@@ -2,12 +2,12 @@ from __future__ import unicode_literals
 from django.db import connection
 
 REBUILD_LEDGER_BALANCES_SQL = '''\
-SELECT 1 FROM ledger_ledger ORDER BY id FOR UPDATE;
+SELECT 1 FROM capone_ledger ORDER BY id FOR UPDATE;
 
-TRUNCATE ledger_ledgerbalance;
+TRUNCATE capone_ledgerbalance;
 
 INSERT INTO
-  ledger_ledgerbalance (
+  capone_ledgerbalance (
     ledger_id,
     related_object_content_type_id,
     related_object_id,
@@ -15,24 +15,24 @@ INSERT INTO
     created_at,
     modified_at)
 SELECT
-  ledger_ledgerentry.ledger_id,
-  ledger_transactionrelatedobject.related_object_content_type_id,
-  ledger_transactionrelatedobject.related_object_id,
-  SUM(ledger_ledgerentry.amount),
+  capone_ledgerentry.ledger_id,
+  capone_transactionrelatedobject.related_object_content_type_id,
+  capone_transactionrelatedobject.related_object_id,
+  SUM(capone_ledgerentry.amount),
   current_timestamp,
   current_timestamp
 FROM
-  ledger_ledgerentry
+  capone_ledgerentry
 INNER JOIN
-  ledger_transaction
-    ON (ledger_ledgerentry.transaction_id = ledger_transaction.id)
+  capone_transaction
+    ON (capone_ledgerentry.transaction_id = capone_transaction.id)
 LEFT OUTER JOIN
-  ledger_transactionrelatedobject
-    ON (ledger_transaction.id = ledger_transactionrelatedobject.transaction_id)
+  capone_transactionrelatedobject
+    ON (capone_transaction.id = capone_transactionrelatedobject.transaction_id)
 GROUP BY
-  ledger_ledgerentry.ledger_id,
-  ledger_transactionrelatedobject.related_object_content_type_id,
-  ledger_transactionrelatedobject.related_object_id;
+  capone_ledgerentry.ledger_id,
+  capone_transactionrelatedobject.related_object_content_type_id,
+  capone_transactionrelatedobject.related_object_id;
 '''
 
 

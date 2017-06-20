@@ -5,20 +5,20 @@ from decimal import Decimal
 from django.db.models import F
 from django.test import TransactionTestCase
 
-from ledger.api.actions import create_transaction
-from ledger.api.actions import credit
-from ledger.api.actions import debit
-from ledger.api.actions import void_transaction
-from ledger.api.queries import get_balances_for_object
-from ledger.models import Ledger
-from ledger.models import LedgerBalance
-from ledger.models import LedgerEntry
-from ledger.models import Transaction
-from ledger.tests.factories import LedgerFactory
-from ledger.tests.factories import OrderFactory
-from ledger.tests.factories import UserFactory
-from ledger.tests.models import Order
-from ledger.utils import rebuild_ledger_balances
+from capone.api.actions import create_transaction
+from capone.api.actions import credit
+from capone.api.actions import debit
+from capone.api.actions import void_transaction
+from capone.api.queries import get_balances_for_object
+from capone.models import Ledger
+from capone.models import LedgerBalance
+from capone.models import LedgerEntry
+from capone.models import Transaction
+from capone.tests.factories import LedgerFactory
+from capone.tests.factories import OrderFactory
+from capone.tests.factories import UserFactory
+from capone.tests.models import Order
+from capone.utils import rebuild_ledger_balances
 
 
 class TestLedgerBalances(TransactionTestCase):

@@ -5,21 +5,21 @@ from decimal import Decimal as D
 
 from django.test import TestCase
 
-from ledger.exceptions import ExistingLedgerEntriesException
-from ledger.exceptions import NoLedgerEntriesException
-from ledger.exceptions import TransactionBalanceException
-from ledger.models import LedgerEntry
-from ledger.models import Transaction
-from ledger.api.actions import create_transaction
-from ledger.api.actions import credit
-from ledger.api.actions import debit
-from ledger.api.queries import get_balances_for_object
-from ledger.api.queries import validate_transaction
-from ledger.tests.factories import CreditCardTransactionFactory
-from ledger.tests.factories import LedgerFactory
-from ledger.tests.factories import OrderFactory
-from ledger.tests.factories import TransactionTypeFactory
-from ledger.tests.factories import UserFactory
+from capone.exceptions import ExistingLedgerEntriesException
+from capone.exceptions import NoLedgerEntriesException
+from capone.exceptions import TransactionBalanceException
+from capone.models import LedgerEntry
+from capone.models import Transaction
+from capone.api.actions import create_transaction
+from capone.api.actions import credit
+from capone.api.actions import debit
+from capone.api.queries import get_balances_for_object
+from capone.api.queries import validate_transaction
+from capone.tests.factories import CreditCardTransactionFactory
+from capone.tests.factories import LedgerFactory
+from capone.tests.factories import OrderFactory
+from capone.tests.factories import TransactionTypeFactory
+from capone.tests.factories import UserFactory
 
 
 RECONCILIATION_TYPE_NAME = 'Recon'
@@ -235,11 +235,11 @@ class TestCreditAndDebit(TestCase):
         self.assertLess(amount, 0)
 
     def test_credit_and_debit_helper_functions(self):
-        with mock.patch('ledger.api.actions.settings') as mock_settings:
+        with mock.patch('capone.api.actions.settings') as mock_settings:
             mock_settings.DEBITS_ARE_NEGATIVE = True
             self.assertPositive(credit(self.AMOUNT))
             self.assertNegative(debit(self.AMOUNT))
-        with mock.patch('ledger.api.actions.settings') as mock_settings:
+        with mock.patch('capone.api.actions.settings') as mock_settings:
             mock_settings.DEBITS_ARE_NEGATIVE = False
             self.assertNegative(credit(self.AMOUNT))
             self.assertPositive(debit(self.AMOUNT))
