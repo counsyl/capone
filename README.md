@@ -18,7 +18,7 @@ or more "credit" and one or more "debit" entries.  For the sake of this brief
 example, you can think of credits as increasing the amount of money recorded in
 a ledger and a debit decreasing it.  With that assumption, the central idea behind
 double-entry bookkeeping is that the sum of every ledger entry's debits must
-equal the sum of its credits.  `ledger` implements a double-entry bookkeeping
+equal the sum of its credits.  `capone` implements a double-entry bookkeeping
 system by providing an API for checking that all created entries satisfy this
 condition or rolling back the transaction if not.
 
