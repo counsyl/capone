@@ -2,6 +2,8 @@
 
 _Never let your books land you in the pen._
 
+![Al Capone's Miami Mugshot](Al_Capone_in_Florida.jpg)
+
 `Capone` is a library that provides double-entry bookkeeping (the foundation of
 all modern accounting) for Django with the ability to link each recorded
 transaction to zero or more other Django models as evidence for that
