@@ -1,5 +1,7 @@
 # Ledger
 
+_Never let your books land you in the pen._
+
 `Ledger` is a library that provides double-entry bookkeeping (the foundation of
 all modern accounting) for Django with the ability to link each recorded
 transaction to zero or more other Django models as evidence for that
