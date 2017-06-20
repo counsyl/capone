@@ -1,8 +1,8 @@
-# Ledger
+# Capone
 
 _Never let your books land you in the pen._
 
-`Ledger` is a library that provides double-entry bookkeeping (the foundation of
+`Capone` is a library that provides double-entry bookkeeping (the foundation of
 all modern accounting) for Django with the ability to link each recorded
 transaction to zero or more other Django models as evidence for that
 transaction.
@@ -20,12 +20,12 @@ equal the sum of its credits.  `ledger` implements a double-entry bookkeeping
 system by providing an API for checking that all created entries satisfy this
 condition or rolling back the transaction if not.
 
-In addition to this standard bookkeeping functionality, `ledger` also allows
+In addition to this standard bookkeeping functionality, `capone` also allows
 any number of arbitrary objects to be attached, via generic foreign keys, to
 a ledger entry as "evidence" for that transaction's having happened.  For
 instance, a transaction recording a bank deposit paying for several medical
 tests at a time from an insurance company to your medical testing company could
-be linked to the original `Order` objects that recorded the test.  `ledger`
+be linked to the original `Order` objects that recorded the test.  `capone`
 also provides an API for the efficient querying of ledger entries by evidence.
 
 For more information on the concept of double-entry bookkeeping itself, we
@@ -65,15 +65,15 @@ From the repository root, run:
 
 Then you should be free to run
 
-    ./manage.py makemigrations --settings=ledger.tests.settings
+    ./manage.py makemigrations --settings=capone.tests.settings
 
 or any other `manage.py` command, even those in the Makefile.
 
 To run individual tests, use the following:
 
-    ./manage.py test --settings=ledger.tests.settings ledger.tests
+    ./manage.py test --settings=capone.tests.settings capone.tests
 
-Notice the `--settings=ledger.tests.settings` argument: because this repository
+Notice the `--settings=capone.tests.settings` argument: because this repository
 is a django sub-module, it wouldn't make sense for it to come with its own
 default `settings.py` file.  Instead, it ships with one used to run its tests.
 To use `manage.py`, we have to pass an import path to the settings file
@@ -82,7 +82,7 @@ explicitly.
 
 ## Models
 
-Let's introduce the models provided by `ledger` and how they relate to one
+Let's introduce the models provided by `capone` and how they relate to one
 another.
 
 Note that all objects in this library have `created_at` and `modified_at`
@@ -99,7 +99,7 @@ credits and debits, and any metadata one wishes to store with these objects.
 #### Ledger
 
 A `Ledger` is the top-most level of organization of information in double-entry
-bookkeeping as well as the `ledger` app.  Most ledgers have names familiar to
+bookkeeping as well as the `capone` app.  Most ledgers have names familiar to
 those with any knowledge of accounting, such as "revenue" or "accounts
 receivable".
 
@@ -138,7 +138,7 @@ debit pair of the same currency amount, but that still represents a net
 increase in the value of a company: a debit in Accounts Receivable and a credit
 in Revenue increases both accounts while satisfying the accounting equation.**
 
-Currently, field `increased_by_debits` is not used by the code in `ledger` but
+Currently, field `increased_by_debits` is not used by the code in `capone` but
 is provided as a convenience to users who might wish to incorporate this
 information into an external report or calculation.
 
@@ -147,8 +147,8 @@ information into an external report or calculation.
 
 A `Transaction` is a record of a discrete financial action, represented by
 a collection of debits and credits whose sums equal one another.  Practically
-all models in `ledger` link to or through `Transaction`: in a sense you could
-say it's the main model provided by `ledger`.  A `Transaction` can sometimes be
+all models in `capone` link to or through `Transaction`: in a sense you could
+say it's the main model provided by `capone`.  A `Transaction` can sometimes be
 referred to as a "journal entry".
 
 The `Transaction` model records debits and credits by linking to
@@ -160,7 +160,7 @@ of by the `credit` and `debit` convenience methods (see examples below).
 
 `Transactions` should never be deleted.  Instead, a new `Transaction` with
 debits and credits swapped should be created using
-`ledger.api.actions.void_transaction` to negate the effect of the `Transaction`
+`capone.api.actions.void_transaction` to negate the effect of the `Transaction`
 you'd like to remove.  The `voids` field on the new `Transaction` will
 automatically be filled in with the old `Transaction` you wish to remove.  By
 this method, you'll never have to delete data from your system as a part of
@@ -173,7 +173,7 @@ non-computerized double-entry bookkeeping.
 -   `notes`: A free-form text field for adding to a `Transaction` any
     information not expressed in the numerous metadata fields.
 -   `posted_timestamp`:  The time a `Transaction` should be considered valid
-    from.  `ledger.api.actions.create_transaction` automatically deals with
+    from.  `capone.api.actions.create_transaction` automatically deals with
     filling in this value with the current time.   You can change this value to
     post-date or back-date `Transactions` because `created_at` will always
     represent the true object creation time.
@@ -192,7 +192,7 @@ The default `TransactionType` is `MANUAL`, which is created automatically by
 the library, but you can define others, say for bots or certain classes of
 users.
 
-Currently, `TransactionType` is not used by the code in `ledger` but is
+Currently, `TransactionType` is not used by the code in `capone` but is
 provided as a convenience to users who might wish to incorporate this
 information into an external report or calculation.
 
@@ -217,11 +217,11 @@ searching over that evidence.
 #### TransactionRelatedObject
 
 A `TransactionRelatedObject` (`TRO`) represents the "evidence" relationship that
-makes the `ledger` library unique.  A `TRO` links a `Transaction` to an arbitrary
+makes the `capone` library more useful.  A `TRO` links a `Transaction` to an arbitrary
 object in the larger app that this library is used in using a generic foreign
 key.  One `TRO` links one `Transaction` and one arbitrary object, so we make as
 many `TROs` as we want pieces of evidence.  There are several convenience
-methods in `ledger.api.queries` for efficiently querying over `Transactions`
+methods in `capone.api.queries` for efficiently querying over `Transactions`
 based on evidence and evidence objects based on their `Transactions` (see
 examples below).
 
@@ -236,14 +236,14 @@ a specific Ledger.  Therefore, there is only one `LedgerBalance` for each
 `(ledger, related_object)` tuple.
 
 You should never have to manually create or edit a `LedgerBalance`: doing so,
-as well as keeping them up-to-date, is handled by `ledger` internals.  For the
+as well as keeping them up-to-date, is handled by `capone` internals.  For the
 same reasons, deleting them is not necessary or a good idea.
 
 The purpose of `LedgerBalance` can best be demonstrated by considering the
-deceptively simple query, "how many Orders (a non-`ledger` model we presumably
-created in the app where we include `ledger` as a library) have an Accounts
+deceptively simple query, "how many Orders (a non-`capone` model we presumably
+created in the app where we include `capone` as a library) have an Accounts
 Receivable balance greater than zero?"  One would have to calculate the ledger
-balance over literally the product of all ledgers and all non-`ledger` objects
+balance over literally the product of all ledgers and all non-`capone` objects
 in the database, and then filter them for all those with balances above zero,
 to answer this question, which is obviously too expensive.  By keeping track of
 the per-`Ledger` balance for each object used as evidence in a `Transaction`,
@@ -258,7 +258,7 @@ Let's start by creating two common ledger types, "Accounts Receivable" and
 "Revenue", which usually have transactions between themselves:
 
 ```
->>> from ledger.models import Ledger
+>>> from capone.models import Ledger
 >>> ar = Ledger.objects.create(name='Accounts Receivable', number=1, increased_by_debits=True)
 <Ledger: Ledger Accounts Receivable>
 >>> revenue = Ledger.objects.create(name='Revenue', number=2, increased_by_debits=True)
@@ -270,11 +270,11 @@ Please consult the double-entry bookkeeping Wikipedia article or the
 explanation for `increased_by_debits` above for a more in-depth explanation of
 the "accounting equation" and whether debits increase or decrease an account.
 
-Also, note that the default convention in `ledger` is to store debits as
+Also, note that the default convention in `capone` is to store debits as
 positive numbers and credits as negative numbers.  This convention is common
 but completely arbitrary.  If you want to switch the convention around, you can
 set `DEBITS_ARE_NEGATIVE` to `True` in your settings.py file.  By default, that
-constant doesn't need to be defined, and if it remains undefined, `ledger` will
+constant doesn't need to be defined, and if it remains undefined, `capone` will
 interpret its value as `False`.
 
 
@@ -284,9 +284,9 @@ Now let's create a fake Order, so that we have some evidence for these ledger
 entries, and a fake User, so we'll have someone to blame for these transactions:
 
 ```
->>> from ledger.tests.factories import OrderFactory
+>>> from capone.tests.factories import OrderFactory
 >>> order = OrderFactory()
->>> from ledger.tests.factories import UserFactory
+>>> from capone.tests.factories import UserFactory
 >>> user = UserFactory()
 ```
 
@@ -296,11 +296,11 @@ entries, and a fake User, so we'll have someone to blame for these transactions:
 We're now ready to create a simple transaction:
 
 ```
->>> from ledger.api.actions import create_transaction
->>> from ledger.api.actions import credit
->>> from ledger.api.actions import debit
+>>> from capone.api.actions import create_transaction
+>>> from capone.api.actions import credit
+>>> from capone.api.actions import debit
 >>> from decimal import Decimal
->>> from ledger.models import LedgerEntry
+>>> from capone.models import LedgerEntry
 >>> txn = create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)])
 >>> txn.summary()
 {
@@ -316,7 +316,7 @@ We're now ready to create a simple transaction:
 
 Note that we use the helper functions `credit` and `debit` with positive
 numbers to keep the signs consistent in our code.  There should be no reason to
-use negative numbers with `ledger`.
+use negative numbers with `capone`.
 
 Note also that the value for the credit and debit is the same: $100.  If we
 tried to create a transaction with mismatching amounts, we would get an error:
@@ -339,13 +339,13 @@ docstring for details.
 
 ### Ledger Balances
 
-`ledger` keeps track of the balance in each ledger for each evidence object in
+`capone` keeps track of the balance in each ledger for each evidence object in
 a denormalized and efficient way.  Let's use this behavior to get the balances
 of our ledgers as well as the balances in each ledger for our `order` object:
 
 
 ```
->>> from ledger.api.queries import get_balances_for_object
+>>> from capone.api.queries import get_balances_for_object
 
 >>> get_balances_for_object(order)
 defaultdict(<function <lambda> at 0x7fd7ecfa96e0>, {<Ledger: Ledger Accounts Receivable>: Decimal('100.0000'), <Ledger: Ledger Revenue>: Decimal('-100.0000')})
@@ -417,7 +417,7 @@ By default, `Transactions` are of a special, auto-generated "manual" type:
 but you can create and assign `TransactionTypes` when creating `Transactions`:
 
 ```
->>> from ledger.models import TransactionType
+>>> from capone.models import TransactionType
 >>> new_type = TransactionType.objects.create(name='New type')
 >>> txn = create_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(100)), ledger=revenue)], type=new_type)
 >>> txn.type
@@ -466,7 +466,7 @@ TransactionBalanceException               Traceback (most recent call last)
 <ipython-input-64-07b6d139bb37> in <module>()
 ----> 1 validate_transaction(user, evidence=[order], ledger_entries=[LedgerEntry(amount=debit(Decimal(100)), ledger=ar), LedgerEntry(amount=credit(Decimal(101)), ledger=revenue)], type=new_type)
 
-/home/hunter/ledger/ledger/api/queries.pyc in validate_transaction(user, evidence, ledger_entries, notes, type, posted_timestamp)
+/home/hunter/capone/capone/api/queries.pyc in validate_transaction(user, evidence, ledger_entries, notes, type, posted_timestamp)
      67     if total != Decimal(0):
      68         raise TransactionBalanceException(
 ---> 69             "Credits do not equal debits. Mis-match of %s." % total)
@@ -478,7 +478,7 @@ TransactionBalanceException: Credits do not equal debits. Mis-match of -1.
 
 ### Queries
 
-Along with the query possibilities from the Django ORM, `ledger` provides
+Along with the query possibilities from the Django ORM, `capone` provides
 `Transaction.filter_by_related_objects` for finding `Transactions` that are
 related to certain models as evidence.
 
@@ -525,7 +525,7 @@ the evidence provided, determined by `MatchTypes` `ANY`, `ALL`, `NONE`, and
 For writing tests, the method
 `assert_transaction_in_ledgers_for_amounts_with_evidence` is provided for
 convenience.  As its name implies, it allows asserting the existence of exactly
-one `Transaction` with the ledger amounts, evidence, and other fields on ledger
+one `Transaction` with the ledger amounts, evidence, and other fields on Ledger
 provided to the method.
 
 ```
@@ -546,5 +546,5 @@ Traceback (most recent call last):
 ```
 
 You can see
-`ledger.tests.test_assert_transaction_in_ledgers_for_amounts_with_evidence` for
+`capone.tests.test_assert_transaction_in_ledgers_for_amounts_with_evidence` for
 more examples!

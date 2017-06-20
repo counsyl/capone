@@ -7,14 +7,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import F
 from django.db.transaction import atomic
 
-from ledger.api.queries import validate_transaction
-from ledger.exceptions import UnvoidableTransactionException
-from ledger.models import get_or_create_manual_transaction_type
-from ledger.models import Ledger
-from ledger.models import LedgerBalance
-from ledger.models import LedgerEntry
-from ledger.models import Transaction
-from ledger.models import TransactionRelatedObject
+from capone.api.queries import validate_transaction
+from capone.exceptions import UnvoidableTransactionException
+from capone.models import get_or_create_manual_transaction_type
+from capone.models import Ledger
+from capone.models import LedgerBalance
+from capone.models import LedgerEntry
+from capone.models import Transaction
+from capone.models import TransactionRelatedObject
 
 
 @atomic

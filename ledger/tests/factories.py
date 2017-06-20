@@ -4,21 +4,21 @@ from decimal import Decimal
 import factory
 from django.contrib.auth import get_user_model
 
-from ledger.api.actions import create_transaction
-from ledger.api.actions import credit
-from ledger.api.actions import debit
-from ledger.models import Ledger
-from ledger.models import LedgerEntry
-from ledger.models import TransactionType
-from ledger.tests.models import CreditCardTransaction
-from ledger.tests.models import Order
+from capone.api.actions import create_transaction
+from capone.api.actions import credit
+from capone.api.actions import debit
+from capone.models import Ledger
+from capone.models import LedgerEntry
+from capone.models import TransactionType
+from capone.tests.models import CreditCardTransaction
+from capone.tests.models import Order
 
 
 class UserFactory(factory.DjangoModelFactory):
     """
     Factory for django.contrib.auth.get_user_model()
 
-    `ledger` relies on `django.contrib.auth` because each `Transaction` is
+    `capone` relies on `django.contrib.auth` because each `Transaction` is
     attached to the `User` who created it.  Therefore, we can't just use a stub
     model here with, say, only a name field.
     """

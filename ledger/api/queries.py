@@ -7,12 +7,12 @@ from functools import reduce
 from django.contrib.contenttypes.models import ContentType
 from nose.tools import assert_equal
 
-from ledger.exceptions import ExistingLedgerEntriesException
-from ledger.exceptions import NoLedgerEntriesException
-from ledger.exceptions import TransactionBalanceException
-from ledger.models import LedgerBalance
-from ledger.models import MatchType
-from ledger.models import Transaction
+from capone.exceptions import ExistingLedgerEntriesException
+from capone.exceptions import NoLedgerEntriesException
+from capone.exceptions import TransactionBalanceException
+from capone.models import LedgerBalance
+from capone.models import MatchType
+from capone.models import Transaction
 
 
 def get_balances_for_object(obj):

@@ -4,16 +4,16 @@ from decimal import Decimal as D
 
 from django.test import TestCase
 
-from ledger.api.actions import create_transaction
-from ledger.api.actions import credit
-from ledger.api.actions import debit
-from ledger.api.actions import void_transaction
-from ledger.exceptions import UnvoidableTransactionException
-from ledger.models import LedgerEntry
-from ledger.tests.factories import LedgerFactory
-from ledger.tests.factories import TransactionFactory
-from ledger.tests.factories import TransactionTypeFactory
-from ledger.tests.factories import UserFactory
+from capone.api.actions import create_transaction
+from capone.api.actions import credit
+from capone.api.actions import debit
+from capone.api.actions import void_transaction
+from capone.exceptions import UnvoidableTransactionException
+from capone.models import LedgerEntry
+from capone.tests.factories import LedgerFactory
+from capone.tests.factories import TransactionFactory
+from capone.tests.factories import TransactionTypeFactory
+from capone.tests.factories import UserFactory
 
 
 class TestVoidBase(TestCase):

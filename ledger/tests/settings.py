@@ -5,8 +5,8 @@ import os
 DEBUG = True
 
 INSTALLED_APPS = (
-    'ledger.tests',
-    'ledger',
+    'capone.tests',
+    'capone',
     'django_nose',
     'django.contrib.staticfiles',
     'django.contrib.sessions',
@@ -21,7 +21,7 @@ TEMPLATE_DIRS = (os.path.join(os.path.dirname(__file__), 'templates'),)
 
 DATABASES = {
     'default': {
-        'NAME': 'ledger_test_db',
+        'NAME': 'capone_test_db',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': 'django',
         'PASSWORD': 'secret',

@@ -14,7 +14,7 @@ from django.db.models import Q
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
-from ledger.exceptions import TransactionBalanceException
+from capone.exceptions import TransactionBalanceException
 
 
 POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # nopep8
@@ -28,7 +28,7 @@ class TransactionRelatedObject(models.Model):
 
     TransactionRelatedObject has a FK to a Transaction and a GFK that can point
     to any object in the database.  These evidence objects would be defined in
-    the larger app that uses `ledger` as a resource.  We create as many
+    the larger app that uses `capone` as a resource.  We create as many
     TransactionRelatedObjects as there are pieces of evidence for
     a `Transaction`.
     """
@@ -204,7 +204,7 @@ def get_or_create_manual_transaction_type_id():
 @python_2_unicode_compatible
 class Transaction(models.Model):
     """
-    The main model for representing a financial event in `ledger`.
+    The main model for representing a financial event in `capone`.
 
     Transactions link together many LedgerEntries.
 
@@ -258,7 +258,7 @@ class Transaction(models.Model):
         Validates that this Transaction properly balances.
 
         This method is not as thorough as
-        `ledger.api.queries.validate_transaction` because not all of the
+        `capone.api.queries.validate_transaction` because not all of the
         validations in that method apply to an already-created object.
         Instead, the only check that makes sense is that the entries for the
         transaction still balance.
@@ -369,7 +369,7 @@ class LedgerBalance(models.Model):
 
     The denormalized values on this model make querying for related objects
     that have a specific balance in a Ledger more efficient.  Creating and
-    updating this model is taken care of automatically by `ledger`.  See the
+    updating this model is taken care of automatically by `capone`.  See the
     README for a further explanation and demonstration of using the query API
     that uses this model.
     """
@@ -412,7 +412,7 @@ def LedgerBalances():
     Make a relation from an evidence model to its LedgerBalance entries.
     """
     return GenericRelation(
-        'ledger.LedgerBalance',
+        'capone.LedgerBalance',
         content_type_field='related_object_content_type',
         object_id_field='related_object_id',
     )

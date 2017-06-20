@@ -1,4 +1,4 @@
-PACKAGE_NAME=ledger
+PACKAGE_NAME=capone
 TEST_OUTPUT?=nosetests.xml
 
 ifdef TOX_ENV
@@ -39,17 +39,17 @@ endif
 
 .PHONY: migrate
 migrate: develop
-	dropdb --if-exists ledger_test_db
-	createdb ledger_test_db
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=ledger.tests.settings --noinput
+	dropdb --if-exists capone_test_db
+	createdb capone_test_db
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=capone.tests.settings --noinput
 
 .PHONY: makemigrations
 makemigrations: develop
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py makemigrations --settings=ledger.tests.settings
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py makemigrations --settings=capone.tests.settings
 
 .PHONY: shell
 shell: migrate
-	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=ledger.tests.settings
+	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=capone.tests.settings
 
 .PHONY: clean
 clean:
@@ -65,7 +65,7 @@ clean:
 	rm -f $(TEST_OUTPUT)
 	find . -type f -name '*.pyc' -delete
 	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
-	dropdb --if-exists ledger_test_db
+	dropdb --if-exists capone_test_db
 
 .PHONY: teardown
 teardown:
