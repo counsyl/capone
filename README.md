@@ -550,3 +550,9 @@ Traceback (most recent call last):
 You can see
 `capone.tests.test_assert_transaction_in_ledgers_for_amounts_with_evidence` for
 more examples!
+
+
+## Image Credits
+
+Image courtesy [Officer](https://commons.wikimedia.org/wiki/User:Officer) on [Wikipedia](https://commons.wikimedia.org/wiki/File:Al_Capone_in_Florida.jpg).
+This work was created by a government unit (including state, county, and municipal government agencies) of the U.S. state of Florida. It is a public record that was not created by an agency which state law has allowed to claim copyright and is therefore in the public domain in the United States.
