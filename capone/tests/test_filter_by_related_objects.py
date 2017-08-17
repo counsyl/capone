@@ -76,15 +76,17 @@ class TestFilterByRelatedObjects(TestCase):
         )
 
     @parameterized.expand([
-        (MatchType.ANY, Transaction.objects.all().values_list('id')),
-        (MatchType.ALL, Transaction.objects.all().values_list('id')),
-        (MatchType.NONE, Transaction.objects.all().values_list('id')),
-        (MatchType.EXACT, Transaction.objects.none().values_list('id')),
+        (MatchType.ANY, 'all'),
+        (MatchType.ALL, 'all'),
+        (MatchType.NONE, 'all'),
+        (MatchType.EXACT, 'none'),
     ])
-    def test_filter_with_no_evidence(self, match_type, result_queryset):
+    def test_filter_with_no_evidence(self, match_type, queryset_function_name):
         """
         Method returns correct Transactions with no evidence given.
         """
+        result_queryset = getattr(
+            Transaction.objects, queryset_function_name)().values_list('id')
         self.assertEqual(
             set(result_queryset),
             set(Transaction.objects.filter_by_related_objects(
