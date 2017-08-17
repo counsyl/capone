@@ -6,5 +6,7 @@ install:
   - pip install tox tox-travis
 script:
   - tox
+env:
+  - POSTGRES_USER=postgres POSTGRES_PASSWORD=""
 notifications:
   email: false

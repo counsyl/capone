@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 import os
+import re
 
 
 DEBUG = True
@@ -19,12 +20,16 @@ SECRET_KEY = 'secretkey'
 
 TEMPLATE_DIRS = (os.path.join(os.path.dirname(__file__), 'templates'),)
 
+# Namespace test database by the tox environment to allow detox to run tests
+# in parallel.
+_ENVNAME = re.sub(r'\W', '', os.environ.get("TOXENV", ""))
 DATABASES = {
     'default': {
-        'NAME': 'capone_test_db',
+        'NAME': 'caponedb%s' % _ENVNAME,
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'USER': 'django',
-        'PASSWORD': 'secret',
+        'USER': os.environ.get('POSTGRES_USER', 'django'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'django'),
+
     },
 }
 
