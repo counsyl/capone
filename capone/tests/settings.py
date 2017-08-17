@@ -5,9 +5,9 @@ import os
 DEBUG = True
 
 INSTALLED_APPS = (
-    'django_nose',
     'capone.tests',
     'capone',
+    'django_nose',
     'django.contrib.staticfiles',
     'django.contrib.sessions',
     'django.contrib.contenttypes',
@@ -21,7 +21,7 @@ TEMPLATE_DIRS = (os.path.join(os.path.dirname(__file__), 'templates'),)
 
 DATABASES = {
     'default': {
-        'NAME': 'capone_db',
+        'NAME': 'capone_test_db',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': os.environ.get('POSTGRES_USER', 'django'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'django'),
