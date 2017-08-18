@@ -23,8 +23,8 @@ DATABASES = {
     'default': {
         'NAME': 'capone_test_db',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'USER': 'django',
-        'PASSWORD': 'secret',
+        'USER': os.environ.get('POSTGRES_USER', 'django'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'django'),
     },
 }
 
