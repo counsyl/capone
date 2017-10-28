@@ -39,7 +39,7 @@ endif
 
 .PHONY: migrate
 migrate: develop
-	test -z `psql postgres -At -c "SELECT 1 FROM pg_roles WHERE rolname='django'" ` && createuser django
+	test -z `psql postgres -At -c "SELECT 1 FROM pg_roles WHERE rolname='django'" ` && createuser django || true
 	dropdb --if-exists capone_test_db
 	createdb capone_test_db
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=capone.tests.settings --noinput
