@@ -70,7 +70,7 @@ class MatchType(Enum):
 class TransactionQuerySet(models.QuerySet):
     def non_void(self):
         return self.filter(
-            voided_by__isnull=True,
+            voided_by__voids_id__isnull=True,
             voids__isnull=True,
         )
 
