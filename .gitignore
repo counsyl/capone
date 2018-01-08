@@ -8,6 +8,7 @@
 .tox
 *.egg-info/*
 *.eggs
+build/*
 docs/_build/*
 dist/*
 pbr-*.egg/
