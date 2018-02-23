@@ -7,7 +7,6 @@ DEBUG = True
 INSTALLED_APPS = (
     'capone.tests',
     'capone',
-    'django_nose',
     'django.contrib.staticfiles',
     'django.contrib.sessions',
     'django.contrib.contenttypes',
