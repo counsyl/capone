@@ -37,8 +37,6 @@ STATIC_FILE_FINDERS = (
 
 STATIC_URL = '/static/'
 
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
-
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',

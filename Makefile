@@ -1,5 +1,4 @@
 PACKAGE_NAME=capone
-TEST_OUTPUT?=nosetests.xml
 
 ifdef TOX_ENV
 	TOX_ENV_FLAG := -e $(TOX_ENV)
@@ -63,9 +62,9 @@ clean:
 	find . -name __pycache__ -delete
 	rm -f MANIFEST
 	rm -f test.db
-	rm -f $(TEST_OUTPUT)
+	rm -f xunit.xml
 	find . -type f -name '*.pyc' -delete
-	rm -rf nosetests* "${TEST_OUTPUT}" coverage .coverage
+	rm -rf coverage .coverage*
 	dropdb --if-exists capone_test_db
 
 .PHONY: teardown

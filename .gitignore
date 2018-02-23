@@ -15,6 +15,7 @@ pbr-*.egg/
 
 *.log
 nosetests*.xml
+xunit.xml
 
 .coverage*
 coverage.xml
