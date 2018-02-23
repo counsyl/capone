@@ -80,15 +80,7 @@ lint: venv
 test: venv
 	$(WITH_VENV) \
 	coverage erase ; \
-	tox -v $(TOX_ENV_FLAG); \
-	status=$$?; \
-	coverage combine; \
-	coverage html --directory=coverage; \
-	coverage report --fail-under=100 --show-missing --omit="*migrations*,*tests*"; \
-	coverage_code=$$?; \
-	xunitmerge nosetests-*.xml $(TEST_OUTPUT); \
-	if [ $$coverage_code -gt 0 ] ; then echo "Failed: Test coverage is not 100%."; fi; \
-	exit $$(($$status + $$coverage_code));
+	tox -v $(TOX_ENV_FLAG)
 
 # Distribution
 VERSION=`$(WITH_VENV) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'`
