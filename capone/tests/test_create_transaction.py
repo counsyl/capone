@@ -55,7 +55,7 @@ class TestCreateTransaction(TestCase):
         Test is complete        | -$500                              | +$500   |                     |                   | `Order`
         Patient pays            | +$500                              |         | -$500               |                   | `CreditCardTransaction`
         Payments are reconciled |                                    |         | +$500               | -$500             | both `Order` and `CreditCardTransaction`
-        """  # nopep8
+        """  # noqa: E501
         order = OrderFactory()
         credit_card_transaction = CreditCardTransactionFactory()
 

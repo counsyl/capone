@@ -16,6 +16,7 @@ pbr-*.egg/
 *.log
 nosetests*.xml
 xunit.xml
+.pytest_cache
 
 .coverage*
 coverage.xml
