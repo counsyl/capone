@@ -102,10 +102,10 @@ def assert_transaction_in_ledgers_for_amounts_with_evidence(
         .get()
     )
 
-    transactions = sorted(
+    matching_pairs = sorted(
         matching_transaction.entries.values_list('ledger__name', 'amount')
     )
-    assert transactions == sorted(ledger_amount_pairs)
+    assert matching_pairs == sorted(ledger_amount_pairs)
 
     related = {o.related_object
                for o in matching_transaction.related_objects.all()}

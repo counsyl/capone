@@ -80,6 +80,8 @@ test: venv
 	$(WITH_VENV) \
 	coverage erase ; \
 	tox -v $(TOX_ENV_FLAG)
+	status=$$?;
+	exit $$status;
 
 # Distribution
 VERSION=`$(WITH_VENV) python setup.py --version | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/'`
