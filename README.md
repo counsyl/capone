@@ -366,6 +366,7 @@ We can also void that transaction, which enters a transaction with the same
 evidence but with all values of the opposite sign:
 
 ```
+>>> from capone.api.actions import void_transaction
 >>> void = void_transaction(txn, user)
 <Transaction: Transaction 9cd85014-c588-43ff-9532-a6fc2429069e>
 
