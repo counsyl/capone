@@ -38,9 +38,10 @@ class TransactionRelatedObject(models.Model):
 
     transaction = models.ForeignKey(
         'Transaction',
-        related_name='related_objects')
+        related_name='related_objects',
+        on_delete=models.deletion.CASCADE)
     related_object_content_type = models.ForeignKey(
-        ContentType)
+        ContentType, on_delete=models.deletion.CASCADE)
     related_object_id = models.PositiveIntegerField(
         db_index=True)
     related_object = GenericForeignKey(
@@ -228,13 +229,14 @@ class Transaction(models.Model):
         'Transaction',
         blank=True,
         null=True,
-        related_name='voided_by')
+        related_name='voided_by',
+        on_delete=models.deletion.CASCADE)
 
     notes = models.TextField(
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL)
+        settings.AUTH_USER_MODEL, on_delete=models.deletion.CASCADE)
     posted_timestamp = models.DateTimeField(
         help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
         db_index=True)
@@ -246,7 +248,7 @@ class Transaction(models.Model):
     type = models.ForeignKey(
         TransactionType,
         default=get_or_create_manual_transaction_type_id,
-    )
+        on_delete=models.deletion.CASCADE)
 
     objects = TransactionQuerySet.as_manager()
 
@@ -334,10 +336,12 @@ class LedgerEntry(models.Model):
 
     ledger = models.ForeignKey(
         Ledger,
-        related_name='entries')
+        related_name='entries',
+        on_delete=models.deletion.CASCADE)
     transaction = models.ForeignKey(
         Transaction,
-        related_name='entries')
+        related_name='entries',
+        on_delete=models.deletion.CASCADE)
 
     entry_id = models.UUIDField(
         help_text=_("UUID for this ledger entry"),
@@ -378,11 +382,10 @@ class LedgerBalance(models.Model):
             ('ledger', 'related_object_content_type', 'related_object_id'),
         )
 
-    ledger = models.ForeignKey(
-        'Ledger')
+    ledger = models.ForeignKey('Ledger', on_delete=models.deletion.CASCADE)
 
     related_object_content_type = models.ForeignKey(
-        ContentType)
+        ContentType, on_delete=models.deletion.CASCADE)
     related_object_id = models.PositiveIntegerField(
         db_index=True)
     related_object = GenericForeignKey(
