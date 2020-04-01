@@ -102,6 +102,7 @@ def _credit_or_debit(amount, reverse):
     else:
         return -amount if reverse else amount
 
+
 credit = partial(_credit_or_debit, reverse=True)
 debit = partial(_credit_or_debit, reverse=False)
 
