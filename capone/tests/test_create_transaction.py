@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
-import mock
 from datetime import datetime
 from decimal import Decimal as D
+from unittest import mock
 
 from django.test import TestCase
 
