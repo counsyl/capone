@@ -2,7 +2,6 @@
 These models are used by the `capone` tests to demonstrate how Orders and
 CreditCardTransactions could be handled in your system.
 """
-from __future__ import unicode_literals
 from decimal import Decimal
 
 from django.db import models

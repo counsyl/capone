@@ -1,11 +1,9 @@
-from __future__ import unicode_literals
 import operator
 from collections import defaultdict
 from decimal import Decimal
 from functools import reduce
 
 from django.contrib.contenttypes.models import ContentType
-from nose.tools import assert_equal
 
 from capone.exceptions import ExistingLedgerEntriesException
 from capone.exceptions import NoLedgerEntriesException
@@ -102,18 +100,15 @@ def assert_transaction_in_ledgers_for_amounts_with_evidence(
         .filter_by_related_objects(evidence, match_type=MatchType.EXACT)
         .get()
     )
-    assert_equal(
-        sorted(
-            matching_transaction.entries.values_list(
-                'ledger__name', 'amount')
-        ),
-        sorted(ledger_amount_pairs),
+
+    matching_pairs = sorted(
+        matching_transaction.entries.values_list('ledger__name', 'amount')
     )
-    assert_equal(
-        set(o.related_object
-            for o in matching_transaction.related_objects.all()),
-        set(evidence),
-    )
+    assert matching_pairs == sorted(ledger_amount_pairs)
+
+    related = {o.related_object
+               for o in matching_transaction.related_objects.all()}
+    assert related == set(evidence)
 
     TRANSACTION_FIELD_NAMES = [
         ('notes', 'notes'),
@@ -124,6 +119,5 @@ def assert_transaction_in_ledgers_for_amounts_with_evidence(
 
     for arg_name, transaction_name in TRANSACTION_FIELD_NAMES:
         if kwargs.get(arg_name):
-            assert_equal(
-                getattr(
-                    matching_transaction, transaction_name), kwargs[arg_name])
+            field = getattr(matching_transaction, transaction_name)
+            assert field == kwargs[arg_name]

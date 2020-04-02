@@ -1,7 +1,6 @@
-from __future__ import unicode_literals
-import mock
 from datetime import datetime
 from decimal import Decimal as D
+from unittest import mock
 
 from django.test import TestCase
 
@@ -55,7 +54,7 @@ class TestCreateTransaction(TestCase):
         Test is complete        | -$500                              | +$500   |                     |                   | `Order`
         Patient pays            | +$500                              |         | -$500               |                   | `CreditCardTransaction`
         Payments are reconciled |                                    |         | +$500               | -$500             | both `Order` and `CreditCardTransaction`
-        """  # nopep8
+        """  # noqa: E501
         order = OrderFactory()
         credit_card_transaction = CreditCardTransactionFactory()
 

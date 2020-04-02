@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from datetime import datetime
 from datetime import timedelta
 from decimal import Decimal
@@ -7,7 +6,7 @@ from django.test import TestCase
 
 from capone.api.actions import credit
 from capone.api.actions import debit
-from capone.api.queries import assert_transaction_in_ledgers_for_amounts_with_evidence  # nopep8
+from capone.api.queries import assert_transaction_in_ledgers_for_amounts_with_evidence  # noqa: E501
 from capone.models import Ledger
 from capone.models import Transaction
 from capone.tests.factories import CreditCardTransactionFactory

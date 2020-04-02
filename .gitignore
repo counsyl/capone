@@ -14,7 +14,8 @@ dist/*
 pbr-*.egg/
 
 *.log
-nosetests*.xml
+pytest*.xml
+.pytest_cache
 
 .coverage*
 coverage.xml

@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from datetime import datetime
 from functools import partial
 
@@ -101,6 +100,7 @@ def _credit_or_debit(amount, reverse):
         return amount if reverse else -amount
     else:
         return -amount if reverse else amount
+
 
 credit = partial(_credit_or_debit, reverse=True)
 debit = partial(_credit_or_debit, reverse=False)

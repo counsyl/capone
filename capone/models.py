@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import operator
 import uuid
 from decimal import Decimal
@@ -17,8 +16,8 @@ from django.utils.translation import ugettext_lazy as _
 from capone.exceptions import TransactionBalanceException
 
 
-POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # nopep8
-NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # nopep8
+POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # noqa: E501
+NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # noqa: E501
 
 
 @python_2_unicode_compatible
@@ -236,7 +235,7 @@ class Transaction(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL)
     posted_timestamp = models.DateTimeField(
-        help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # nopep8
+        help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # noqa: E501
         db_index=True)
     created_at = models.DateTimeField(
         auto_now_add=True)
@@ -304,7 +303,7 @@ class Ledger(models.Model):
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
     increased_by_debits = models.BooleanField(
-        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # nopep8
+        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # noqa: E501
         default=None,
     )
     created_at = models.DateTimeField(

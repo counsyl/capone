@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
 import sys
 from datetime import datetime
 from decimal import Decimal
@@ -42,7 +41,7 @@ class TestStrMethods(TestCase):
         tro = txn.related_objects.last()
         self.assertEqual(
             str(tro),
-            'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # nopep8
+            'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # noqa: E501
         )
 
         entry = txn.entries.last()
