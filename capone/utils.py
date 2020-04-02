@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 from django.db import connection
 
 REBUILD_LEDGER_BALANCES_SQL = '''\

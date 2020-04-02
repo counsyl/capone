@@ -1,4 +1,3 @@
-from __future__ import unicode_literals
 import operator
 import uuid
 from decimal import Decimal
