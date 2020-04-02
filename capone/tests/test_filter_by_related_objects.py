@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 from decimal import Decimal as D
 
 from django.test import TestCase
-from nose_parameterized import parameterized
+from parameterized import parameterized
 
 from capone.api.actions import create_transaction
 from capone.api.actions import credit
