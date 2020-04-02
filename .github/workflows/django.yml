@@ -27,9 +27,6 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install Dependencies
-      run: |
-        make venv
     - name: Run Tests
       run: |
         make test
