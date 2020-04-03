@@ -22,7 +22,8 @@ jobs:
       with:
         postgresql version: 9.6
         postgresql db: capone_test_db
-        postgresql user: postgres
+        postgresql user: django
+        postgres password: django
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
