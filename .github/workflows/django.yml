@@ -37,7 +37,7 @@ jobs:
     - name: Install Dependencies
       run: |
         pip install virtualenv
-        npm ci
+        npm i pg
 
     - name: Connect to PostgreSQL
       # Runs a script that creates a PostgreSQL client, populates
