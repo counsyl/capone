@@ -9,6 +9,18 @@ on:
 jobs:
   build:
 
+    services:
+      postgres:
+        image: postgres:9.6
+        env:
+          POSTGRES_USER: django
+          POSTGRES_PASSWORD: django
+          POSTGRES_DB: capone_test_db
+        ports:
+        - 5432:5432
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -17,13 +29,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Setup PostgreSQL
-      uses: Harmon758/postgresql-action@v1.0.0
-      with:
-        postgresql version: 9.6
-        postgresql db: capone_test_db
-        postgresql user: django
-        postgresql password: django
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
