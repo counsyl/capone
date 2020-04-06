@@ -19,10 +19,12 @@ TEMPLATE_DIRS = (os.path.join(os.path.dirname(__file__), 'templates'),)
 
 DATABASES = {
     'default': {
-        'NAME': 'capone_test_db',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'USER': os.environ.get('POSTGRES_USER', 'django'),
+        'HOST': os.environ.get('POSTGRES_HOST', ''),
+        'NAME': os.environ.get('POSTGRES_DB', 'capone_test_db'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'django'),
+        'PORT': os.environ.get('POSTGRES_PORT', ''),
+        'USER': os.environ.get('POSTGRES_USER', 'django'),
     },
 }
 
