@@ -130,13 +130,12 @@ class TransactionQuerySet(models.QuerySet):
         elif match_type == MatchType.EXACT:
             for related_object in related_objects:
                 self = (
-                    self
-                        .filter(
+                    self.filter(
                         related_objects__related_object_content_type=(
-                            content_types[type(related_object)]),
+                            content_types[type(related_object)]
+                        ),
                         related_objects__related_object_id=related_object.id,
-                    )
-                        .prefetch_related(
+                    ).prefetch_related(
                         'related_objects',
                     )
                 )
