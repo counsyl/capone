@@ -29,8 +29,8 @@ def get_balances_for_object(obj):
     content_type = ContentType.objects.get_for_model(obj)
     ledger_balances = (
         LedgerBalance
-        .objects
-        .filter(
+            .objects
+            .filter(
             related_object_content_type=content_type,
             related_object_id=obj.id)
     )
@@ -40,12 +40,12 @@ def get_balances_for_object(obj):
 
 
 def validate_transaction(
-    user,
-    evidence=(),
-    ledger_entries=(),
-    notes=None,
-    type=None,
-    posted_timestamp=None,
+        user,
+        evidence=(),
+        ledger_entries=(),
+        notes=None,
+        type=None,
+        posted_timestamp=None,
 ):
     """
     Validates a Transaction and its sub-models before saving.
@@ -95,10 +95,10 @@ def assert_transaction_in_ledgers_for_amounts_with_evidence(
     )
     matching_transaction = (
         Transaction
-        .objects
-        .filter(id__in=transactions_in_all_ledgers)
-        .filter_by_related_objects(evidence, match_type=MatchType.EXACT)
-        .get()
+            .objects
+            .filter(id__in=transactions_in_all_ledgers)
+            .filter_by_related_objects(evidence, match_type=MatchType.EXACT)
+            .get()
     )
 
     matching_pairs = sorted(

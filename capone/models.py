@@ -10,17 +10,14 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
-from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
 from capone.exceptions import TransactionBalanceException
-
 
 POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and credits are negative."  # noqa: E501
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # noqa: E501
 
 
-@python_2_unicode_compatible
 class TransactionRelatedObject(models.Model):
     """
     A piece of evidence for a particular Transaction.
@@ -31,15 +28,16 @@ class TransactionRelatedObject(models.Model):
     TransactionRelatedObjects as there are pieces of evidence for
     a `Transaction`.
     """
+
     class Meta:
         unique_together = (
             'transaction', 'related_object_content_type', 'related_object_id')
 
     transaction = models.ForeignKey(
         'Transaction',
-        related_name='related_objects')
+        related_name='related_objects', on_delete=models.CASCADE,)
     related_object_content_type = models.ForeignKey(
-        ContentType)
+        ContentType, on_delete=models.CASCADE,)
     related_object_id = models.PositiveIntegerField(
         db_index=True)
     related_object = GenericForeignKey(
@@ -133,12 +131,12 @@ class TransactionQuerySet(models.QuerySet):
             for related_object in related_objects:
                 self = (
                     self
-                    .filter(
+                        .filter(
                         related_objects__related_object_content_type=(
                             content_types[type(related_object)]),
                         related_objects__related_object_id=related_object.id,
                     )
-                    .prefetch_related(
+                        .prefetch_related(
                         'related_objects',
                     )
                 )
@@ -162,7 +160,6 @@ class TransactionQuerySet(models.QuerySet):
             raise ValueError("Invalid match_type.")
 
 
-@python_2_unicode_compatible
 class TransactionType(models.Model):
     """
     A user-defined "type" to group `Transactions`.
@@ -200,7 +197,6 @@ def get_or_create_manual_transaction_type_id():
     return get_or_create_manual_transaction_type().id
 
 
-@python_2_unicode_compatible
 class Transaction(models.Model):
     """
     The main model for representing a financial event in `capone`.
@@ -233,9 +229,10 @@ class Transaction(models.Model):
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL)
+        settings.AUTH_USER_MODEL,null=True, on_delete=models.SET_NULL)
     posted_timestamp = models.DateTimeField(
-        help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),  # noqa: E501
+        help_text=_("Time the transaction was posted.  Change this field to model retroactive ledger entries."),
+        # noqa: E501
         db_index=True)
     created_at = models.DateTimeField(
         auto_now_add=True)
@@ -244,7 +241,7 @@ class Transaction(models.Model):
 
     type = models.ForeignKey(
         TransactionType,
-        default=get_or_create_manual_transaction_type_id,
+        default=get_or_create_manual_transaction_type_id,null=True, on_delete=models.SET_NULL
     )
 
     objects = TransactionQuerySet.as_manager()
@@ -281,13 +278,12 @@ class Transaction(models.Model):
         """
         return {
             'entries':
-            [str(entry) for entry in self.entries.all()],
+                [str(entry) for entry in self.entries.all()],
             'related_objects':
-            [str(obj) for obj in self.related_objects.all()],
+                [str(obj) for obj in self.related_objects.all()],
         }
 
 
-@python_2_unicode_compatible
 class Ledger(models.Model):
     """
     A group of `LedgerEntries` all debiting or crediting the same resource.
@@ -303,7 +299,8 @@ class Ledger(models.Model):
         help_text=_("Any notes to go along with this Transaction."),
         blank=True)
     increased_by_debits = models.BooleanField(
-        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",  # noqa: E501
+        help_text="All accounts (and their corresponding ledgers) are of one of two types: either debits increase the value of an account or credits do.  By convention, asset and expense accounts are of the former type, while liabilities, equity, and revenue are of the latter.",
+        # noqa: E501
         default=None,
     )
     created_at = models.DateTimeField(
@@ -328,15 +325,16 @@ class LedgerEntry(models.Model):
     LedgerEntries must always be part of a Transaction so that they balance
     according to double-entry bookkeeping.
     """
+
     class Meta:
         verbose_name_plural = "ledger entries"
 
     ledger = models.ForeignKey(
         Ledger,
-        related_name='entries')
+        related_name='entries', on_delete=models.CASCADE)
     transaction = models.ForeignKey(
         Transaction,
-        related_name='entries')
+        related_name='entries', on_delete=models.CASCADE)
 
     entry_id = models.UUIDField(
         help_text=_("UUID for this ledger entry"),
@@ -361,7 +359,6 @@ class LedgerEntry(models.Model):
             amount=self.amount, ledger=self.ledger.name)
 
 
-@python_2_unicode_compatible
 class LedgerBalance(models.Model):
     """
     A Denormalized balance for a related object in a ledger.
@@ -372,16 +369,17 @@ class LedgerBalance(models.Model):
     README for a further explanation and demonstration of using the query API
     that uses this model.
     """
+
     class Meta:
         unique_together = (
             ('ledger', 'related_object_content_type', 'related_object_id'),
         )
 
     ledger = models.ForeignKey(
-        'Ledger')
+        'Ledger', on_delete=models.CASCADE)
 
     related_object_content_type = models.ForeignKey(
-        ContentType)
+        ContentType, on_delete=models.CASCADE)
     related_object_id = models.PositiveIntegerField(
         db_index=True)
     related_object = GenericForeignKey(

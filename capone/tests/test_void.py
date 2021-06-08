@@ -157,6 +157,7 @@ class TestVoidTimestamps(TestVoidBase):
     """
     Test automatic and manual handling of `posted_timestamp` on voids.
     """
+
     def test_auto_timestamp(self):
         """
         If a posted_timestamp isn't specified we assume the posted_timestamp is

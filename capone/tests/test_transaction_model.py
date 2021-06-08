@@ -25,6 +25,7 @@ class TransactionBase(TestCase):
     """
     Base class for `Transaction` model test cases.
     """
+
     def setUp(self):
         self.user1 = UserFactory()
         self.user2 = UserFactory()
@@ -35,6 +36,7 @@ class TestStrMethods(TestCase):
     """
     Test all __str__ methods.
     """
+
     def test_unicode_methods(self):
         txn = TransactionFactory()
 
@@ -79,6 +81,7 @@ class TestTransactionSummary(TransactionBase):
     """
     Test that Transaction.summary returns correct information.
     """
+
     def test_transaction_summary(self):
         ledger = LedgerFactory()
         amount = Decimal('500')
@@ -122,6 +125,7 @@ class TestEditingTransactions(TestCase):
     However, we want to make sure that our balance invariants are still kept
     when editing a Transaction.
     """
+
     def test_editing_transactions(self):
         transaction = TransactionFactory()
 
@@ -140,6 +144,7 @@ class TestNonVoidFilter(TestCase):
     """
     Test Transaction.objects.non_void filter.
     """
+
     def setUp(self):
         self.order = OrderFactory()
         self.ar_ledger = LedgerFactory(name='A/R')
