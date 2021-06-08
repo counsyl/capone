@@ -23,7 +23,7 @@ coverage
 
 test.db
 .venv
-
+venv
 # Emacs
 .dir-locals.el
 .\#*

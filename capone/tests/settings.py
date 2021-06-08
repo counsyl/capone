@@ -1,6 +1,5 @@
 import os
 
-
 DEBUG = True
 
 INSTALLED_APPS = (

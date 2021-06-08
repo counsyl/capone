@@ -8,21 +8,21 @@ from django.db.transaction import atomic
 
 from capone.api.queries import validate_transaction
 from capone.exceptions import UnvoidableTransactionException
-from capone.models import get_or_create_manual_transaction_type
 from capone.models import Ledger
 from capone.models import LedgerBalance
 from capone.models import LedgerEntry
 from capone.models import Transaction
 from capone.models import TransactionRelatedObject
+from capone.models import get_or_create_manual_transaction_type
 
 
 @atomic
 def void_transaction(
-    transaction,
-    user,
-    notes=None,
-    type=None,
-    posted_timestamp=None,
+        transaction,
+        user,
+        notes=None,
+        type=None,
+        posted_timestamp=None,
 ):
     """
     Create a new transaction that voids the given Transaction.
@@ -44,7 +44,7 @@ def void_transaction(
     else:
         raise UnvoidableTransactionException(
             "Cannot void the same Transaction #({id}) more than once."
-            .format(id=transaction.transaction_id))
+                .format(id=transaction.transaction_id))
 
     evidence = [
         tro.related_object for tro in transaction.related_objects.all()
@@ -108,12 +108,12 @@ debit = partial(_credit_or_debit, reverse=False)
 
 @atomic
 def create_transaction(
-    user,
-    evidence=(),
-    ledger_entries=(),
-    notes='',
-    type=None,
-    posted_timestamp=None,
+        user,
+        evidence=(),
+        ledger_entries=(),
+        notes='',
+        type=None,
+        posted_timestamp=None,
 ):
     """
     Create a Transaction with LedgerEntries and TransactionRelatedObjects.
@@ -124,10 +124,10 @@ def create_transaction(
     # of LedgerBalances.
     list(
         Ledger.objects
-        .filter(id__in=(
+            .filter(id__in=(
             ledger_entry.ledger.id for ledger_entry in ledger_entries))
-        .order_by('id')  # Avoid deadlocks.
-        .select_for_update()
+            .order_by('id')  # Avoid deadlocks.
+            .select_for_update()
     )
 
     if not posted_timestamp:
@@ -155,11 +155,11 @@ def create_transaction(
             content_type = ContentType.objects.get_for_model(related_object)
             num_updated = (
                 LedgerBalance.objects
-                .filter(
+                    .filter(
                     ledger=ledger_entry.ledger,
                     related_object_content_type=content_type,
                     related_object_id=related_object.id)
-                .update(balance=F('balance') + ledger_entry.amount)
+                    .update(balance=F('balance') + ledger_entry.amount)
             )
             assert num_updated <= 1
             if num_updated == 0:

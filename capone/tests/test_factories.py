@@ -22,6 +22,7 @@ class TestTransactionFactory(TestCase):
     We test this "factory" because it's actually a method implemented in this
     app, not a Factory Boy Factory.
     """
+
     @classmethod
     def setUpTestData(cls):
         cls.credit_card_transaction = CreditCardTransactionFactory()

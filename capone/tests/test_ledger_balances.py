@@ -38,8 +38,8 @@ class TestLedgerBalances(TransactionTestCase):
         Transaction.objects.all().delete()
         (
             Ledger.objects
-            .filter(id__in=(self.ar_ledger.id, self.cash_ledger.id))
-            .delete()
+                .filter(id__in=(self.ar_ledger.id, self.cash_ledger.id))
+                .delete()
         )
         self.order_1.delete()
         self.order_2.delete()
@@ -190,7 +190,7 @@ class TestLedgerBalances(TransactionTestCase):
         def all_cash_orders():
             return set(
                 Order.objects
-                .filter(
+                    .filter(
                     id__in=(self.order_1.id, self.order_2.id),
                     ledger_balances__ledger=self.cash_ledger,
                     ledger_balances__balance=F('amount'),
