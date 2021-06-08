@@ -222,6 +222,7 @@ class Transaction(models.Model):
         'Transaction',
         blank=True,
         null=True,
+        on_delete=models.SET_NULL,
         related_name='voided_by')
 
     notes = models.TextField(
