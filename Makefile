@@ -14,6 +14,8 @@ VENV_DIR?=.venv
 VENV_ACTIVATE=$(VENV_DIR)/bin/activate
 WITH_VENV=. $(VENV_ACTIVATE);
 
+VENDOR_SENTINEL:=.sentinel
+
 .PHONY: venv
 venv: $(VENV_ACTIVATE)
 
@@ -37,14 +39,18 @@ else
 endif
 
 .PHONY: init
-init:
+init: $(VENDOR_SENTINEL)-init
+$(VENDOR_SENTINEL)-init:
 	test -z `psql postgres -U postgres -At -c "SELECT 1 FROM pg_roles WHERE rolname='django'" ` && createuser -u postgres -d django || true
 	dropdb --if-exists capone_test_db -U postgres
 	createdb -U django capone_test_db
+	@touch $@
 
 .PHONY: migrate
-migrate: develop
+migrate: $(VENDOR_SENTINEL)-migrate
+$(VENDOR_SENTINEL)-migrate: setup
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=capone.tests.settings --noinput
+	@touch $@
 
 .PHONY: makemigrations
 makemigrations: develop
