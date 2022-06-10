@@ -14,6 +14,8 @@ VENV_DIR?=.venv
 VENV_ACTIVATE=$(VENV_DIR)/bin/activate
 WITH_VENV=. $(VENV_ACTIVATE);
 
+VENDOR_SENTINEL:=.sentinel
+
 .PHONY: venv
 venv: $(VENV_ACTIVATE)
 
@@ -24,31 +26,38 @@ $(VENV_ACTIVATE): requirements*.txt
 	$(WITH_VENV) pip install -r requirements-dev.txt
 	touch $@
 
-develop: setup
+develop: setup migrate
 	$(WITH_VENV) python setup.py develop
 
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
-setup: venv migrate
+setup: init venv
 ifdef ARGS
 	$(WITH_VENV) python setup.py ${ARGS}
 else
 	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
 endif
 
+.PHONY: init
+init: $(VENDOR_SENTINEL)-init
+$(VENDOR_SENTINEL)-init:
+	test -z `psql postgres -U postgres -At -c "SELECT 1 FROM pg_roles WHERE rolname='django'" ` && createuser -u postgres -d django || true
+	dropdb --if-exists capone_test_db -U postgres
+	createdb -U django capone_test_db
+	@touch $@
+
 .PHONY: migrate
-migrate: develop
-	test -z `psql postgres -At -c "SELECT 1 FROM pg_roles WHERE rolname='django'" ` && createuser -d django || true
-	dropdb --if-exists capone_test_db
-	createdb capone_test_db
+migrate: $(VENDOR_SENTINEL)-migrate
+$(VENDOR_SENTINEL)-migrate: setup
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=capone.tests.settings --noinput
+	@touch $@
 
 .PHONY: makemigrations
 makemigrations: develop
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py makemigrations --settings=capone.tests.settings
 
 .PHONY: shell
-shell: migrate
+shell: develop
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=capone.tests.settings
 
 .PHONY: clean
@@ -65,7 +74,7 @@ clean:
 	rm -f xunit.xml
 	find . -type f -name '*.pyc' -delete
 	rm -rf coverage .coverage*
-	dropdb --if-exists capone_test_db
+	dropdb --if-exists capone_test_db -U postgres
 
 .PHONY: teardown
 teardown:

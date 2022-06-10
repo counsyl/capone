@@ -12,6 +12,7 @@ build/*
 docs/_build/*
 dist/*
 pbr-*.egg/
+.sentinel*
 
 *.log
 pytest*.xml
