@@ -29,18 +29,21 @@ develop: setup
 
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
-setup: venv migrate
+setup: init venv migrate
 ifdef ARGS
 	$(WITH_VENV) python setup.py ${ARGS}
 else
 	@echo "Won't run 'python setup.py ${ARGS}' without ARGS set."
 endif
 
+.PHONY: init
+init:
+	test -z `psql postgres -U postgres -At -c "SELECT 1 FROM pg_roles WHERE rolname='django'" ` && createuser -u postgres -d django || true
+	dropdb --if-exists capone_test_db -U postgres
+	createdb -U django capone_test_db
+
 .PHONY: migrate
 migrate: develop
-	test -z `psql postgres -At -c "SELECT 1 FROM pg_roles WHERE rolname='django'" ` && createuser -d django || true
-	dropdb --if-exists capone_test_db -U django
-	createdb capone_test_db
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=capone.tests.settings --noinput
 
 .PHONY: makemigrations
@@ -65,7 +68,7 @@ clean:
 	rm -f xunit.xml
 	find . -type f -name '*.pyc' -delete
 	rm -rf coverage .coverage*
-	dropdb --if-exists capone_test_db -U django
+	dropdb --if-exists capone_test_db -U postgres
 
 .PHONY: teardown
 teardown:
