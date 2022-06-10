@@ -26,12 +26,12 @@ $(VENV_ACTIVATE): requirements*.txt
 	$(WITH_VENV) pip install -r requirements-dev.txt
 	touch $@
 
-develop: setup
+develop: setup migrate
 	$(WITH_VENV) python setup.py develop
 
 .PHONY: setup
 setup: ##[setup] Run an arbitrary setup.py command
-setup: init venv migrate
+setup: init venv
 ifdef ARGS
 	$(WITH_VENV) python setup.py ${ARGS}
 else
@@ -57,7 +57,7 @@ makemigrations: develop
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py makemigrations --settings=capone.tests.settings
 
 .PHONY: shell
-shell: migrate
+shell: develop
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py shell --settings=capone.tests.settings
 
 .PHONY: clean
