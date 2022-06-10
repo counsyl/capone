@@ -39,7 +39,7 @@ endif
 .PHONY: migrate
 migrate: develop
 	test -z `psql postgres -At -c "SELECT 1 FROM pg_roles WHERE rolname='django'" ` && createuser -d django || true
-	dropdb --if-exists capone_test_db
+	dropdb --if-exists capone_test_db -U django
 	createdb capone_test_db
 	$(WITH_VENV) DBFILENAME=test.db ./manage.py migrate --settings=capone.tests.settings --noinput
 
@@ -65,7 +65,7 @@ clean:
 	rm -f xunit.xml
 	find . -type f -name '*.pyc' -delete
 	rm -rf coverage .coverage*
-	dropdb --if-exists capone_test_db
+	dropdb --if-exists capone_test_db -U django
 
 .PHONY: teardown
 teardown:
