@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
 from datetime import datetime
 from decimal import Decimal
 
@@ -56,10 +55,7 @@ class TestStrMethods(TestCase):
         ledger = LedgerFactory(name='foo')
         self.assertEqual(str(ledger), "Ledger foo")
         ledger = LedgerFactory(name='föo')
-        if sys.version_info.major == 2:
-            str(ledger) == b"Ledger f\xc3\xb6o"
-        if sys.version_info.major == 3:
-            self.assertTrue(str(ledger) == "Ledger föo")
+        self.assertTrue(str(ledger) == "Ledger föo")
 
         ttype = TransactionTypeFactory(name='foo')
         self.assertEqual(str(ttype), "Transaction Type foo")
