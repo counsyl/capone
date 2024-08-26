@@ -1,8 +1,8 @@
-from datetime import datetime
 from decimal import Decimal as D
 from unittest import mock
 
 from django.test import TestCase
+from django.utils import timezone
 
 from capone.exceptions import ExistingLedgerEntriesException
 from capone.exceptions import NoLedgerEntriesException
@@ -153,7 +153,7 @@ class TestCreateTransaction(TestCase):
         )
 
     def test_setting_posted_timestamp(self):
-        POSTED_DATETIME = datetime(2016, 2, 7, 11, 59)
+        POSTED_DATETIME = timezone.now()
         order = OrderFactory(amount=self.AMOUNT)
 
         txn_recognize = create_transaction(

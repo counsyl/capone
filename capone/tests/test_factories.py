@@ -1,7 +1,7 @@
-from datetime import datetime
 from decimal import Decimal
 
 from django.test import TestCase
+from django.utils import timezone
 
 from capone.api.actions import credit
 from capone.api.actions import debit
@@ -74,7 +74,7 @@ class TestTransactionFactory(TestCase):
         """
         Test setting fields `posted_timestamp`, `notes`, `type`, and `user`.
         """
-        time = datetime.now()
+        time = timezone.now()
         FIELDS_TO_VALUES = [
             ('posted_timestamp', time),
             ('notes', 'booga'),

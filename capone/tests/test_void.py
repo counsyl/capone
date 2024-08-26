@@ -1,7 +1,7 @@
-from datetime import datetime
 from decimal import Decimal as D
 
 from django.test import TestCase
+from django.utils import timezone
 
 from capone.api.actions import create_transaction
 from capone.api.actions import credit
@@ -182,7 +182,7 @@ class TestVoidTimestamps(TestVoidBase):
             LedgerEntry(amount=credit(amount), ledger=self.rev_ledger),
         ])
 
-        now = datetime.now()
+        now = timezone.now()
         void_txn = void_transaction(
             charge_txn, self.creation_user,
             posted_timestamp=now)

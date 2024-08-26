@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
 from decimal import Decimal
 
 from django.test import TestCase
+from django.utils import timezone
 
 from capone.api.actions import create_transaction
 from capone.api.actions import credit
@@ -27,7 +27,7 @@ class TransactionBase(TestCase):
     def setUp(self):
         self.user1 = UserFactory()
         self.user2 = UserFactory()
-        self.posted_timestamp = datetime.now()
+        self.posted_timestamp = timezone.now()
 
 
 class TestStrMethods(TestCase):
@@ -102,7 +102,7 @@ class TestSettingExplicitTimestampField(TransactionBase):
     def test_setting_explicit_timestamp_field(self):
         transaction = TransactionFactory()
         old_posted_timestamp = transaction.posted_timestamp
-        transaction.posted_timestamp = datetime.now()
+        transaction.posted_timestamp = timezone.now()
         transaction.save()
         self.assertNotEqual(
             old_posted_timestamp,
