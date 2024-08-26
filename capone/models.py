@@ -263,10 +263,11 @@ class Transaction(models.Model):
         Instead, the only check that makes sense is that the entries for the
         transaction still balance.
         """
-        total = sum([entry.amount for entry in self.entries.all()])
-        if total != Decimal(0):
-            raise TransactionBalanceException(
-                "Credits do not equal debits. Mis-match of %s." % total)
+        if self.pk:
+            total = sum([entry.amount for entry in self.entries.all()])
+            if total != Decimal(0):
+                raise TransactionBalanceException(
+                    "Credits do not equal debits. Mis-match of %s." % total)
         return True
 
     def save(self, **kwargs):
