@@ -13,7 +13,7 @@ from capone.tests.models import CreditCardTransaction
 from capone.tests.models import Order
 
 
-class UserFactory(factory.DjangoModelFactory):
+class UserFactory(factory.django.DjangoModelFactory):
     """
     Factory for django.contrib.auth.get_user_model()
 
@@ -27,7 +27,7 @@ class UserFactory(factory.DjangoModelFactory):
     email = username = factory.Sequence(lambda n: "TransactionUser #%s" % n)
 
 
-class LedgerFactory(factory.DjangoModelFactory):
+class LedgerFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Ledger
 
@@ -36,7 +36,7 @@ class LedgerFactory(factory.DjangoModelFactory):
     number = factory.Sequence(lambda n: n)
 
 
-class OrderFactory(factory.DjangoModelFactory):
+class OrderFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Order
 
@@ -44,14 +44,14 @@ class OrderFactory(factory.DjangoModelFactory):
     barcode = factory.Sequence(lambda n: str(n))
 
 
-class CreditCardTransactionFactory(factory.DjangoModelFactory):
+class CreditCardTransactionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = CreditCardTransaction
 
     cardholder_name = factory.Sequence(lambda n: "Cardholder %s" % n)
 
 
-class TransactionTypeFactory(factory.DjangoModelFactory):
+class TransactionTypeFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = TransactionType
 
