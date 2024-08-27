@@ -5,27 +5,9 @@ on: [push]
 jobs:
     runs-on: ubuntu-20.04
     strategy:
-      max-parallel: 4
+      max-parallel: 2
       matrix:
-        python-version: [3.6, 3.8, 3.9]
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Dependencies
-      run: |
-        pip install virtualenv
-        npm i pg
-    - name: Test with tox
-      run: |
-        source venv/bin/activate
-        tox -vv
-      env:
-        POSTGRES_HOST: localhost
-        POSTGRES_PORT: 5432
+        python-version: [3.8, 3.9]
 
   test:
     services:
@@ -66,6 +48,9 @@ jobs:
       run: |
         source venv/bin/activate
         tox -vv
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
 
   test36:
     runs-on: ubuntu-20.04
@@ -87,6 +72,9 @@ jobs:
       run: |
         source venv/bin/activate
         tox -vv -e py36-django1.11,py36-django2.2
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
 
   lint:
     runs-on: ubuntu-latest
@@ -104,4 +92,7 @@ jobs:
         run: |
           source venv/bin/activate
           tox -vv -e flake8
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
 
