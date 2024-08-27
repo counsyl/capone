@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
 
-from django.test import TestCase
+import pytest
 from django.utils import timezone
 
 from capone.api.actions import create_transaction
@@ -20,97 +20,76 @@ from capone.tests.factories import TransactionTypeFactory
 from capone.tests.factories import UserFactory
 
 
-class TransactionBase(TestCase):
-    """
-    Base class for `Transaction` model test cases.
-    """
-    def setUp(self):
-        self.user1 = UserFactory()
-        self.user2 = UserFactory()
-        self.posted_timestamp = timezone.now()
-
-
-class TestStrMethods(TestCase):
+def test_unicode_methods(db):
     """
     Test all __str__ methods.
     """
-    def test_unicode_methods(self):
-        txn = TransactionFactory()
+    txn = TransactionFactory()
 
-        tro = txn.related_objects.last()
-        self.assertEqual(
-            str(tro),
-            'TransactionRelatedObject: CreditCardTransaction(id=%s)' % tro.related_object_id,  # noqa: E501
+    tro = txn.related_objects.last()
+    assert str(tro) == (
+        'TransactionRelatedObject: CreditCardTransaction(id=%s)'
+        % tro.related_object_id
+    )
+
+    entry = txn.entries.last()
+    assert str(entry) == (
+        "LedgerEntry: $%s in %s" % (
+            entry.amount,
+            entry.ledger.name,
         )
+    )
 
-        entry = txn.entries.last()
-        self.assertEqual(
-            str(entry),
-            "LedgerEntry: $%s in %s" % (
-                entry.amount,
-                entry.ledger.name,
-            )
+    ledger = LedgerFactory(name='foo')
+    assert str(ledger) == "Ledger foo"
+    ledger = LedgerFactory(name='föo')
+    assert str(ledger) == "Ledger föo"
+
+    ttype = TransactionTypeFactory(name='foo')
+    assert str(ttype) == "Transaction Type foo"
+
+    balance = LedgerBalance.objects.last()
+    assert str(balance) == (
+        "LedgerBalance: %s for %s in %s" % (
+            balance.balance,
+            balance.related_object,
+            balance.ledger,
         )
-
-        ledger = LedgerFactory(name='foo')
-        self.assertEqual(str(ledger), "Ledger foo")
-        ledger = LedgerFactory(name='föo')
-        self.assertTrue(str(ledger) == "Ledger föo")
-
-        ttype = TransactionTypeFactory(name='foo')
-        self.assertEqual(str(ttype), "Transaction Type foo")
-
-        balance = LedgerBalance.objects.last()
-        self.assertEqual(
-            str(balance),
-            "LedgerBalance: %s for %s in %s" % (
-                balance.balance,
-                balance.related_object,
-                balance.ledger,
-            )
-        )
+    )
 
 
-class TestTransactionSummary(TransactionBase):
+def test_transaction_summary(db):
     """
     Test that Transaction.summary returns correct information.
     """
-    def test_transaction_summary(self):
-        ledger = LedgerFactory()
-        amount = Decimal('500')
-        ccx = CreditCardTransactionFactory()
-        le1 = LedgerEntry(ledger=ledger, amount=credit(amount))
-        le2 = LedgerEntry(ledger=ledger, amount=debit(amount))
-        txn = TransactionFactory(
-            evidence=[ccx],
-            ledger_entries=[le1, le2]
-        )
+    ledger = LedgerFactory()
+    amount = Decimal('500')
+    ccx = CreditCardTransactionFactory()
+    le1 = LedgerEntry(ledger=ledger, amount=credit(amount))
+    le2 = LedgerEntry(ledger=ledger, amount=debit(amount))
+    txn = TransactionFactory(
+        evidence=[ccx],
+        ledger_entries=[le1, le2]
+    )
 
-        self.assertEqual(
-            txn.summary(),
-            {
-                'entries': [str(entry) for entry in txn.entries.all()],
-                'related_objects': [
-                    'TransactionRelatedObject: CreditCardTransaction(id=%s)' %
-                    ccx.id,
-                ],
-            },
-        )
+    assert txn.summary() == {
+        'entries': [str(entry) for entry in txn.entries.all()],
+        'related_objects': [
+            'TransactionRelatedObject: CreditCardTransaction(id=%s)' %
+            ccx.id,
+        ],
+    }
 
 
-class TestSettingExplicitTimestampField(TransactionBase):
-    def test_setting_explicit_timestamp_field(self):
-        transaction = TransactionFactory()
-        old_posted_timestamp = transaction.posted_timestamp
-        transaction.posted_timestamp = timezone.now()
-        transaction.save()
-        self.assertNotEqual(
-            old_posted_timestamp,
-            transaction.posted_timestamp,
-        )
+def test_setting_explicit_timestamp_field(db):
+    transaction = TransactionFactory()
+    old_posted_timestamp = transaction.posted_timestamp
+    transaction.posted_timestamp = timezone.now()
+    transaction.save()
+    assert old_posted_timestamp != transaction.posted_timestamp
 
 
-class TestEditingTransactions(TestCase):
+def test_editing_transactions(db):
     """
     Test that validation is still done when editing a Transaction.
 
@@ -118,63 +97,58 @@ class TestEditingTransactions(TestCase):
     However, we want to make sure that our balance invariants are still kept
     when editing a Transaction.
     """
-    def test_editing_transactions(self):
-        transaction = TransactionFactory()
+    transaction = TransactionFactory()
 
-        transaction.notes = 'foo'
+    transaction.notes = 'foo'
+    transaction.save()
+
+    entry = transaction.entries.last()
+    entry.amount += Decimal('1')
+    entry.save()
+
+    with pytest.raises(TransactionBalanceException):
         transaction.save()
 
-        entry = transaction.entries.last()
-        entry.amount += Decimal('1')
-        entry.save()
 
-        with self.assertRaises(TransactionBalanceException):
-            transaction.save()
-
-
-class TestNonVoidFilter(TestCase):
+def test_non_void(db):
     """
     Test Transaction.objects.non_void filter.
     """
-    def setUp(self):
-        self.order = OrderFactory()
-        self.ar_ledger = LedgerFactory(name='A/R')
-        self.cash_ledger = LedgerFactory(name='Cash')
-        self.user = UserFactory()
 
-    def add_transaction(self):
+    order = OrderFactory()
+    ar_ledger = LedgerFactory(name='A/R')
+    cash_ledger = LedgerFactory(name='Cash')
+    user = UserFactory()
+
+    def add_transaction():
         return create_transaction(
-            self.user,
-            evidence=[self.order],
+            user,
+            evidence=[order],
             ledger_entries=[
                 LedgerEntry(
-                    ledger=self.ar_ledger,
+                    ledger=ar_ledger,
                     amount=credit(Decimal(50))),
                 LedgerEntry(
-                    ledger=self.cash_ledger,
+                    ledger=cash_ledger,
                     amount=debit(Decimal(50))),
             ],
         )
 
-    def filtered_out_by_non_void(self, transaction):
+    def filtered_out_by_non_void(transaction):
         """
         Return whether `transaction` is in `Transaction.objects.non_void()`.
         """
         queryset = Transaction.objects.filter(id=transaction.id)
-        self.assertTrue(queryset.exists())
+        assert queryset.exists()
         return not queryset.non_void().exists()
 
-    def test_non_void(self):
-        """
-        Test Transaction.objects.non_void filter.
-        """
-        transaction_1 = self.add_transaction()
-        self.assertFalse(self.filtered_out_by_non_void(transaction_1))
+    transaction_1 = add_transaction()
+    assert not filtered_out_by_non_void(transaction_1)
 
-        transaction_2 = self.add_transaction()
-        self.assertFalse(self.filtered_out_by_non_void(transaction_2))
+    transaction_2 = add_transaction()
+    assert not filtered_out_by_non_void(transaction_2)
 
-        voiding_transaction = void_transaction(transaction_2, self.user)
-        self.assertFalse(self.filtered_out_by_non_void(transaction_1))
-        self.assertTrue(self.filtered_out_by_non_void(transaction_2))
-        self.assertTrue(self.filtered_out_by_non_void(voiding_transaction))
+    voiding_transaction = void_transaction(transaction_2, user)
+    assert not filtered_out_by_non_void(transaction_1)
+    assert filtered_out_by_non_void(transaction_2)
+    assert filtered_out_by_non_void(voiding_transaction)
