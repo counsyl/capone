@@ -19,7 +19,7 @@ amount = D(100)
 
 
 @pytest.fixture
-def create_objects(db):
+def create_objects():
     creation_user = UserFactory()
     ar_ledger = LedgerFactory()
     rev_ledger = LedgerFactory()

@@ -28,7 +28,7 @@ amount = Decimal('50.00')
 
 
 @pytest.fixture
-def create_objects(db):
+def create_objects():
     order_1, order_2 = OrderFactory.create_batch(2)
     ar_ledger = LedgerFactory(name='A/R')
     cash_ledger = LedgerFactory(name='Cash')
@@ -270,7 +270,7 @@ def test_rebuild_ledger_balance(create_objects, transactional_db):
     )
 
 
-def test_ledger_balances_filtering(db, create_objects):
+def test_ledger_balances_filtering(create_objects):
     (
         order_1,
         order_2,

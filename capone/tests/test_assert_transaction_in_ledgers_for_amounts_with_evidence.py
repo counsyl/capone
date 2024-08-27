@@ -17,7 +17,7 @@ from capone.tests.factories import TransactionTypeFactory
 from capone.tests.factories import UserFactory
 
 
-def test_transaction_fields(db):
+def test_transaction_fields():
     """
     Test filtering by `posted_timestamp`, `notes`, `type`, and `user`.
     """
@@ -51,7 +51,7 @@ def test_transaction_fields(db):
         )
 
 
-def test_no_matches(db):
+def test_no_matches():
     """
     No matching transaction raises DoesNotExist.
     """
@@ -71,7 +71,7 @@ def test_no_matches(db):
         )
 
 
-def test_multiple_matches(db):
+def test_multiple_matches():
     """
     Multiple matching transactions raises MultipleObjectsReturned.
     """
@@ -100,7 +100,7 @@ def test_multiple_matches(db):
         )
 
 
-def test_mismatch_on_ledger_entries(db):
+def test_mismatch_on_ledger_entries():
     """
     An otherwise matching Trans. will fail if its LedgerEntries mismatch.
     """
@@ -137,7 +137,7 @@ def test_mismatch_on_ledger_entries(db):
         )
 
 
-def test_mismatch_on_evidence(db):
+def test_mismatch_on_evidence():
     """
     An otherwise matching Trans. will fail if its evidence is different.
     """

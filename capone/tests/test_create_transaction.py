@@ -24,7 +24,7 @@ AMOUNT = D(100)
 
 
 @pytest.fixture
-def create_objects(db):
+def create_objects():
     user = UserFactory()
     accounts_receivable = LedgerFactory(name='Accounts Receivable')
     cash_unrecon = LedgerFactory(name='Cash (unreconciled)')
@@ -219,7 +219,7 @@ def test_no_ledger_entries(create_objects):
         validate_transaction(user)
 
 
-def test_with_existing_ledger_entry(db):
+def test_with_existing_ledger_entry():
     amount = D(100)
     user = UserFactory()
 
@@ -293,26 +293,26 @@ def _create_transaction_and_compare_to_amount(
         assert entry2.amount == -amount
 
 
-def test_precision(db):
+def test_precision():
     _create_transaction_and_compare_to_amount(
         D('-499.9999'))
 
 
-def test_round_up(db):
+def test_round_up():
     _create_transaction_and_compare_to_amount(
         D('499.99995'), D('500'))
 
 
-def test_round_down(db):
+def test_round_down():
     _create_transaction_and_compare_to_amount(
         D('499.99994'), D('499.9999'))
 
 
-def test_round_up_negative(db):
+def test_round_up_negative():
     _create_transaction_and_compare_to_amount(
         D('-499.99994'), D('-499.9999'))
 
 
-def test_round_down_negative(db):
+def test_round_down_negative():
     _create_transaction_and_compare_to_amount(
         D('-499.99995'), D('-500'))

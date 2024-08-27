@@ -20,7 +20,7 @@ from capone.tests.factories import TransactionTypeFactory
 from capone.tests.factories import UserFactory
 
 
-def test_unicode_methods(db):
+def test_unicode_methods():
     """
     Test all __str__ methods.
     """
@@ -58,7 +58,7 @@ def test_unicode_methods(db):
     )
 
 
-def test_transaction_summary(db):
+def test_transaction_summary():
     """
     Test that Transaction.summary returns correct information.
     """
@@ -81,7 +81,7 @@ def test_transaction_summary(db):
     }
 
 
-def test_setting_explicit_timestamp_field(db):
+def test_setting_explicit_timestamp_field():
     transaction = TransactionFactory()
     old_posted_timestamp = transaction.posted_timestamp
     transaction.posted_timestamp = timezone.now()
@@ -89,7 +89,7 @@ def test_setting_explicit_timestamp_field(db):
     assert old_posted_timestamp != transaction.posted_timestamp
 
 
-def test_editing_transactions(db):
+def test_editing_transactions():
     """
     Test that validation is still done when editing a Transaction.
 
@@ -110,7 +110,7 @@ def test_editing_transactions(db):
         transaction.save()
 
 
-def test_non_void(db):
+def test_non_void():
     """
     Test Transaction.objects.non_void filter.
     """
