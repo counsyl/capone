@@ -86,7 +86,7 @@ jobs:
     - name: Test with tox
       run: |
         source venv/bin/activate
-        tox -vv -e py36-django1.11,py36-django2.2
+        tox -vv -e py36-1.11,py36-2.2,py36-3.2,py36-4.2
       env:
         POSTGRES_HOST: localhost
         POSTGRES_PORT: 5432
