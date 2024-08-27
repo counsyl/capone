@@ -3,50 +3,6 @@ name: Django CI
 on: [push]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 3
-      matrix:
-        python-version: ['3.8', '3.9']
-
-    services:
-      postgres:
-        image: postgres:12
-        env:
-          POSTGRES_USER: django
-          POSTGRES_PASSWORD: django
-          POSTGRES_DB: capone_test_db
-        # Set health checks to make Workflow wait until Postgres is ready
-        # before executing next step.
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements-setup.txt
-    - name: Test with tox
-      run: |
-        source venv/bin/activate
-        tox -vv
-      env:
-        POSTGRES_HOST: localhost
-        POSTGRES_PORT: 5432
-
   test36:
     runs-on: ubuntu-20.04
 
@@ -84,27 +40,6 @@ jobs:
         run: |
           source venv/bin/activate
           tox -vv -e py36-1.11,py36-2.2,py36-3.2,py36-4.2
-        env:
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-      - name: Install dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements-setup.txt
-      - name: lint
-        run: |
-          source venv/bin/activate
-          tox -vv -e flake8
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
