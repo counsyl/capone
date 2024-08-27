@@ -1,14 +1,17 @@
 name: Django CI
 
-on: [push]
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
-  test36:
-    runs-on: ubuntu-20.04
+  build:
 
     services:
       postgres:
-        image: postgres:12
+        image: postgres:9.6
         env:
           POSTGRES_USER: django
           POSTGRES_PASSWORD: django
@@ -24,22 +27,25 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
 
+    runs-on: ubuntu-20.04
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.6]
+
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.6
-      - name: Install dependencies
-        run: |
-          npm i pg
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements-setup.txt
-      - name: Test with tox
-        run: |
-          source venv/bin/activate
-          tox -vv -e py36-1.11,py36-2.2,py36-3.2,py36-4.2
-        env:
-          POSTGRES_HOST: 0.0.0.0
-          POSTGRES_PORT: 5432
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Dependencies
+      run: |
+        pip install virtualenv
+        npm i pg
+    - name: Run Tests
+      run: |
+        make test
+      env:
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
