@@ -1,7 +1,6 @@
 from decimal import Decimal as D
 
 import pytest
-from django.test import TestCase
 from django.utils import timezone
 
 from capone.exceptions import ExistingLedgerEntriesException
