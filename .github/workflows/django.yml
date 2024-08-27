@@ -23,8 +23,6 @@ jobs:
         ports:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
-        extra_hosts:
-          host.docker.internal: host-gateway
 
     steps:
       - uses: actions/checkout@v3
