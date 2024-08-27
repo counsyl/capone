@@ -41,5 +41,5 @@ jobs:
           source venv/bin/activate
           tox -vv -e py36-1.11,py36-2.2,py36-3.2,py36-4.2
         env:
-          POSTGRES_HOST: localhost
+          POSTGRES_HOST: 0.0.0.0
           POSTGRES_PORT: 5432
