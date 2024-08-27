@@ -20,7 +20,7 @@ VENDOR_SENTINEL:=.sentinel
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): requirements*.txt
-	test -f $@ || virtualenv --python=python3.6 $(VENV_DIR)
+	test -f $@ || python -m venv $(VENV_DIR)
 	$(WITH_VENV) pip install -r requirements-setup.txt
 	$(WITH_VENV) pip install -e .
 	$(WITH_VENV) pip install -r requirements-dev.txt
