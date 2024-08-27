@@ -41,7 +41,7 @@ jobs:
         pip install -r requirements-setup.txt
     - name: Test with tox
       run: |
-        source .venv/bin/activate
+        source venv/bin/activate
         tox -vv
       env:
         POSTGRES_HOST: localhost
@@ -85,7 +85,7 @@ jobs:
         pip install -r requirements-setup.txt
     - name: Test with tox
       run: |
-        source .venv/bin/activate
+        source venv/bin/activate
         tox -vv -e py36-django1.11,py36-django2.2
       env:
         POSTGRES_HOST: localhost
@@ -106,7 +106,7 @@ jobs:
           pip install -r requirements-setup.txt
       - name: lint
         run: |
-          source .venv/bin/activate
+          source venv/bin/activate
           tox -vv -e flake8
         env:
           POSTGRES_HOST: localhost
