@@ -36,8 +36,9 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        pip install virtualenv
-        npm i pg
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements-setup.txt
     - name: Test with tox
       run: |
         source .venv/bin/activate
@@ -79,8 +80,9 @@ jobs:
           3.10
     - name: Install dependencies
       run: |
-        pip install virtualenv
-        npm i pg
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements-setup.txt
     - name: Test with tox
       run: |
         source .venv/bin/activate
@@ -99,8 +101,9 @@ jobs:
           python-version: '3.9'
       - name: Install dependencies
         run: |
-          pip install virtualenv
-          npm i pg
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements-setup.txt
       - name: lint
         run: |
           source .venv/bin/activate
