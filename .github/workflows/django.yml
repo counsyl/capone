@@ -42,7 +42,6 @@ jobs:
     - name: Install Dependencies
       run: |
         pip install virtualenv
-        npm i pg
     - name: Run Tests
       run: |
         make test
