@@ -40,7 +40,7 @@ jobs:
         npm i pg
     - name: Test with tox
       run: |
-        source venv/bin/activate
+        source .venv/bin/activate
         tox -vv
       env:
         POSTGRES_HOST: localhost
@@ -83,7 +83,7 @@ jobs:
         npm i pg
     - name: Test with tox
       run: |
-        source venv/bin/activate
+        source .venv/bin/activate
         tox -vv -e py36-django1.11,py36-django2.2
       env:
         POSTGRES_HOST: localhost
@@ -96,15 +96,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-         python-version: '3.9'
+          python-version: '3.9'
       - name: Install dependencies
         run: |
           pip install virtualenv
           npm i pg
       - name: lint
         run: |
-          source venv/bin/activate
+          source .venv/bin/activate
           tox -vv -e flake8
-      env:
-        POSTGRES_HOST: localhost
-        POSTGRES_PORT: 5432
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
