@@ -20,7 +20,7 @@ AMOUNT = D('100')
 
 
 @pytest.fixture
-def create_transactions(db):
+def create_transactions():
     create_user = UserFactory()
     ledger = LedgerFactory()
 
@@ -90,7 +90,7 @@ def create_transactions(db):
     (MatchType.EXACT, 'none'),
 ])
 def test_filter_with_no_evidence(
-    match_type, queryset_function_name, create_transactions, db,
+    match_type, queryset_function_name, create_transactions,
 ):
     """
     Method returns correct Transactions with no evidence given.
@@ -109,7 +109,7 @@ def test_filter_with_no_evidence(
     (MatchType.NONE, [False, False, False, True, False]),
     (MatchType.EXACT, [True, False, False, False, False]),
 ])
-def test_filters(match_type, results, create_transactions, db):
+def test_filters(match_type, results, create_transactions):
     """
     Method returns correct Transactions with various evidence given.
 
@@ -156,11 +156,7 @@ def test_filters(match_type, results, create_transactions, db):
     (MatchType.EXACT, 4),
 ])
 def test_query_counts(
-    match_type,
-    query_counts,
-    django_assert_num_queries,
-    create_transactions,
-    db,
+    match_type, query_counts, django_assert_num_queries, create_transactions,
 ):
     """
     `filter_by_related_objects` should use a constant number of queries.
@@ -187,7 +183,7 @@ def test_invalid_match_type():
         Transaction.objects.filter_by_related_objects(match_type='foo')
 
 
-def test_chaining_filter_to_existing_queryset(create_transactions, db):
+def test_chaining_filter_to_existing_queryset(create_transactions):
     """
     `filter_by_related_objects` can be used like any other queryset filter.
     """

@@ -24,7 +24,7 @@ app, not a Factory Boy Factory.
 
 
 @pytest.fixture
-def credit_card_transaction(db):
+def credit_card_transaction():
     return CreditCardTransactionFactory()
 
 
@@ -61,7 +61,7 @@ def test_custom_ledger_entries(credit_card_transaction):
     )
 
 
-def test_custom_evidence(db):
+def test_custom_evidence():
     ccx = CreditCardTransactionFactory()
     TransactionFactory(evidence=[ccx])
 
