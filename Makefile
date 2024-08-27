@@ -71,7 +71,6 @@ clean:
 	find . -name __pycache__ -delete
 	rm -f MANIFEST
 	rm -f test.db
-	rm -f xunit.xml
 	find . -type f -name '*.pyc' -delete
 	rm -rf coverage .coverage*
 	dropdb --if-exists capone_test_db -U postgres
