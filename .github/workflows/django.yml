@@ -27,7 +27,7 @@ jobs:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
 
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       max-parallel: 4
       matrix:
