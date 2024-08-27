@@ -73,11 +73,7 @@ jobs:
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
-        # Setup doesn't work on 3.6 for Baya, so we install under 3.10 and use Tox to install 3.6 in a virtualenv.
-        # This syntax is new as of setup-python@4 that enables multiple versions of Python to be installed.
-        python-version: |
-          3.6
-          3.10
+        python-version: 3.6
     - name: Install dependencies
       run: |
         python -m venv venv
