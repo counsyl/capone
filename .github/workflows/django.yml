@@ -69,24 +69,24 @@ jobs:
           - 5432:5432
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.6
-    - name: Install dependencies
-      run: |
-        npm i pg
-        python -m venv venv
-        source venv/bin/activate
-        pip install -r requirements-setup.txt
-    - name: Test with tox
-      run: |
-        source venv/bin/activate
-        tox -vv -e py36-1.11,py36-2.2,py36-3.2,py36-4.2
-      env:
-        POSTGRES_HOST: localhost
-        POSTGRES_PORT: 5432
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.6
+      - name: Install dependencies
+        run: |
+          npm i pg
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements-setup.txt
+      - name: Test with tox
+        run: |
+          source venv/bin/activate
+          tox -vv -e py36-1.11,py36-2.2,py36-3.2,py36-4.2
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
 
   lint:
     runs-on: ubuntu-latest
