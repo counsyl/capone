@@ -1,32 +1,8 @@
 name: Django CI
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: [push]
 
 jobs:
-  build:
-
-    services:
-      postgres:
-        image: postgres:9.6
-        env:
-          POSTGRES_USER: django
-          POSTGRES_PASSWORD: django
-          POSTGRES_DB: capone_test_db
-        # Set health checks to make Workflow wait until Postgres is ready
-        # before executing next step.
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          # Maps tcp port 5432 on service container to the host
-          - 5432:5432
-
     runs-on: ubuntu-20.04
     strategy:
       max-parallel: 4
@@ -50,3 +26,82 @@ jobs:
       env:
         POSTGRES_HOST: localhost
         POSTGRES_PORT: 5432
+
+  test:
+    services:
+      postgres:
+        image: postgres:9.6
+        env:
+          POSTGRES_USER: django
+          POSTGRES_PASSWORD: django
+          POSTGRES_DB: capone_test_db
+        # Set health checks to make Workflow wait until Postgres is ready
+        # before executing next step.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 3
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        pip install virtualenv
+        npm i pg
+    - name: Test with tox
+      run: |
+        source venv/bin/activate
+        tox -vv
+
+  test36:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        # Setup doesn't work on 3.6 for Baya, so we install under 3.10 and use Tox to install 3.6 in a virtualenv.
+        # This syntax is new as of setup-python@4 that enables multiple versions of Python to be installed.
+        python-version: |
+          3.6
+          3.10
+    - name: Install dependencies
+      run: |
+        pip install virtualenv
+        npm i pg
+    - name: Test with tox
+      run: |
+        source venv/bin/activate
+        tox -vv -e py36-django1.11,py36-django2.2
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+         python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          pip install virtualenv
+          npm i pg
+      - name: lint
+        run: |
+          source venv/bin/activate
+          tox -vv -e flake8
+
