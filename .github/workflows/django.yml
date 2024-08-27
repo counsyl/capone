@@ -3,13 +3,13 @@ name: Django CI
 on: [push]
 
 jobs:
-    runs-on: ubuntu-20.04
-    strategy:
-      max-parallel: 2
-      matrix:
-        python-version: [3.8, 3.9]
-
   test:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 3
+      matrix:
+        python-version: ['3.8', '3.9']
+
     services:
       postgres:
         image: postgres:9.6
@@ -27,12 +27,6 @@ jobs:
         ports:
           # Maps tcp port 5432 on service container to the host
           - 5432:5432
-
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 3
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
 
     steps:
     - uses: actions/checkout@v3
@@ -54,6 +48,25 @@ jobs:
 
   test36:
     runs-on: ubuntu-20.04
+
+    services:
+      postgres:
+        image: postgres:9.6
+        env:
+          POSTGRES_USER: django
+          POSTGRES_PASSWORD: django
+          POSTGRES_DB: capone_test_db
+        # Set health checks to make Workflow wait until Postgres is ready
+        # before executing next step.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -95,4 +108,3 @@ jobs:
       env:
         POSTGRES_HOST: localhost
         POSTGRES_PORT: 5432
-
