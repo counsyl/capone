@@ -10,8 +10,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import Q
-from django.utils.encoding import python_2_unicode_compatible
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 from capone.exceptions import TransactionBalanceException
 
@@ -20,7 +19,6 @@ POSITIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are positive, and cr
 NEGATIVE_DEBITS_HELP_TEXT = "Amount for this entry.  Debits are negative, and credits are positive."  # noqa: E501
 
 
-@python_2_unicode_compatible
 class TransactionRelatedObject(models.Model):
     """
     A piece of evidence for a particular Transaction.
@@ -164,7 +162,6 @@ class TransactionQuerySet(models.QuerySet):
             raise ValueError("Invalid match_type.")
 
 
-@python_2_unicode_compatible
 class TransactionType(models.Model):
     """
     A user-defined "type" to group `Transactions`.
@@ -202,7 +199,6 @@ def get_or_create_manual_transaction_type_id():
     return get_or_create_manual_transaction_type().id
 
 
-@python_2_unicode_compatible
 class Transaction(models.Model):
     """
     The main model for representing a financial event in `capone`.
@@ -267,10 +263,11 @@ class Transaction(models.Model):
         Instead, the only check that makes sense is that the entries for the
         transaction still balance.
         """
-        total = sum([entry.amount for entry in self.entries.all()])
-        if total != Decimal(0):
-            raise TransactionBalanceException(
-                "Credits do not equal debits. Mis-match of %s." % total)
+        if self.pk:
+            total = sum([entry.amount for entry in self.entries.all()])
+            if total != Decimal(0):
+                raise TransactionBalanceException(
+                    "Credits do not equal debits. Mis-match of %s." % total)
         return True
 
     def save(self, **kwargs):
@@ -292,7 +289,6 @@ class Transaction(models.Model):
         }
 
 
-@python_2_unicode_compatible
 class Ledger(models.Model):
     """
     A group of `LedgerEntries` all debiting or crediting the same resource.
@@ -368,7 +364,6 @@ class LedgerEntry(models.Model):
             amount=self.amount, ledger=self.ledger.name)
 
 
-@python_2_unicode_compatible
 class LedgerBalance(models.Model):
     """
     A Denormalized balance for a related object in a ledger.
